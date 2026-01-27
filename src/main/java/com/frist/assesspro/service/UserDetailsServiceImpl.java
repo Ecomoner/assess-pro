@@ -1,6 +1,6 @@
 package com.frist.assesspro.service;
 
-import com.frist.assesspro.model.User;
+import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

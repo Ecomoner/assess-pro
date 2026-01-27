@@ -1,4 +1,4 @@
-package com.frist.assesspro.model;
+package com.frist.assesspro.entity;
 
 
 import jakarta.persistence.*;

@@ -1,6 +1,6 @@
 package com.frist.assesspro.dto;
 
-import com.frist.assesspro.model.User;
+import com.frist.assesspro.entity.User;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

@@ -1,6 +1,6 @@
 package com.frist.assesspro.controllers;
 
-import com.frist.assesspro.model.User;
+import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

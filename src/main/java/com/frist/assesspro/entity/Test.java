@@ -1,4 +1,4 @@
-package com.frist.assesspro.model;
+package com.frist.assesspro.entity;
 
 
 import jakarta.persistence.*;
@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.CurrentTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.frist.assesspro.service;
 
 import com.frist.assesspro.dto.RegistrationDTO;
-import com.frist.assesspro.model.User;
+import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
