@@ -1,0 +1,52 @@
+spring:
+
+  security:
+    user:
+      name: admin
+      password: admin
+
+  application:
+    name: assess-pro
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/dev_postgres?currentSchema=assess_pro_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: assess_pro_db
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+    show-sql: true
+
+  liquibase:
+    change-log: classpath:/db/changelog/master.yaml
+    enabled: true
+    drop-first: false
+    contexts: dev
+
+  sql:
+    init:
+      mode: never
+
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+
+logging:
+  level:
+    org.springframework.security: INFO
+    com.zaxxer.hikari: INFO
+    liquibase: INFO

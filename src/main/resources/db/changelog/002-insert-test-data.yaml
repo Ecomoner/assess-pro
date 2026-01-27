@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-insert-admin-user
+      author: your_name
+      context: dev
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            sql: "SELECT COUNT(*) FROM assess_pro_db.users WHERE username = 'admin'"
+            expectedResult: "0"
+      changes:
+        - insert:
+            tableName: users
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: username
+                  value: admin
+              - column:
+                  name: password
+                  value: $2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVWcHy
+              - column:
+                  name: role
+                  value: ROLE_CREATOR
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP  # ← ДОБАВЬТЕ ЭТО
+              - column:
+                  name: is_active
+                  value: true
+
+  - changeSet:
+      id: 002-insert-test-user
+      author: your_name
+      context: dev
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            sql: "SELECT COUNT(*) FROM assess_pro_db.users WHERE username = 'tester'"
+            expectedResult: "0"
+      changes:
+        - insert:
+            tableName: users
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: username
+                  value: tester
+              - column:
+                  name: password
+                  value: $2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVWcHy
+              - column:
+                  name: role
+                  value: ROLE_USER
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP  # ← ДОБАВЬТЕ ЭТО
+              - column:
+                  name: is_active
+                  value: true

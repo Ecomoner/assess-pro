@@ -1,0 +1,396 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-users-table
+      author: your_name
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: users
+                schemaName: assess_pro_db
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS assess_pro_db
+
+        - createTable:
+            tableName: users
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValue: true
+
+        - createIndex:
+            tableName: users
+            schemaName: assess_pro_db
+            indexName: idx_users_username
+            columns:
+              - column:
+                  name: username
+
+  - changeSet:
+      id: 001-create-tests-table
+      author: your_name
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tests
+                schemaName: assess_pro_db
+      changes:
+        - createTable:
+            tableName: tests
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_published
+                  type: BOOLEAN
+                  defaultValue: false
+              - column:
+                  name: time_limit_minutes
+                  type: INTEGER
+                  defaultValue: 0
+
+        - addForeignKeyConstraint:
+            baseTableName: tests
+            baseSchemaName: assess_pro_db
+            baseColumnNames: created_by
+            constraintName: fk_tests_created_by
+            referencedTableName: users
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: tests
+            schemaName: assess_pro_db
+            indexName: idx_tests_created_by
+            columns:
+              - column:
+                  name: created_by
+
+  - changeSet:
+      id: 001-create-questions-table
+      author: your_name
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: questions
+                schemaName: assess_pro_db
+      changes:
+        - createTable:
+            tableName: questions
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: test_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: text
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: order_index
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+                  defaultValue: 0
+
+        - addForeignKeyConstraint:
+            baseTableName: questions
+            baseSchemaName: assess_pro_db
+            baseColumnNames: test_id
+            constraintName: fk_questions_test_id
+            referencedTableName: tests
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: questions
+            schemaName: assess_pro_db
+            indexName: idx_questions_test_id
+            columns:
+              - column:
+                  name: test_id
+
+  - changeSet:
+      id: 001-create-answer-options-table
+      author: your_name
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: answer_options
+                schemaName: assess_pro_db
+      changes:
+        - createTable:
+            tableName: answer_options
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: question_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: text
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_correct
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+                  defaultValue: false
+
+        - addForeignKeyConstraint:
+            baseTableName: answer_options
+            baseSchemaName: assess_pro_db
+            baseColumnNames: question_id
+            constraintName: fk_answer_options_question_id
+            referencedTableName: questions
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: answer_options
+            schemaName: assess_pro_db
+            indexName: idx_answer_options_question_id
+            columns:
+              - column:
+                  name: question_id
+
+  - changeSet:
+      id: 001-create-test-attempts-table
+      author: your_name
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: test_attempts
+                schemaName: assess_pro_db
+      changes:
+        - createTable:
+            tableName: test_attempts
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: test_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_time
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_time
+                  type: TIMESTAMP
+              - column:
+                  name: total_score
+                  type: INTEGER
+                  defaultValue: 0
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                  defaultValue: 'IN_PROGRESS'
+
+        - addForeignKeyConstraint:
+            baseTableName: test_attempts
+            baseSchemaName: assess_pro_db
+            baseColumnNames: test_id
+            constraintName: fk_test_attempts_test_id
+            referencedTableName: tests
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            baseTableName: test_attempts
+            baseSchemaName: assess_pro_db
+            baseColumnNames: user_id
+            constraintName: fk_test_attempts_user_id
+            referencedTableName: users
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: test_attempts
+            schemaName: assess_pro_db
+            indexName: idx_test_attempts_test_user
+            columns:
+              - column:
+                  name: test_id
+              - column:
+                  name: user_id
+
+  - changeSet:
+      id: 001-create-user-answers-table
+      author: your_name
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: user_answers
+                schemaName: assess_pro_db
+      changes:
+        - createTable:
+            tableName: user_answers
+            schemaName: assess_pro_db
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: attempt_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: question_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: chosen_answer_option_id
+                  type: BIGINT
+              - column:
+                  name: is_correct
+                  type: BOOLEAN
+              - column:
+                  name: points_earned
+                  type: INTEGER
+                  defaultValue: 0
+
+        - addForeignKeyConstraint:
+            baseTableName: user_answers
+            baseSchemaName: assess_pro_db
+            baseColumnNames: attempt_id
+            constraintName: fk_user_answers_attempt_id
+            referencedTableName: test_attempts
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: user_answers
+            baseSchemaName: assess_pro_db
+            baseColumnNames: question_id
+            constraintName: fk_user_answers_question_id
+            referencedTableName: questions
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - addForeignKeyConstraint:
+            baseTableName: user_answers
+            baseSchemaName: assess_pro_db
+            baseColumnNames: chosen_answer_option_id
+            constraintName: fk_user_answers_answer_option_id
+            referencedTableName: answer_options
+            referencedSchemaName: assess_pro_db
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+        - createIndex:
+            tableName: user_answers
+            schemaName: assess_pro_db
+            indexName: idx_user_answers_attempt_question
+            columns:
+              - column:
+                  name: attempt_id
+              - column:
+                  name: question_id
+            unique: true
