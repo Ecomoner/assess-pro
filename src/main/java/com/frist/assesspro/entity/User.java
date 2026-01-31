@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -46,20 +47,26 @@ public class User implements UserDetails {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @OneToMany(mappedBy = "createdBy")
+    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<Test> createdTests;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<TestAttempt> testAttempts;
+
+    public static class Roles {
+        public static final String CREATOR = "ROLE_CREATOR";
+        public static final String TESTER = "ROLE_TESTER";
+
+        public static boolean isValidRole(String role) {
+            return CREATOR.equals(role) || TESTER.equals(role);
+        }
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority(role));
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
     }
 
     @Override

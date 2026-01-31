@@ -21,5 +21,5 @@ public class RegistrationDTO {
     @NotBlank(message = "Подтверждение пароля обязательно")
     private String confirmPassword;
 
-    private String role = User.Roles.USER;
+    private String role = "ROLE_TESTER";
 }

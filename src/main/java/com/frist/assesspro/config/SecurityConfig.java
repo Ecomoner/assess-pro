@@ -1,30 +1,44 @@
 package com.frist.assesspro.config;
 
+import com.frist.assesspro.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.*;
+import org.springframework.util.AntPathMatcher;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConfig  {
+public class SecurityConfig {
 
-//    private final UserDetailsServiceImpl userDetailsService;
-
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
     }
 
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(
@@ -33,18 +47,24 @@ public class SecurityConfig  {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) {
-        http.csrf(AbstractHttpConfigurer::disable) // Для упрощения, можно включить позже
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Публичные эндпоинты
-                        .requestMatchers("/", "/home", "/login","/password-check","/register").permitAll()
-                        // Только для создателей тестов
+                        // Публичные пути
+                        .requestMatchers(
+                                "/",
+                                "/home",
+                                "/register/**",
+                                "/login/**"
+                        ).permitAll()
+                        // Защищенные пути по ролям
                         .requestMatchers("/creator/**").hasRole("CREATOR")
+                        .requestMatchers("/tester/**").hasRole("TESTER")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        // Только для тестирующих
-                        .requestMatchers("/user/**").hasRole("USER")
-                        // Все остальные запросы требуют аутентификации
-                        .anyRequest().authenticated())
+                        // Все остальные пути требуют аутентификации
+                        .anyRequest().authenticated()
+                )
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
@@ -54,10 +74,22 @@ public class SecurityConfig  {
                         .passwordParameter("password")
                         .permitAll()
                 )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                )
                 .exceptionHandling(exceptions -> exceptions
                         .accessDeniedPage("/access-denied")
-                );
-
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                )
+                .authenticationProvider(authenticationProvider());
         return http.build();
     }
 }

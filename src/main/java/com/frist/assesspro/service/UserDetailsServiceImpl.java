@@ -3,6 +3,7 @@ package com.frist.assesspro.service;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -19,17 +21,23 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.debug("Загрузка пользователя по имени: {}", username);
 
         User user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new UsernameNotFoundException(
-//                        "Пользователь с таким именем '" + username + "' не найден."
-//                ))
-                ;
+                .orElseThrow(() -> {
+                    log.error("Пользователь не найден: {}", username);
+                    return new UsernameNotFoundException(
+                            "Пользователь с именем '" + username + "' не найден"
+                    );
+                });
+        if (!user.isEnabled()) {
+            log.error("Учетная запись отключена: {}", username);
+            throw new UsernameNotFoundException("Учетная запись отключена");
+        }
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
-                .password(user.getPassword())
-                .authorities(user.getAuthorities())
-                .build();
+        log.debug("Пользователь найден: {} с ролью: {}",
+                user.getUsername(), user.getRole());
+
+        return user;
     }
 }

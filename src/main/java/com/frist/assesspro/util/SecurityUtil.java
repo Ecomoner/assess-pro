@@ -9,40 +9,31 @@ import org.springframework.stereotype.Component;
 @Component
 public class SecurityUtil {
 
-
-    public static Authentication getAuthentication(){
+    public static Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
     }
 
-    public static String getCurrenName(){
+    public static String getCurrentUsername() {
         Authentication auth = getAuthentication();
-        return auth != null? auth.getName():null;
+        return auth != null ? auth.getName() : null;
     }
 
-    public static boolean isCurrentUserCreator(){
+    public static User getCurrentUser() {
         Authentication auth = getAuthentication();
-        return auth != null && auth.getAuthorities().stream()
-                .anyMatch( a -> a.getAuthority().equals(User.Roles.CREATOR));
-    }
-
-    public static boolean isCurrentThisUser(){
-        Authentication auth = getAuthentication();
-        return auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(User.Roles.USER));
-    }
-
-    public static boolean isCurrentUserAdmin(){
-        Authentication auth = getAuthentication();
-        return auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(User.Roles.ADMIN));
-    }
-
-    public static User getCurrentUser(){
-        Authentication auth = getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof User){
+        if (auth != null && auth.getPrincipal() instanceof User) {
             return (User) auth.getPrincipal();
         }
         return null;
     }
 
+    public static boolean isCurrentUserCreator() {
+        User user = getCurrentUser();
+        return user != null && user.getRole().equals(User.Roles.CREATOR);
+    }
+
+    public static boolean isCurrentUserTester() {
+        User user = getCurrentUser();
+        return user != null && user.getRole().equals(User.Roles.TESTER);
+    }
 }
+
