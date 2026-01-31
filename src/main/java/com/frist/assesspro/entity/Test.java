@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -48,8 +49,10 @@ public class Test {
 
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
+    @ToString.Exclude
     private List<Question> questions;
 
     @OneToMany(mappedBy = "test")
+    @ToString.Exclude
     private List<TestAttempt> attempts;
 }
