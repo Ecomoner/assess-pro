@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${action == 'create' ? 'Создание теста' : 'Редактирование теста'}">Создание теста</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/home}">Assess Pro</a>
+        <div class="navbar-nav ms-auto">
+            <span class="navbar-text me-3">
+                Создатель: <strong sec:authentication="name"></strong>
+            </span>
+            <a th:href="@{/creator/tests}" class="nav-link">Мои тесты</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0" th:text="${action == 'create' ? 'Создание нового теста' : 'Редактирование теста'}">
+                        Создание нового теста
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form th:action="${action == 'create' ? '/creator/tests/new' : '/creator/tests/update/' + test.id}"
+                          th:object="${test}" method="post">
+
+                        <!-- Название теста -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Название теста *</label>
+                            <input type="text" class="form-control" id="title"
+                                   th:field="*{title}" required>
+                            <div class="form-text">Краткое и понятное название</div>
+                        </div>
+
+                        <!-- Описание -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Описание</label>
+                            <textarea class="form-control" id="description"
+                                      th:field="*{description}" rows="3"></textarea>
+                            <div class="form-text">Опишите, о чем этот тест</div>
+                        </div>
+
+                        <!-- Лимит времени -->
+                        <div class="mb-4">
+                            <label for="timeLimitMinutes" class="form-label">Лимит времени (минут)</label>
+                            <input type="number" class="form-control" id="timeLimitMinutes"
+                                   th:field="*{timeLimitMinutes}" min="0" value="0">
+                            <div class="form-text">0 = без ограничения по времени</div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5>Вопросы</h5>
+                        <p class="text-muted">Вопросы можно будет добавить после создания теста</p>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a th:href="@{/creator/tests}" class="btn btn-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">
+                                <span th:text="${action == 'create' ? 'Создать тест' : 'Сохранить изменения'}"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

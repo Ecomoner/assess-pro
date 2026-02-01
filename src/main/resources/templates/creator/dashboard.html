@@ -33,16 +33,19 @@
                     <a href="#" class="list-group-item list-group-item-action active">
                         Обзор
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a th:href="@{/creator/tests}" class="list-group-item list-group-item-action">
                         Мои тесты
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a th:href="@{/creator/tests/new}" class="list-group-item list-group-item-action">
                         Создать тест
                     </a>
                     <a href="#" class="list-group-item list-group-item-action">
                         Статистика
                     </a>
                     <a th:href="@{/home}" class="list-group-item list-group-item-action">
+                        На главную
+                    </a>
+                    <a th:href="@{/creator/question-list.html}" class="list-group-item list-group-item-action">
                         На главную
                     </a>
                 </div>
@@ -64,7 +67,7 @@
                                 <div class="card-body text-center">
                                     <h6>Создать новый тест</h6>
                                     <p class="small">Добавьте вопросы, варианты ответов и настройки</p>
-                                    <button class="btn btn-primary btn-sm">Создать тест</button>
+                                    <button th:href="@{/creator/tests/new}" class="btn btn-primary btn-sm">Создать тест</button>
                                 </div>
                             </div>
                         </div>

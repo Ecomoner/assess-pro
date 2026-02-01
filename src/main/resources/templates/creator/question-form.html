@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${action == 'create' ? 'Добавление вопроса' : 'Редактирование вопроса'}">
+        Форма вопроса
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .answer-row { margin-bottom: 10px; padding: 10px; border: 1px solid #dee2e6; border-radius: 5px; }
+        .correct-answer { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/home}">Assess Pro</a>
+        <div class="navbar-nav ms-auto">
+            <span class="navbar-text me-3">
+                Создатель: <strong sec:authentication="name"></strong>
+            </span>
+            <a th:href="@{'/creator/tests/' + ${test.id} + '/questions'}" class="nav-link">← Назад к вопросам</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0" th:text="${action == 'create' ? 'Добавление нового вопроса' : 'Редактирование вопроса'}">
+                        Форма вопроса
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Сообщения об ошибках валидации -->
+<!--                    <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger">-->
+<!--                        <p>Пожалуйста, исправьте следующие ошибки:</p>-->
+<!--                        <ul>-->
+<!--                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>-->
+<!--                        </ul>-->
+<!--                    </div>-->
+
+                    <form th:action="${action == 'create' ?
+                            '/creator/tests/' + test.id + '/questions/new' :
+                            '/creator/tests/' + test.id + '/questions/' + questionDTO.id + '/update'}"
+                          th:object="${questionDTO}" method="post">
+
+                        <!-- Информация о тесте -->
+                        <div class="alert alert-info mb-4">
+                            <strong>Тест:</strong> [[${test.title}]]<br>
+                            <small th:text="${test.description ?: 'Без описания'}"></small>
+                        </div>
+
+                        <!-- Текст вопроса -->
+                        <div class="mb-4">
+                            <label for="text" class="form-label">Текст вопроса *</label>
+                            <textarea class="form-control" id="text"
+                                      th:field="*{text}" rows="3" required
+                                      placeholder="Введите текст вопроса..."></textarea>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('text')}">
+                                <span th:errors="*{text}"></span>
+                            </div>
+                            <div class="form-text">Сформулируйте четкий и понятный вопрос</div>
+                        </div>
+
+                        <!-- Порядковый номер -->
+                        <div class="mb-4">
+                            <label for="orderIndex" class="form-label">Порядковый номер *</label>
+                            <input type="number" class="form-control" id="orderIndex"
+                                   th:field="*{orderIndex}" min="0" required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('orderIndex')}">
+                                <span th:errors="*{orderIndex}"></span>
+                            </div>
+                            <div class="form-text">Определяет порядок вопросов в тесте</div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Варианты ответов -->
+                        <h5>Варианты ответов</h5>
+                        <p class="text-muted mb-4">
+                            Отметьте галочкой правильные варианты. Удалите строки, которые нужно убрать.
+                        </p>
+
+                        <div id="answers-container">
+                            <div th:each="answer, iter : ${questionDTO.answerOptions}"
+                                 class="answer-row mb-3 p-3 border rounded">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1 text-center">
+                                        <input type="checkbox"
+                                               th:field="*{answerOptions[__${iter.index}__].isCorrect}"
+                                               class="form-check-input correct-checkbox">
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input type="text"
+                                               th:field="*{answerOptions[__${iter.index}__].text}"
+                                               class="form-control"
+                                               placeholder="Введите вариант ответа..."
+                                               th:classappend="${#fields.hasErrors('answerOptions[' + iter.index + '].text')} ? 'is-invalid' : ''">
+                                        <div class="invalid-feedback"
+                                             th:if="${#fields.hasErrors('answerOptions[' + iter.index + '].text')}">
+                                            <span th:errors="*{answerOptions[__${iter.index}__].text}"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-answer"
+                                                th:unless="${iter.first}">
+                                            Удалить
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Скрытые поля для ID -->
+                                <input type="hidden"
+                                       th:field="*{answerOptions[__${iter.index}__].id}">
+                            </div>
+                        </div>
+
+                        <!-- Кнопка добавления варианта -->
+                        <div class="mb-4">
+                            <button type="button" id="add-answer" class="btn btn-sm btn-outline-primary">
+                                + Добавить вариант ответа
+                            </button>
+                            <div class="form-text mt-2">
+                                <span class="text-success">✓</span> Галочка отмечает правильный ответ
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a th:href="@{'/creator/tests/' + ${test.id} + '/questions'}"
+                               class="btn btn-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">
+                                <span th:text="${action == 'create' ? 'Добавить вопрос' : 'Сохранить изменения'}"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript для динамического добавления вариантов ответов -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const answersContainer = document.getElementById('answers-container');
+        const addButton = document.getElementById('add-answer');
+
+        // Считаем сколько уже есть строк
+        let answerCount = document.querySelectorAll('.answer-row').length;
+
+        // Удаление варианта ответа
+        answersContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-answer')) {
+                e.target.closest('.answer-row').remove();
+            }
+        });
+
+        // Добавление нового варианта ответа
+        addButton.addEventListener('click', function() {
+            const newIndex = answerCount++;
+
+            const newAnswerRow = document.createElement('div');
+            newAnswerRow.className = 'answer-row mb-3 p-3 border rounded';
+            newAnswerRow.innerHTML = `
+            <div class="row align-items-center">
+                <div class="col-md-1 text-center">
+                    <input type="checkbox"
+                           name="answerOptions[${newIndex}].isCorrect"
+                           class="form-check-input correct-checkbox">
+                </div>
+                <div class="col-md-9">
+                    <input type="text"
+                           name="answerOptions[${newIndex}].text"
+                           class="form-control"
+                           placeholder="Введите вариант ответа...">
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-answer">
+                        Удалить
+                    </button>
+                </div>
+            </div>
+            <input type="hidden" name="answerOptions[${newIndex}].id">
+        `;
+
+            answersContainer.appendChild(newAnswerRow);
+        });
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

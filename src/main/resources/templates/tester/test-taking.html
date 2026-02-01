@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Прохождение теста - [[${testTakingDTO.testTitle}]]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .question-card {
+            border-left: 5px solid #198754;
+        }
+        .answer-option {
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .answer-option:hover {
+            background-color: #f8f9fa;
+            border-color: #adb5bd;
+            transform: translateY(-2px);
+        }
+        .answer-option.selected {
+            background-color: #d1e7dd;
+            border-color: #198754;
+            box-shadow: 0 4px 8px rgba(25, 135, 84, 0.2);
+        }
+        .progress-bar-custom {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+        .progress-bar-custom .progress-bar {
+            border-radius: 5px;
+        }
+        .timer {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .timer.warning {
+            color: #dc3545;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .question-nav-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .question-number {
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-success">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/home}">
+            <i class="bi bi-card-checklist"></i> Assess Pro
+        </a>
+        <div class="navbar-text text-white">
+            Тестируемый: <strong sec:authentication="name"></strong>
+        </div>
+    </div>
+</nav>
+
+<!-- Скрытый контейнер с данными для JavaScript -->
+<div id="test-data"
+     th:data-attempt-id="${testTakingDTO.attemptId}"
+     th:data-total-questions="${testTakingDTO.totalQuestions}"
+     th:data-current-index="${testTakingDTO.currentQuestionIndex}"
+     th:data-has-timer="${testTakingDTO.hasTimeLimit()}"
+     th:data-timer-minutes="${testTakingDTO.timeLimitMinutes}"
+     style="display: none;">
+     <span th:each="q, iter : ${testTakingDTO.questions}"
+           th:if="${iter.index == testTakingDTO.currentQuestionIndex}"
+           th:data-question-id="${q.id}"></span>
+</div>
+
+<div class="container mt-4">
+    <!-- Шапка теста -->
+    <div class="card mb-4 border-success">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="card-title mb-1" th:text="${testTakingDTO.testTitle}"></h2>
+                    <p class="card-text text-muted mb-0">
+                        Вопрос
+                        <span th:text="${testTakingDTO.currentQuestionIndex + 1}"></span>
+                        из
+                        <span th:text="${testTakingDTO.totalQuestions}"></span>
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <!-- Таймер -->
+                        <div th:if="${testTakingDTO.hasTimeLimit()}" class="timer me-3" id="timer">
+                            <i class="bi bi-clock"></i>
+                            <span id="time-remaining">
+                                [[${testTakingDTO.timeLimitMinutes}]]:00
+                            </span>
+                        </div>
+
+                        <!-- Прогресс -->
+                        <div class="text-end">
+                            <div class="progress progress-bar-custom mb-1" style="width: 150px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     th:attr="style='width: ' + ${(testTakingDTO.currentQuestionIndex + 1) / testTakingDTO.totalQuestions * 100} + '%;'">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                [[${#numbers.formatDecimal((testTakingDTO.currentQuestionIndex + 1) / testTakingDTO.totalQuestions * 100, 0, 0)}]]%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для сообщений -->
+    <div id="message-container"></div>
+
+    <!-- Текущий вопрос -->
+    <div th:with="currentQuestion=${testTakingDTO.questions[testTakingDTO.currentQuestionIndex]}"
+         class="card question-card mb-4">
+        <div class="card-header bg-light">
+            <h4 class="mb-0">
+                <span class="badge bg-success me-2">
+                    Вопрос [[${testTakingDTO.currentQuestionIndex + 1}]]
+                </span>
+                [[${currentQuestion.text}]]
+            </h4>
+        </div>
+        <div class="card-body">
+            <!-- Варианты ответов -->
+            <div class="list-group" id="answers-container">
+                <div th:each="answer, iter : ${currentQuestion.answerOptions}"
+                     class="list-group-item answer-option p-3"
+                     th:data-answer-id="${answer.id}"
+                     th:data-answer-text="${answer.text}"
+                     onclick="TestTaking.selectAnswer(this)">
+                    <div class="form-check d-flex align-items-center">
+                        <input class="form-check-input me-3" type="radio"
+                               name="answer"
+                               th:id="'answer-' + ${answer.id}"
+                               th:value="${answer.id}">
+                        <label class="form-check-label flex-grow-1 mb-0"
+                               th:for="'answer-' + ${answer.id}"
+                               th:text="${answer.text}">
+                        </label>
+                        <div class="ms-3">
+                            <i class="bi bi-check-circle-fill text-success d-none selected-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопка "Пропустить" -->
+            <div class="mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="TestTaking.skipQuestion()">
+                    <i class="bi bi-skip-forward"></i> Пропустить вопрос
+                </button>
+                <small class="text-muted ms-2">Можно вернуться позже</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навигация по вопросам -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <!-- Кнопка "Назад" -->
+                <button type="button" class="btn btn-outline-primary"
+                        th:disabled="${testTakingDTO.currentQuestionIndex == 0}"
+                        onclick="TestTaking.previousQuestion()">
+                    <i class="bi bi-chevron-left"></i> Предыдущий
+                </button>
+
+                <!-- Индикатор вопросов -->
+                <div class="d-flex flex-wrap justify-content-center">
+                    <div th:each="q, iter : ${testTakingDTO.questions}"
+                         class="mx-1 mb-1">
+                        <button type="button"
+                                class="btn btn-sm question-nav-btn"
+                                th:class="${iter.index == testTakingDTO.currentQuestionIndex} ?
+                                         'btn-success' : 'btn-outline-secondary'"
+                                th:onclick="'TestTaking.goToQuestion(' + ${iter.index} + ')'"
+                                th:text="${iter.index + 1}">
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Кнопки "Далее" и "Завершить" -->
+                <div>
+                    <button type="button" class="btn btn-primary me-2"
+                            th:disabled="${testTakingDTO.currentQuestionIndex == testTakingDTO.totalQuestions - 1}"
+                            onclick="TestTaking.nextQuestion()">
+                        Следующий <i class="bi bi-chevron-right"></i>
+                    </button>
+
+                    <button type="button" class="btn btn-danger"
+                            data-bs-toggle="modal" data-bs-target="#finishModal">
+                        <i class="bi bi-flag-fill"></i> Завершить тест
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно завершения теста -->
+<div class="modal fade" id="finishModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Завершение теста
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите завершить тест?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    После завершения вы увидите результаты и не сможете изменить ответы.
+                </div>
+                <p>Отвечено вопросов:
+                    <span class="badge bg-primary" id="answered-count">0</span>
+                    из <span id="total-questions-display" th:text="${testTakingDTO.totalQuestions}"></span>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Отмена
+                </button>
+                <form th:action="@{/tester/attempt/{id}/finish(id=${testTakingDTO.attemptId})}"
+                      method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-flag-fill"></i> Да, завершить тест
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Объект для управления тестом
+    const TestTaking = {
+        // Конфигурация
+        config: null,
+
+        // Инициализация
+        init: function() {
+            // Получаем данные из скрытого контейнера
+            const testData = document.getElementById('test-data');
+
+            this.config = {
+                attemptId: testData.getAttribute('data-attempt-id'),
+                totalQuestions: parseInt(testData.getAttribute('data-total-questions')) || 0,
+                currentIndex: parseInt(testData.getAttribute('data-current-index')) || 0,
+                hasTimer: testData.getAttribute('data-has-timer') === 'true',
+                timerMinutes: parseInt(testData.getAttribute('data-timer-minutes')) || 0
+            };
+
+            // Получаем ID текущего вопроса
+            const questionSpan = testData.querySelector('[data-question-id]');
+            this.config.currentQuestionId = questionSpan ? questionSpan.getAttribute('data-question-id') : null;
+
+            // Инициализируем таймер если нужно
+            if (this.config.hasTimer && this.config.timerMinutes > 0) {
+                this.initTimer();
+            }
+
+            console.log('TestTaking initialized:', this.config);
+        },
+
+        // Выбор ответа
+        selectAnswer: function(element) {
+            const answerId = element.getAttribute('data-answer-id');
+            const answerText = element.getAttribute('data-answer-text');
+
+            // Снимаем выделение со всех вариантов
+            document.querySelectorAll('.answer-option').forEach(opt => {
+                opt.classList.remove('selected');
+                opt.querySelector('.selected-icon').classList.add('d-none');
+            });
+
+            // Выделяем выбранный вариант
+            element.classList.add('selected');
+            element.querySelector('.selected-icon').classList.remove('d-none');
+
+            // Устанавливаем выбранный radio
+            const radio = element.querySelector('input[type="radio"]');
+            radio.checked = true;
+
+            // Сохраняем ответ
+            this.saveAnswer(answerId);
+
+            this.showMessage('Ответ выбран: ' + answerText, 'success');
+        },
+
+        // Сохранение ответа на сервер
+        saveAnswer: function(answerId) {
+            if (!this.config.currentQuestionId) {
+                console.error('No current question ID');
+                return;
+            }
+
+            const data = {
+                attemptId: this.config.attemptId,
+                questionId: this.config.currentQuestionId,
+                answerOptionId: answerId
+            };
+
+            fetch('/tester/attempt/' + this.config.attemptId + '/answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    if (result.status === 'success') {
+                        console.log('Answer saved successfully');
+                    } else {
+                        this.showMessage('Ошибка при сохранении: ' + result.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving answer:', error);
+                    this.showMessage('Ошибка сети при сохранении ответа', 'danger');
+                });
+        },
+
+        // Пропуск вопроса
+        skipQuestion: function() {
+            if (!this.config.currentQuestionId) {
+                console.error('No current question ID');
+                return;
+            }
+
+            const data = {
+                attemptId: this.config.attemptId,
+                questionId: this.config.currentQuestionId,
+                answerOptionId: null
+            };
+
+            fetch('/tester/attempt/' + this.config.attemptId + '/answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        this.showMessage('Вопрос пропущен', 'info');
+                        this.nextQuestion();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error skipping question:', error);
+                    this.showMessage('Ошибка при пропуске вопроса', 'danger');
+                });
+        },
+
+        // Переход к предыдущему вопросу
+        previousQuestion: function() {
+            if (this.config.currentIndex > 0) {
+                this.goToQuestion(this.config.currentIndex - 1);
+            }
+        },
+
+        // Переход к следующему вопросу
+        nextQuestion: function() {
+            if (this.config.currentIndex < this.config.totalQuestions - 1) {
+                this.goToQuestion(this.config.currentIndex + 1);
+            }
+        },
+
+        // Переход к конкретному вопросу
+        goToQuestion: function(questionIndex) {
+            if (questionIndex >= 0 && questionIndex < this.config.totalQuestions) {
+                window.location.href = '/tester/attempt/' + this.config.attemptId +
+                    '/question/' + questionIndex;
+            }
+        },
+
+        // Инициализация таймера
+        initTimer: function() {
+            const timerElement = document.getElementById('timer');
+            if (!timerElement) return;
+
+            const timeDisplay = document.getElementById('time-remaining');
+            let timeRemaining = this.config.timerMinutes * 60;
+
+            const updateTimer = () => {
+                if (timeRemaining <= 0) {
+                    timeDisplay.textContent = '00:00';
+                    timerElement.classList.add('warning');
+
+                    // Автоматическое завершение теста через 3 секунды
+                    setTimeout(() => {
+                        this.showMessage('Время вышло! Тест будет завершен автоматически.', 'danger');
+                        setTimeout(() => {
+                            document.querySelector('form[action*="finish"]').submit();
+                        }, 2000);
+                    }, 1000);
+
+                    return;
+                }
+
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+
+                timeDisplay.textContent =
+                    minutes.toString().padStart(2, '0') + ':' +
+                    seconds.toString().padStart(2, '0');
+
+                // Предупреждение за последнюю минуту
+                if (timeRemaining <= 60) {
+                    timerElement.classList.add('warning');
+                }
+
+                timeRemaining--;
+            };
+
+            // Запускаем таймер
+            updateTimer();
+            this.timerInterval = setInterval(updateTimer, 1000);
+        },
+
+        // Показать сообщение
+        showMessage: function(text, type) {
+            const container = document.getElementById('message-container');
+            const messageId = 'msg-' + Date.now();
+
+            const html = `
+            <div id="${messageId}" class="alert alert-${type} alert-dismissible fade show">
+                <i class="bi ${type === 'success' ? 'bi-check-circle' :
+                type === 'danger' ? 'bi-exclamation-triangle' :
+                    'bi-info-circle'} me-2"></i>
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+            container.innerHTML = html;
+
+            // Автоматически скрыть через 5 секунд
+            setTimeout(() => {
+                const msg = document.getElementById(messageId);
+                if (msg) {
+                    const bsAlert = new bootstrap.Alert(msg);
+                    bsAlert.close();
+                }
+            }, 5000);
+        },
+
+        // Очистка (если нужно)
+        cleanup: function() {
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+            }
+        }
+    };
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        TestTaking.init();
+
+        // При закрытии страницы можно вызвать cleanup
+        window.addEventListener('beforeunload', function() {
+            TestTaking.cleanup();
+        });
+    });
+</script>
+</body>
+</html>

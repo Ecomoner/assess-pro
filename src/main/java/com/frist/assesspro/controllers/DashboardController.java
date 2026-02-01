@@ -1,7 +1,5 @@
 package com.frist.assesspro.controllers;
 
-import com.frist.assesspro.entity.User;
-import com.frist.assesspro.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -52,14 +50,14 @@ public class DashboardController {
         return "creator/dashboard";
     }
 
-    @GetMapping("/tester/dashboard")
-    @PreAuthorize("hasRole('TESTER')")
-    @Transactional(readOnly = true)
-    public String testerDashboard(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        model.addAttribute("username", auth.getName());
-        model.addAttribute("role", auth.getAuthorities().iterator().next().getAuthority());
-        model.addAttribute("message", "Добро пожаловать в каталог тестов!");
-        return "tester/dashboard";
-    }
+//    @GetMapping("/tester/dashboard")
+//    @PreAuthorize("hasRole('TESTER')")
+//    @Transactional(readOnly = true)
+//    public String testerDashboard(Model model) {
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        model.addAttribute("username", auth.getName());
+//        model.addAttribute("role", auth.getAuthorities().iterator().next().getAuthority());
+//        model.addAttribute("message", "Добро пожаловать в каталог тестов!");
+//        return "tester/dashboard";
+//    }
 }

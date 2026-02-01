@@ -18,6 +18,11 @@ public interface TestRepository extends JpaRepository<Test,Long> {
     List<Test> findByCreatedBy(User createdBy);
     Optional<Test> findByIdAndIsPublishedTrue(Long id);
 
+    @Query("SELECT DISTINCT t FROM Test t " +
+            "LEFT JOIN FETCH t.questions " +
+            "WHERE t.createdBy = :user")
+    List<Test> findByCreatedByWithQuestions(@Param("user") User user);
+
     @Query("SELECT COUNT(t) FROM Test t WHERE t.createdBy = :user")
     long countByCreator(@Param("user") User user);
 }

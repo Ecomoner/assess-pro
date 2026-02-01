@@ -24,7 +24,7 @@ databaseChangeLog:
                   value: ROLE_CREATOR
               - column:
                   name: created_at
-                  valueComputed: CURRENT_TIMESTAMP  # ← ДОБАВЬТЕ ЭТО
+                  valueComputed: CURRENT_TIMESTAMP
               - column:
                   name: is_active
                   value: true
@@ -51,10 +51,10 @@ databaseChangeLog:
                   value: $2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVWcHy
               - column:
                   name: role
-                  value: ROLE_USER
+                  value: ROLE_TESTER
               - column:
                   name: created_at
-                  valueComputed: CURRENT_TIMESTAMP  # ← ДОБАВЬТЕ ЭТО
+                  valueComputed: CURRENT_TIMESTAMP
               - column:
                   name: is_active
                   value: true

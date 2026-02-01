@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление вопросами - [[${test.title}]]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/home}">Assess Pro</a>
+        <div class="navbar-nav ms-auto">
+            <span class="navbar-text me-3">
+                Создатель: <strong sec:authentication="name"></strong>
+            </span>
+            <a th:href="@{/creator/tests}" class="nav-link">Все тесты</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Сообщения -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+        [[${successMessage}]]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+        [[${errorMessage}]]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Вопросы теста: <span th:text="${test.title}"></span></h2>
+            <p class="text-muted" th:text="${test.description ?: 'Без описания'}"></p>
+        </div>
+        <div>
+            <a th:href="@{/creator/tests}" class="btn btn-secondary me-2">← Назад к тестам</a>
+            <a th:href="@{'/creator/tests/' + ${test.id} + '/questions/new'}"
+               class="btn btn-primary">+ Добавить вопрос</a>
+        </div>
+    </div>
+
+    <!-- Список вопросов -->
+    <div class="card">
+        <div class="card-body">
+            <div th:if="${questions.isEmpty()}" class="alert alert-info">
+                В этом тесте пока нет вопросов. Добавьте первый вопрос!
+            </div>
+
+            <div th:unless="${questions.isEmpty()}" class="list-group">
+                <div th:each="question, iter : ${questions}" class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">
+                                Вопрос <span th:text="${iter.index + 1}"></span>:
+                                <span th:text="${question.text}"></span>
+                            </h5>
+                            <p class="mb-1">
+                                <small class="text-muted">
+                                    Вариантов ответа:
+                                    <span th:text="${question.answerOptions != null ? question.answerOptions.size() : 0}"></span>
+                                    | Порядок: <span th:text="${question.orderIndex}"></span>
+                                </small>
+                            </p>
+                            <!-- Показываем правильные ответы -->
+                            <div th:if="${question.answerOptions != null}" class="mt-2">
+                                <small class="text-success">
+                                    Правильные ответы:
+                                    <span th:each="answer : ${question.answerOptions}"
+                                          th:if="${answer.isCorrect}">
+                                        "[[${answer.text}]]"
+                                    </span>
+                                    <span th:if="${question.answerOptions.isEmpty()}">
+                                        Нет правильных ответов
+                                    </span>
+                                </small>
+                            </div>
+                        </div>
+                        <div class="btn-group btn-group-sm ms-3">
+                            <a th:href="@{'/creator/tests/' + ${test.id} + '/questions/' + ${question.id} + '/edit'}"
+                               class="btn btn-outline-primary">Редактировать</a>
+                            <form th:action="@{'/creator/tests/' + ${test.id} + '/questions/' + ${question.id} + '/delete'}"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('Удалить этот вопрос?')">
+                                <button type="submit" class="btn btn-outline-danger">Удалить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
