@@ -4,6 +4,7 @@ package com.frist.assesspro.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,7 @@ public class AnswerOption {
     private Question question;
 
     @NotBlank(message = "Текст варианта ответа обязателен")
+    @Size(min = 1, max = 500, message = "Текст варианта ответа должен быть от 1 до 500 символов")
     @Column(columnDefinition = "TEXT", nullable = false)
     private String text;
 

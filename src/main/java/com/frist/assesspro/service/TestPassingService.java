@@ -1,15 +1,24 @@
 package com.frist.assesspro.service;
 
 
+import com.frist.assesspro.dto.UserStatisticsDTO;
+import com.frist.assesspro.dto.category.CategoryDTO;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.*;
 import com.frist.assesspro.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,35 +34,52 @@ public class TestPassingService {
     private final UserRepository userRepository;
     private final QuestionRepository questionRepository;
     private final AnswerOptionRepository answerOptionRepository;
+    private final CategoryService categoryService;
+    private final ProfileService profileService;
+    private final CooldownService cooldownService;
 
     /**
-     * Получение списка доступных тестов как DTO
+     * 🔥 НОВОЕ: Получение ВСЕХ доступных тестов С ПАГИНАЦИЕЙ (для каталога)
+     * Кэширование с учетом страницы и размера
      */
+    @Cacheable(value = "publishedTests",
+            key = "'all-tests-page-' + #page + '-' + #size",
+            unless = "#result == null or #result.isEmpty()")
     @Transactional(readOnly = true)
-    public List<TestInfoDTO> getAvailableTestsDTO() {
-        List<Test> tests = testRepository.findByIsPublishedTrue();
-
-        return tests.stream()
-                .map(this::convertToTestInfoDTO)
-                .collect(Collectors.toList());
+    public Page<TestInfoDTO> getAllAvailableTestsDTOPaginated(int page, int size) {
+        log.info("Запрос всех доступных тестов (страница: {}, размер: {})", page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return testRepository.findPublishedTestInfoDTOs(pageable);
     }
+    /**
+     *  Получение тестов ПО КАТЕГОРИИ С ПАГИНАЦИЕЙ
+     * Кэширование по ID категории + страница + размер
+     */
+    @Cacheable(value = "publishedTests",
+            key = "'category-tests-page-' + #categoryId + '-' + #page + '-' + #size",
+            unless = "#result == null or #result.isEmpty()")
+    @Transactional(readOnly = true)
+    public Page<TestInfoDTO> getAvailableTestsByCategoryDTOPaginated(Long categoryId, int page, int size) {
+        log.info("Запрос тестов категории ID: {} (страница: {}, размер: {})", categoryId, page, size);
 
-    private TestInfoDTO convertToTestInfoDTO(Test test) {
-        TestInfoDTO dto = new TestInfoDTO();
-        dto.setId(test.getId());
-        dto.setTitle(test.getTitle());
-        dto.setDescription(test.getDescription());
-        dto.setQuestionCount(test.getQuestions() != null ? test.getQuestions().size() : 0);
-        dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
-        dto.setCreatedAt(test.getCreatedAt());
-        return dto;
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        if (categoryId == null) {
+            return testRepository.findPublishedTestInfoDTOs(pageable);
+        }
+
+        return testRepository.findPublishedTestInfoDTOsByCategoryId(categoryId, pageable);
     }
-
     /**
      * Получение теста для прохождения как DTO
      */
-    @Transactional(readOnly = true)
-    public Optional<TestTakingDTO> getTestForTaking(Long testId, String username){
+    @Transactional
+    public Optional<TestTakingDTO> getTestForTaking(Long testId, String username) {
+
+        if (!profileService.isProfileComplete(username)) {
+            throw new RuntimeException("Для прохождения тестов необходимо заполнить профиль (ФИО)");
+        }
+
         Test test = testRepository.findByIdAndIsPublishedTrue(testId)
                 .orElse(null);
 
@@ -63,14 +89,22 @@ public class TestPassingService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        if (!cooldownService.canUserTakeTest(test, user)) {
+            LocalDateTime nextAvailable = cooldownService.getNextAvailableTime(test, user);
+            String message = String.format(
+                    "Вы уже проходили этот тест. Следующая попытка доступна %s",
+                    formatDateTime(nextAvailable)
+            );
+            throw new RuntimeException(message);
+        }
 
         Optional<TestAttempt> existingAttempt = testAttemptRepository
                 .findByTestIdAndUserIdAndStatus(testId, user.getId(), TestAttempt.AttemptStatus.IN_PROGRESS);
 
         Long attemptId;
-        if (existingAttempt.isPresent()){
+        if (existingAttempt.isPresent()) {
             attemptId = existingAttempt.get().getId();
-        }else {
+        } else {
             TestAttempt attempt = new TestAttempt();
             attempt.setTest(test);
             attempt.setUser(user);
@@ -83,9 +117,22 @@ public class TestPassingService {
             log.info("Создана новая попытка теста ID: {}", testId);
         }
 
-        List<QuestionForTakingDTO> questionDTOs = test.getQuestions().stream()
-                .sorted((q1, q2) -> q1.getOrderIndex().compareTo(q2.getOrderIndex()))
-                .map(this::convertToQuestionForTakingDTO)
+        // Безопасное преобразование вопросов в DTO с проверкой на null
+        List<QuestionForTakingDTO> questionDTOs = new ArrayList<>();
+        if (test.getQuestions() != null && !test.getQuestions().isEmpty()) {
+            questionDTOs = test.getQuestions().stream()
+                    .sorted(Comparator.comparing(Question::getOrderIndex))
+                    .map(this::convertToQuestionForTakingDTO)
+                    .collect(Collectors.toList());
+        }
+
+        // Проверяем, что у вопросов есть варианты ответов
+        questionDTOs = questionDTOs.stream()
+                .peek(question -> {
+                    if (question.getAnswerOptions() == null) {
+                        question.setAnswerOptions(new ArrayList<>());
+                    }
+                })
                 .collect(Collectors.toList());
 
         TestTakingDTO dto = new TestTakingDTO();
@@ -93,10 +140,16 @@ public class TestPassingService {
         dto.setTestId(test.getId());
         dto.setTestTitle(test.getTitle());
         dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
-        dto.setQuestions(questionDTOs);
+        dto.setQuestions(questionDTOs);  // ← Гарантировано не null
         dto.setTotalQuestions(questionDTOs.size());
 
         return Optional.of(dto);
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        java.time.format.DateTimeFormatter formatter =
+                java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+        return dateTime.format(formatter);
     }
 
     private QuestionForTakingDTO convertToQuestionForTakingDTO(Question question) {
@@ -105,11 +158,14 @@ public class TestPassingService {
         dto.setText(question.getText());
         dto.setOrderIndex(question.getOrderIndex());
 
-        List<QuestionForTakingDTO.AnswerOptionForTakingDTO> answerDTOs = question.getAnswerOptions().stream()
-                .map(this::convertToAnswerOptionForTakingDTO)
-                .collect(Collectors.toList());
+        // Безопасное преобразование ответов
+        if (question.getAnswerOptions() != null && !question.getAnswerOptions().isEmpty()) {
+            List<QuestionForTakingDTO.AnswerOptionForTakingDTO> answerDTOs = question.getAnswerOptions().stream()
+                    .map(this::convertToAnswerOptionForTakingDTO)
+                    .collect(Collectors.toList());
+            dto.setAnswerOptions(answerDTOs);
+        }
 
-        dto.setAnswerOptions(answerDTOs);
         return dto;
     }
 
@@ -124,15 +180,15 @@ public class TestPassingService {
      * Сохранение ответа
      */
     @Transactional
-    public void saveAnswer(TestPassingDTO testPassingDTO, String username){
+    public void saveAnswer(TestPassingDTO testPassingDTO, String username) {
         TestAttempt attempt = testAttemptRepository.findById(testPassingDTO.getAttemptId())
                 .orElseThrow(() -> new RuntimeException("Попытка не найдена!"));
 
-        if (!attempt.getUser().getUsername().equals(username)){
+        if (!attempt.getUser().getUsername().equals(username)) {
             throw new RuntimeException("Нет прав доступа к этой попытке!");
         }
 
-        if(attempt.getStatus() != TestAttempt.AttemptStatus.IN_PROGRESS){
+        if (attempt.getStatus() != TestAttempt.AttemptStatus.IN_PROGRESS) {
             throw new RuntimeException("Попытка уже завершена!");
         }
 
@@ -145,7 +201,7 @@ public class TestPassingService {
 
         AnswerOption chosenAnswer = null;
 
-        if(testPassingDTO.getAnswerOptionId() != null){
+        if (testPassingDTO.getAnswerOptionId() != null) {
             chosenAnswer = answerOptionRepository.findById(testPassingDTO.getAnswerOptionId())
                     .orElseThrow(() -> new RuntimeException("Вариант ответа не найдент!"));
         }
@@ -178,12 +234,43 @@ public class TestPassingService {
         // Обновляем общий счет
         updateAttemptTotalScore(attempt.getId());
     }
+    /**
+     * Получение ВСЕХ доступных тестов (без пагинации, для дашборда)
+     * С кэшированием - ключ 'all-tests-list'
+     */
+    @Cacheable(value = "publishedTests",
+            key = "'all-tests-list'",
+            unless = "#result == null or #result.isEmpty()")
+    @Transactional(readOnly = true)
+    public List<TestInfoDTO> getAllAvailableTestsDTO() {
+        log.info("Запрос всех доступных тестов (список)");
+        return testRepository.findPublishedTestInfoDTOs();
+    }
+    /**
+     * 🔥 НОВОЕ: Получение тестов ПО КАТЕГОРИИ (без пагинации)
+     * Кэширование по ID категории
+     */
+    @Cacheable(value = "publishedTests",
+            key = "'category-tests-list-' + #categoryId",
+            unless = "#result == null or #result.isEmpty()")
+    @Transactional(readOnly = true)
+    public List<TestInfoDTO> getAvailableTestsByCategoryDTO(Long categoryId) {
+        log.info("Запрос тестов категории ID: {} (список)", categoryId);
+
+        if (categoryId == null) {
+            return getAllAvailableTestsDTO();
+        }
+
+        return testRepository.findPublishedTestInfoDTOsByCategoryId(categoryId);
+    }
+
+
 
     /**
      * Завершение теста и получение результатов как DTO
      */
     @Transactional
-    public TestResultsDTO finishTestAndGetResults(Long attemptId, String username){
+    public TestResultsDTO finishTestAndGetResults(Long attemptId, String username) {
         TestAttempt attempt = testAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new RuntimeException("Попытка не найдена"));
 
@@ -191,7 +278,7 @@ public class TestPassingService {
             throw new RuntimeException("Нет доступа к этой попытке");
         }
 
-        if (attempt.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS){
+        if (attempt.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
             attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
             attempt.setEndTime(LocalDateTime.now());
             testAttemptRepository.save(attempt);
@@ -247,59 +334,76 @@ public class TestPassingService {
         return dto;
     }
 
-    private QuestionResultDTO convertToQuestionResultDTO(UserAnswer userAnswer){
+    private QuestionResultDTO convertToQuestionResultDTO(UserAnswer userAnswer) {
         QuestionResultDTO dto = new QuestionResultDTO();
-        dto.setQuestionId(userAnswer.getQuestion().getId());
-        dto.setQuestionText(userAnswer.getQuestion().getText());
+
+
+        if (userAnswer.getQuestion() == null) {
+            dto.setQuestionId(null);
+            dto.setQuestionText("Вопрос не найден");
+        } else {
+            dto.setQuestionId(userAnswer.getQuestion().getId());
+            dto.setQuestionText(userAnswer.getQuestion().getText());
+        }
+
 
         if (userAnswer.getChosenAnswerOption() != null) {
             dto.setChosenAnswerId(userAnswer.getChosenAnswerOption().getId());
             dto.setChosenAnswerText(userAnswer.getChosenAnswerOption().getText());
+        } else {
+            dto.setChosenAnswerId(null);
+            dto.setChosenAnswerText("Ответ не предоставлен");
         }
 
-        Optional<AnswerOption> correctAnswer = userAnswer.getQuestion().getAnswerOptions().stream()
-                .filter(AnswerOption::getIsCorrect)
-                .findFirst();
+        // Правильный ответ
+        if (userAnswer.getQuestion() != null && userAnswer.getQuestion().getAnswerOptions() != null) {
+            Optional<AnswerOption> correctAnswer = userAnswer.getQuestion().getAnswerOptions().stream()
+                    .filter(AnswerOption::getIsCorrect)
+                    .findFirst();
 
-        if (correctAnswer.isPresent()) {
-            dto.setCorrectAnswerId(correctAnswer.get().getId());
-            dto.setCorrectAnswerText(correctAnswer.get().getText());
+            if (correctAnswer.isPresent()) {
+                dto.setCorrectAnswerId(correctAnswer.get().getId());
+                dto.setCorrectAnswerText(correctAnswer.get().getText());
+            } else {
+                dto.setCorrectAnswerId(null);
+                dto.setCorrectAnswerText("Правильный ответ не указан");
+            }
+        } else {
+            dto.setCorrectAnswerId(null);
+            dto.setCorrectAnswerText("Нет вариантов ответа");
         }
 
         dto.setIsCorrect(userAnswer.getIsCorrect());
-        dto.setPointsEarned(userAnswer.getPointsEarned());
+        dto.setPointsEarned(userAnswer.getPointsEarned() != null ? userAnswer.getPointsEarned() : 0);
 
         return dto;
     }
 
     /**
-     * Получение истории тестов как DTO
+     * Получение истории тестов с пагинацией через DTO проекцию
+     */
+    @Transactional(readOnly = true)
+    public Page<TestHistoryDTO> getUserTestHistory(String username, int page, int size, String status) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
+
+        // Используем DTO проекцию вместо преобразования Entity
+        return testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
+    }
+
+    /**
+     * Получение истории тестов (без пагинации, для дашборда)
      */
     @Transactional(readOnly = true)
     public List<TestHistoryDTO> getUserTestHistory(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        List<TestAttempt> attempts = testAttemptRepository.findByUserIdOrderByStartTimeDesc(user.getId());
-
-        return attempts.stream()
-                .map(this::convertToTestHistoryDTO)
-                .collect(Collectors.toList());
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").descending());
+        return testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable).getContent();
     }
-
-    private TestHistoryDTO convertToTestHistoryDTO(TestAttempt attempt) {
-        TestHistoryDTO dto = new TestHistoryDTO();
-        dto.setAttemptId(attempt.getId());
-        dto.setTestId(attempt.getTest().getId());
-        dto.setTestTitle(attempt.getTest().getTitle());
-        dto.setStartTime(attempt.getStartTime());
-        dto.setEndTime(attempt.getEndTime());
-        dto.setStatus(attempt.getStatus().toString());
-        dto.setTotalScore(attempt.getTotalScore() != null ? attempt.getTotalScore() : 0);
-        dto.setMaxPossibleScore(attempt.getTest().getQuestions().size());
-        return dto;
-    }
-
 
     /**
      * Обновление общего счета попытки
@@ -312,4 +416,60 @@ public class TestPassingService {
 
         testAttemptRepository.updateTotalScore(attemptId, totalScore);
     }
+
+    /**
+     * Получение статистики пользователя
+     */
+    @Transactional(readOnly = true)
+    public UserStatisticsDTO getUserStatistics(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        UserStatisticsDTO statistics = new UserStatisticsDTO();
+
+        statistics.setTotalAttempts(testAttemptRepository.countByUserId(user.getId()));
+        statistics.setCompletedAttempts(testAttemptRepository.countByUserIdAndStatus(
+                user.getId(), TestAttempt.AttemptStatus.COMPLETED));
+        statistics.setInProgressAttempts(testAttemptRepository.countByUserIdAndStatus(
+                user.getId(), TestAttempt.AttemptStatus.IN_PROGRESS));
+
+        Double averageScore = testAttemptRepository.findAverageScoreByUserId(user.getId());
+        statistics.setAverageScore(averageScore != null ? averageScore : 0.0);
+
+        return statistics;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> getAvailableCategories() {
+        return categoryService.getAllActiveCategories();
+    }
+
+    /**
+     * 🔥 НОВОЕ: Поиск тестов по названию (для тестера)
+     */
+    @Transactional(readOnly = true)
+    public Page<TestInfoDTO> searchTests(String searchTerm, int page, int size) {
+        log.info("Поиск тестов по запросу: '{}', страница: {}, размер: {}", searchTerm, page, size);
+
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return getAllAvailableTestsDTOPaginated(page, size);
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return testRepository.searchPublishedTests(searchTerm.trim(), pageable);
+    }
+
+    /**
+     * 🔥 НОВОЕ: Быстрый поиск для автодополнения (AJAX)
+     */
+    @Transactional(readOnly = true)
+    public List<TestInfoDTO> quickSearchTests(String searchTerm, int limit) {
+        if (searchTerm == null || searchTerm.trim().length() < 2) {
+            return List.of();
+        }
+
+        Pageable pageable = PageRequest.of(0, limit);
+        return testRepository.searchPublishedTests(searchTerm.trim(), pageable).getContent();
+    }
+
 }

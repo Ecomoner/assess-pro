@@ -1,8 +1,9 @@
-package com.frist.assesspro.controllers;
+package com.frist.assesspro.controllers.creator;
 
 
 import com.frist.assesspro.dto.AnswerOptionDTO;
 import com.frist.assesspro.dto.QuestionDTO;
+import com.frist.assesspro.dto.QuestionWithStatsDTO;
 import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.service.QuestionService;
@@ -42,14 +43,42 @@ public class QuestionController {
             List<Question> questions = questionService.getQuestionsByTestId(testId, userDetails.getUsername());
             Test test = questionService.getTestById(testId, userDetails.getUsername());
 
+            // Конвертируем в DTO со статистикой - НО ФИЛЬТРУЕМ ПУСТЫЕ!
+            List<QuestionWithStatsDTO> questionDTOs = questions.stream()
+                    .map(question -> convertToQuestionWithStatsDTO(question))
+                    .collect(Collectors.toList());
+
             model.addAttribute("test", test);
             model.addAttribute("questions", questions);
+            model.addAttribute("questionDTOs", questionDTOs);
             return "creator/question-list";
 
         } catch (Exception e) {
             log.error("Ошибка при загрузке вопросов", e);
             return "redirect:/creator/tests?error=" + e.getMessage();
         }
+    }
+
+    private QuestionWithStatsDTO convertToQuestionWithStatsDTO(Question question) {
+        // Фильтруем пустые ответы при конвертации
+        List<AnswerOptionDTO> answerOptionDTOs = question.getAnswerOptions().stream()
+                .filter(answer -> answer.getText() != null && !answer.getText().trim().isEmpty())
+                .map(answer -> {
+                    AnswerOptionDTO dto = new AnswerOptionDTO();
+                    dto.setId(answer.getId());
+                    dto.setText(answer.getText());
+                    dto.setIsCorrect(answer.getIsCorrect());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        // Используем фабричный метод для создания DTO со статистикой
+        return QuestionWithStatsDTO.createWithStats(
+                question.getId(),
+                question.getText(),
+                question.getOrderIndex(),
+                answerOptionDTOs
+        );
     }
 
     /**
@@ -62,15 +91,33 @@ public class QuestionController {
             Model model,
             @AuthenticationPrincipal UserDetails userDetails) {
 
+        log.info("=== ОТКРЫТИЕ ФОРМЫ СОЗДАНИЯ ВОПРОСА ДЛЯ ТЕСТА ID: {} ===", testId);
+
         try {
             Test test = questionService.getTestById(testId, userDetails.getUsername());
 
             QuestionDTO questionDTO = new QuestionDTO();
+            questionDTO.setText("");
             questionDTO.setOrderIndex(0);
+
+
+            questionDTO.getAnswerOptions().clear();
+
+
+            for (int i = 0; i < 2; i++) {
+                AnswerOptionDTO emptyAnswer = new AnswerOptionDTO();
+                emptyAnswer.setText("");
+                emptyAnswer.setIsCorrect(false);
+                questionDTO.getAnswerOptions().add(emptyAnswer);
+            }
 
             model.addAttribute("test", test);
             model.addAttribute("questionDTO", questionDTO);
             model.addAttribute("action", "create");
+
+            log.info("Создана НОВАЯ форма. Вариантов ответов: {}",
+                    questionDTO.getAnswerOptions().size());
+
             return "creator/question-form";
 
         } catch (Exception e) {
@@ -91,8 +138,15 @@ public class QuestionController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
 
-        log.info("Создание вопроса для теста ID: {}", testId);
+        log.info("=== НАЧАЛО СОЗДАНИЯ ВОПРОСА ДЛЯ ТЕСТА {} ===", testId);
 
+        if (questionDTO.getText() == null || questionDTO.getText().trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Текст вопроса обязателен");
+            redirectAttributes.addFlashAttribute("questionDTO", questionDTO);
+            return "redirect:/creator/tests/" + testId + "/questions/new";
+        }
+
+        // Оригинальная валидация
         if (bindingResult.hasErrors()) {
             log.warn("Ошибки валидации при создании вопроса: {}", bindingResult.getAllErrors());
             redirectAttributes.addFlashAttribute(
@@ -104,6 +158,7 @@ public class QuestionController {
         }
 
         try {
+            // Фильтруем пустые варианты ответов
             List<AnswerOptionDTO> filteredAnswers = questionDTO.getAnswerOptions().stream()
                     .filter(answer -> answer.getText() != null && !answer.getText().trim().isEmpty())
                     .collect(Collectors.toList());
@@ -117,7 +172,13 @@ public class QuestionController {
 
             questionDTO.setAnswerOptions(filteredAnswers);
 
+            // ВАЖНО: Логируем перед созданием
+            log.info("Создание вопроса с текстом: '{}'", questionDTO.getText());
+            log.info("Количество вариантов ответов: {}", filteredAnswers.size());
+
             Question savedQuestion = questionService.createQuestion(testId, questionDTO, userDetails.getUsername());
+
+            log.info("=== ВОПРОС УСПЕШНО СОЗДАН. ID: {} ===", savedQuestion.getId());
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Вопрос успешно добавлен!");
@@ -239,6 +300,8 @@ public class QuestionController {
             return "redirect:/creator/tests/" + testId + "/questions";
         }
     }
+
+
 
 
 }

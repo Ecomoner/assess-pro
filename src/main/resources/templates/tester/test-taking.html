@@ -1,47 +1,23 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Прохождение теста - [[${testTakingDTO.testTitle}]]</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <style>
-        .question-card {
-            border-left: 5px solid #198754;
-        }
         .answer-option {
             cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            transition: all 0.2s ease;
         }
         .answer-option:hover {
             background-color: #f8f9fa;
-            border-color: #adb5bd;
-            transform: translateY(-2px);
+            transform: translateX(5px);
         }
         .answer-option.selected {
-            background-color: #d1e7dd;
-            border-color: #198754;
-            box-shadow: 0 4px 8px rgba(25, 135, 84, 0.2);
-        }
-        .progress-bar-custom {
-            height: 10px;
-            border-radius: 5px;
-            background-color: #e9ecef;
-        }
-        .progress-bar-custom .progress-bar {
-            border-radius: 5px;
-        }
-        .timer {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .timer.warning {
-            color: #dc3545;
-            animation: pulse 1s infinite;
+            background-color: #e8f5e8;
+            border-color: #28a745;
+            border-left: 4px solid #28a745;
         }
         @keyframes pulse {
             0% { opacity: 1; }
@@ -51,12 +27,20 @@
         .question-nav-btn {
             width: 40px;
             height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-        .question-number {
-            font-size: 0.9rem;
+        .progress-bar-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+        .selected-icon {
+            font-size: 1.2rem;
+        }
+        .answer-option.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .btn:disabled {
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -146,8 +130,7 @@
                 <div th:each="answer, iter : ${currentQuestion.answerOptions}"
                      class="list-group-item answer-option p-3"
                      th:data-answer-id="${answer.id}"
-                     th:data-answer-text="${answer.text}"
-                     onclick="TestTaking.selectAnswer(this)">
+                     th:data-answer-text="${answer.text}">
                     <div class="form-check d-flex align-items-center">
                         <input class="form-check-input me-3" type="radio"
                                name="answer"
@@ -166,7 +149,7 @@
 
             <!-- Кнопка "Пропустить" -->
             <div class="mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="TestTaking.skipQuestion()">
+                <button type="button" id="skip-question-btn" class="btn btn-outline-secondary">
                     <i class="bi bi-skip-forward"></i> Пропустить вопрос
                 </button>
                 <small class="text-muted ms-2">Можно вернуться позже</small>
@@ -179,21 +162,20 @@
         <div class="card-body">
             <div class="d-flex justify-content-between">
                 <!-- Кнопка "Назад" -->
-                <button type="button" class="btn btn-outline-primary"
-                        th:disabled="${testTakingDTO.currentQuestionIndex == 0}"
-                        onclick="TestTaking.previousQuestion()">
+                <button type="button" id="prev-question-btn" class="btn btn-outline-primary"
+                        th:disabled="${testTakingDTO.currentQuestionIndex == 0}">
                     <i class="bi bi-chevron-left"></i> Предыдущий
                 </button>
 
                 <!-- Индикатор вопросов -->
-                <div class="d-flex flex-wrap justify-content-center">
+                <div class="d-flex flex-wrap justify-content-center question-navigation">
                     <div th:each="q, iter : ${testTakingDTO.questions}"
                          class="mx-1 mb-1">
                         <button type="button"
                                 class="btn btn-sm question-nav-btn"
                                 th:class="${iter.index == testTakingDTO.currentQuestionIndex} ?
                                          'btn-success' : 'btn-outline-secondary'"
-                                th:onclick="'TestTaking.goToQuestion(' + ${iter.index} + ')'"
+                                th:data-question-index="${iter.index}"
                                 th:text="${iter.index + 1}">
                         </button>
                     </div>
@@ -201,13 +183,12 @@
 
                 <!-- Кнопки "Далее" и "Завершить" -->
                 <div>
-                    <button type="button" class="btn btn-primary me-2"
-                            th:disabled="${testTakingDTO.currentQuestionIndex == testTakingDTO.totalQuestions - 1}"
-                            onclick="TestTaking.nextQuestion()">
+                    <button type="button" id="next-question-btn" class="btn btn-primary me-2"
+                            th:disabled="${testTakingDTO.currentQuestionIndex == testTakingDTO.totalQuestions - 1}">
                         Следующий <i class="bi bi-chevron-right"></i>
                     </button>
 
-                    <button type="button" class="btn btn-danger"
+                    <button type="button" id="finish-test-btn" class="btn btn-danger"
                             data-bs-toggle="modal" data-bs-target="#finishModal">
                         <i class="bi bi-flag-fill"></i> Завершить тест
                     </button>
@@ -260,6 +241,12 @@
         // Конфигурация
         config: null,
 
+        // Флаги состояния
+        isNavigating: false,
+        isSkipping: false,
+        isAnswering: false,
+        timerInterval: null,
+
         // Инициализация
         init: function() {
             // Получаем данные из скрытого контейнера
@@ -277,37 +264,113 @@
             const questionSpan = testData.querySelector('[data-question-id]');
             this.config.currentQuestionId = questionSpan ? questionSpan.getAttribute('data-question-id') : null;
 
+            // Настройка делегирования событий
+            this.setupEventDelegation();
+
             // Инициализируем таймер если нужно
             if (this.config.hasTimer && this.config.timerMinutes > 0) {
                 this.initTimer();
             }
 
-            console.log('TestTaking initialized:', this.config);
+            // Обновляем счетчик отвеченных вопросов в модальном окне
+            this.updateAnsweredCount();
+
+            console.log('TestTaking initialized with event delegation');
+        },
+
+        // Настройка делегирования событий
+        setupEventDelegation: function() {
+            // Обработка выбора ответа
+            document.getElementById('answers-container').addEventListener('click', (e) => {
+                // Находим ближайший контейнер ответа
+                const answerOption = e.target.closest('.answer-option');
+                if (answerOption && !this.isAnswering) {
+                    this.selectAnswer(answerOption);
+                }
+            });
+
+            // Обработка пропуска вопроса
+            document.getElementById('skip-question-btn').addEventListener('click', (e) => {
+                if (!this.isSkipping) {
+                    this.skipQuestion();
+                }
+            });
+
+            // Обработка навигации по вопросам
+            const navigationContainer = document.querySelector('.question-navigation');
+            if (navigationContainer) {
+                navigationContainer.addEventListener('click', (e) => {
+                    const navButton = e.target.closest('.question-nav-btn');
+                    if (navButton && !this.isNavigating) {
+                        const questionIndex = parseInt(navButton.dataset.questionIndex);
+                        if (!isNaN(questionIndex)) {
+                            this.goToQuestion(questionIndex);
+                        }
+                    }
+                });
+            }
+
+            // Обработка кнопок навигации
+            document.getElementById('prev-question-btn').addEventListener('click', () => {
+                if (!this.isNavigating) {
+                    this.previousQuestion();
+                }
+            });
+
+            document.getElementById('next-question-btn').addEventListener('click', () => {
+                if (!this.isNavigating) {
+                    this.nextQuestion();
+                }
+            });
+
+            // Обработка завершения теста
+            document.getElementById('finish-test-btn').addEventListener('click', () => {
+                this.updateAnsweredCount();
+            });
         },
 
         // Выбор ответа
         selectAnswer: function(element) {
+            if (this.isAnswering) return;
+
+            this.isAnswering = true;
+
             const answerId = element.getAttribute('data-answer-id');
             const answerText = element.getAttribute('data-answer-text');
+
+            // Если уже выбран этот ответ - снимаем выделение
+            if (element.classList.contains('selected')) {
+                element.classList.remove('selected');
+                element.querySelector('.selected-icon').classList.add('d-none');
+                element.querySelector('input[type="radio"]').checked = false;
+                this.saveAnswer(null); // Отправляем null для отмены выбора
+                this.isAnswering = false;
+                return;
+            }
 
             // Снимаем выделение со всех вариантов
             document.querySelectorAll('.answer-option').forEach(opt => {
                 opt.classList.remove('selected');
                 opt.querySelector('.selected-icon').classList.add('d-none');
+                opt.querySelector('input[type="radio"]').checked = false;
             });
 
             // Выделяем выбранный вариант
             element.classList.add('selected');
             element.querySelector('.selected-icon').classList.remove('d-none');
-
-            // Устанавливаем выбранный radio
-            const radio = element.querySelector('input[type="radio"]');
-            radio.checked = true;
+            element.querySelector('input[type="radio"]').checked = true;
 
             // Сохраняем ответ
             this.saveAnswer(answerId);
 
             this.showMessage('Ответ выбран: ' + answerText, 'success');
+
+            // Обновляем счетчик отвеченных вопросов
+            this.updateAnsweredCount();
+
+            setTimeout(() => {
+                this.isAnswering = false;
+            }, 300);
         },
 
         // Сохранение ответа на сервер
@@ -351,10 +414,13 @@
 
         // Пропуск вопроса
         skipQuestion: function() {
-            if (!this.config.currentQuestionId) {
-                console.error('No current question ID');
+            if (!this.config.currentQuestionId || this.isSkipping) {
                 return;
             }
+
+            this.isSkipping = true;
+            const skipButton = document.getElementById('skip-question-btn');
+            skipButton.disabled = true;
 
             const data = {
                 attemptId: this.config.attemptId,
@@ -373,34 +439,47 @@
                 .then(result => {
                     if (result.status === 'success') {
                         this.showMessage('Вопрос пропущен', 'info');
-                        this.nextQuestion();
+                        // Обновляем счетчик
+                        this.updateAnsweredCount();
                     }
                 })
                 .catch(error => {
                     console.error('Error skipping question:', error);
                     this.showMessage('Ошибка при пропуске вопроса', 'danger');
+                })
+                .finally(() => {
+                    this.isSkipping = false;
+                    skipButton.disabled = false;
                 });
         },
 
         // Переход к предыдущему вопросу
         previousQuestion: function() {
-            if (this.config.currentIndex > 0) {
+            if (this.config.currentIndex > 0 && !this.isNavigating) {
                 this.goToQuestion(this.config.currentIndex - 1);
             }
         },
 
         // Переход к следующему вопросу
         nextQuestion: function() {
-            if (this.config.currentIndex < this.config.totalQuestions - 1) {
+            if (this.config.currentIndex < this.config.totalQuestions - 1 && !this.isNavigating) {
                 this.goToQuestion(this.config.currentIndex + 1);
             }
         },
 
         // Переход к конкретному вопросу
         goToQuestion: function(questionIndex) {
-            if (questionIndex >= 0 && questionIndex < this.config.totalQuestions) {
-                window.location.href = '/tester/attempt/' + this.config.attemptId +
-                    '/question/' + questionIndex;
+            if (questionIndex >= 0 && questionIndex < this.config.totalQuestions && !this.isNavigating) {
+                this.isNavigating = true;
+
+                // Визуальная обратная связь
+                const buttons = document.querySelectorAll('.question-nav-btn, #prev-question-btn, #next-question-btn');
+                buttons.forEach(btn => btn.disabled = true);
+
+                setTimeout(() => {
+                    window.location.href = '/tester/attempt/' + this.config.attemptId +
+                        '/question/' + questionIndex;
+                }, 150);
             }
         },
 
@@ -417,14 +496,18 @@
                     timeDisplay.textContent = '00:00';
                     timerElement.classList.add('warning');
 
-                    // Автоматическое завершение теста через 3 секунды
+                    // Автоматическое завершение теста
                     setTimeout(() => {
                         this.showMessage('Время вышло! Тест будет завершен автоматически.', 'danger');
                         setTimeout(() => {
-                            document.querySelector('form[action*="finish"]').submit();
+                            const finishForm = document.querySelector('form[action*="finish"]');
+                            if (finishForm) {
+                                finishForm.submit();
+                            }
                         }, 2000);
                     }, 1000);
 
+                    clearInterval(this.timerInterval);
                     return;
                 }
 
@@ -453,15 +536,18 @@
             const container = document.getElementById('message-container');
             const messageId = 'msg-' + Date.now();
 
+            let iconClass = 'bi-info-circle';
+            if (type === 'success') iconClass = 'bi-check-circle';
+            if (type === 'danger') iconClass = 'bi-exclamation-triangle';
+            if (type === 'warning') iconClass = 'bi-exclamation-circle';
+
             const html = `
             <div id="${messageId}" class="alert alert-${type} alert-dismissible fade show">
-                <i class="bi ${type === 'success' ? 'bi-check-circle' :
-                type === 'danger' ? 'bi-exclamation-triangle' :
-                    'bi-info-circle'} me-2"></i>
+                <i class="bi ${iconClass} me-2"></i>
                 ${text}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        `;
+            `;
 
             container.innerHTML = html;
 
@@ -475,7 +561,15 @@
             }, 5000);
         },
 
-        // Очистка (если нужно)
+        // Обновить счетчик отвеченных вопросов
+        updateAnsweredCount: function() {
+            // В реальном приложении нужно делать запрос к серверу
+            // Для демо считаем выбранные ответы на клиенте
+            const answeredCount = document.querySelectorAll('.answer-option.selected').length;
+            document.getElementById('answered-count').textContent = answeredCount;
+        },
+
+        // Очистка
         cleanup: function() {
             if (this.timerInterval) {
                 clearInterval(this.timerInterval);
@@ -487,9 +581,12 @@
     document.addEventListener('DOMContentLoaded', function() {
         TestTaking.init();
 
-        // При закрытии страницы можно вызвать cleanup
-        window.addEventListener('beforeunload', function() {
+        // При закрытии страницы
+        window.addEventListener('beforeunload', function(e) {
             TestTaking.cleanup();
+            // Можно показать предупреждение о потере данных
+            // e.preventDefault();
+            // e.returnValue = '';
         });
     });
 </script>

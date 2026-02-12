@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title th:text="${action == 'create' ? 'Создание теста' : 'Редактирование теста'}">Создание теста</title>
@@ -28,7 +28,7 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    <form th:action="${action == 'create' ? '/creator/tests/new' : '/creator/tests/update/' + test.id}"
+                    <form th:action="${action == 'create' ? '/creator/tests/new' : '/creator/tests/update/' + test?.id}"
                           th:object="${test}" method="post">
 
                         <!-- Название теста -->
@@ -48,11 +48,22 @@
                         </div>
 
                         <!-- Лимит времени -->
-                        <div class="mb-4">
-                            <label for="timeLimitMinutes" class="form-label">Лимит времени (минут)</label>
-                            <input type="number" class="form-control" id="timeLimitMinutes"
-                                   th:field="*{timeLimitMinutes}" min="0" value="0">
-                            <div class="form-text">0 = без ограничения по времени</div>
+                        <div class="mb-3">
+                            <label for="timeLimitMinutes" class="form-label">
+                                <i class="bi bi-clock me-1"></i>Лимит времени (минут)
+                            </label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="timeLimitMinutes"
+                                   name="timeLimitMinutes"
+                                   th:field="*{timeLimitMinutes}"
+                                   min="0"
+                                   max="300"
+                                   step="5"
+                                   placeholder="0 = без ограничения">
+                            <div class="form-text">
+                                Установите 0 для теста без ограничения времени. Максимум 300 минут (5 часов).
+                            </div>
                         </div>
 
                         <hr class="my-4">

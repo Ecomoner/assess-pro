@@ -1,6 +1,7 @@
 package com.frist.assesspro.repository;
 
 import com.frist.assesspro.entity.UserAnswer;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,4 +17,17 @@ public interface UserAnswerRepository extends JpaRepository<UserAnswer,Long> {
 
     @Query("SELECT SUM(ua.pointsEarned) FROM UserAnswer ua WHERE ua.attempt.id = :attemptId")
     Integer sumPointsEarnedByAttemptId(@Param("attemptId") Long attemptId);
+
+    /**
+     * Загружаем ответы пользователя с вопросами и вариантами ответов
+     */
+    @EntityGraph(attributePaths = {
+            "question",
+            "question.answerOptions",
+            "chosenAnswerOption"
+    })
+    @Query("SELECT ua FROM UserAnswer ua " +
+            "WHERE ua.attempt.id = :attemptId " +
+            "ORDER BY ua.question.orderIndex")
+    List<UserAnswer> findByAttemptIdWithDetails(@Param("attemptId") Long attemptId);
 }

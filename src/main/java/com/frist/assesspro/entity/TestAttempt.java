@@ -12,6 +12,18 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
+@NamedEntityGraph(
+        name = "TestAttempt.withTest",
+        attributeNodes = @NamedAttributeNode("test")
+)
+@NamedEntityGraph(
+        name = "TestAttempt.withTestAndUser",
+        attributeNodes = {
+                @NamedAttributeNode("test"),
+                @NamedAttributeNode("user")
+        }
+)
 @Entity
 @Table(name = "test_attempts")
 @Data

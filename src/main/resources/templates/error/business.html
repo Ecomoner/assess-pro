@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ошибка операции - Assess Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-x-circle"></i> Невозможно выполнить операцию
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 th:text="${errorMessage != null ? errorMessage : 'Операция не может быть выполнена'}"></h5>
+                    </div>
+
+                    <div class="mt-3">
+                        <p>Возможные причины:</p>
+                        <ul>
+                            <li>Нарушение правил бизнес-логики</li>
+                            <li>Попытка выполнить запрещенное действие</li>
+                            <li>Некорректные данные</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-4">
+                        <button onclick="history.back()" class="btn btn-primary">
+                            <i class="bi bi-arrow-left"></i> Назад
+                        </button>
+                        <a th:href="@{/home}" class="btn btn-secondary ms-2">
+                            <i class="bi bi-house"></i> На главную
+                        </a>
+                        <a th:href="@{/dashboard}" class="btn btn-info ms-2">
+                            <i class="bi bi-speedometer2"></i> В панель управления
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

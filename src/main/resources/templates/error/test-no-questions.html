@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Нет вопросов</title>
+</head>
+<body>
+<div class="container">
+    <h1>Ошибка</h1>
+    <p th:text="${errorMessage}">В тесте нет вопросов</p>
+    <a th:href="@{/tester/tests}">Вернуться к каталогу тестов</a>
+</div>
+</body>
+</html>

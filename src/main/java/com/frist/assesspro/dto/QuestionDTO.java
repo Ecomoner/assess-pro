@@ -23,8 +23,5 @@ public class QuestionDTO {
     private List<AnswerOptionDTO> answerOptions = new ArrayList<>();
 
     public QuestionDTO() {
-        for (int i = 0; i < 4; i++) {
-            answerOptions.add(new AnswerOptionDTO());
-        }
     }
 }

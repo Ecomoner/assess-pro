@@ -3,7 +3,8 @@ package com.frist.assesspro.service;
 import com.frist.assesspro.dto.RegistrationDTO;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,27 +20,38 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @CacheEvict(value = {"creatorStats", "testerStats"}, allEntries = true)
     @Transactional
     public User registerUser(RegistrationDTO registrationDTO) {
         log.info("Начало регистрации пользователя: {}", registrationDTO.getUsername());
 
+        // Дополнительная валидация
+        if (registrationDTO.getUsername().trim().length() < 3) {
+            throw new IllegalArgumentException("Имя пользователя слишком короткое");
+        }
+
+        if (registrationDTO.getPassword().contains(registrationDTO.getUsername())) {
+            throw new IllegalArgumentException("Пароль не должен содержать имя пользователя");
+        }
+
         if (userRepository.existsByUsername(registrationDTO.getUsername())) {
-            log.error("Имя пользователя уже занято: {}", registrationDTO.getUsername());
             throw new IllegalArgumentException("Имя пользователя уже занято");
         }
 
-        // Проверка совпадения паролей
         if (!registrationDTO.getPassword().equals(registrationDTO.getConfirmPassword())) {
-            log.error("Пароли не совпадают для пользователя: {}", registrationDTO.getUsername());
             throw new IllegalArgumentException("Пароли не совпадают");
         }
 
+        // Проверка сложности пароля
+        if (!isPasswordStrong(registrationDTO.getPassword())) {
+            throw new IllegalArgumentException(
+                    "Пароль недостаточно надежен. Используйте буквы, цифры и специальные символы");
+        }
+
         if (!User.Roles.isValidRole(registrationDTO.getRole())) {
-            log.error("Некорректная роль: {}", registrationDTO.getRole());
             throw new IllegalArgumentException("Некорректная роль");
         }
 
-        // Создание пользователя
         User user = new User();
         user.setUsername(registrationDTO.getUsername());
         user.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
@@ -55,8 +67,11 @@ public class AuthService {
         return savedUser;
     }
 
-    public boolean usernameExists(String username) {
-        return userRepository.existsByUsername(username);
+    private boolean isPasswordStrong(String password) {
+        // Минимум 6 символов, хотя бы одна цифра и одна буква
+        return password.length() >= 6 &&
+                password.matches(".*\\d.*") &&
+                password.matches(".*[a-zA-Z].*");
     }
 
 }

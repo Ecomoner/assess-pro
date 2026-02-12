@@ -1,0 +1,32 @@
+<!-- Форма фильтрации -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="bi bi-filter me-2"></i>Фильтры</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" th:action="@{''}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small">Дата с:</label>
+                    <input type="datetime-local" class="form-control form-control-sm"
+                           name="dateFrom" th:value="${dateFrom}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Дата по:</label>
+                    <input type="datetime-local" class="form-control form-control-sm"
+                           name="dateTo" th:value="${dateTo}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-funnel me-1"></i>Применить
+                        </button>
+                        <a th:href="@{''}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Сбросить
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

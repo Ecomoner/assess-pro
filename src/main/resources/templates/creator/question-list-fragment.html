@@ -1,0 +1,92 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div th:fragment="question-list">
+    <div th:unless="${questions.isEmpty()}" id="questions-list">
+        <div th:each="questionDTO, qIter : ${questionDTOs}"
+             class="question-item list-group-item mb-3 p-4 border rounded">
+
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1 me-3">
+                    <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-secondary me-2"
+                          th:text="${questionDTO.orderIndex + 1}"></span>
+                        <h5 class="mb-0" th:text="${questionDTO.text}"></h5>
+                    </div>
+
+                    <!-- Статистика вопроса (только если есть ответы) -->
+                    <div class="mb-3" th:if="${questionDTO.totalAnswerOptions > 0}">
+                        <small class="text-muted">
+                            <i class="bi bi-list-check"></i>
+                            Вариантов ответа:
+                            <strong th:text="${questionDTO.totalAnswerOptions}"></strong>
+
+                            <span class="ms-3">
+                            <i class="bi bi-check-circle"></i>
+                            Правильных:
+                            <strong th:text="${questionDTO.correctAnswerOptions}"></strong>
+                        </span>
+                        </small>
+                    </div>
+
+                    <!-- Показываем правильные ответы -->
+                    <div th:if="${not #lists.isEmpty(questionDTO.correctAnswerTexts)}"
+                         class="mt-3">
+                        <small class="text-success">
+                            <i class="bi bi-check-lg"></i> Правильные ответы:
+                            <span th:each="answerText, aIter : ${questionDTO.correctAnswerTexts}">
+                            "[[${answerText}]]"
+                            <span th:unless="${aIter.last}">, </span>
+                        </span>
+                        </small>
+
+                        <!-- Показываем неправильные ответы -->
+                        <div th:if="${questionDTO.incorrectAnswerOptions > 0}"
+                             class="mt-1">
+                            <small class="text-muted">
+                                <i class="bi bi-x-lg"></i> Неправильные:
+                                <span th:each="answerText, aIter : ${questionDTO.incorrectAnswerTexts}"
+                                      th:if="${aIter.index < 2}">
+                                "[[${answerText}]]"
+                                <span th:if="${aIter.index == 0 and questionDTO.incorrectAnswerOptions > 1}">, </span>
+                            </span>
+                                <span th:if="${questionDTO.incorrectAnswerOptions > 2}">
+                                и ещё [[${questionDTO.incorrectAnswerOptions - 2}]]
+                            </span>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Сообщение, если нет вариантов ответов -->
+                    <div th:if="${questionDTO.totalAnswerOptions == 0}"
+                         class="mt-3">
+                        <small class="text-danger">
+                            <i class="bi bi-exclamation-triangle"></i> Нет вариантов ответа
+                        </small>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <a th:href="@{'/creator/tests/' + ${test.id} + '/questions/' + ${questionDTO.id} + '/edit'}"
+                       class="btn btn-sm btn-outline-primary">Редактировать</a>
+                    <form th:action="@{'/creator/tests/' + ${test.id} + '/questions/' + ${questionDTO.id} + '/delete'}"
+                          method="post"
+                          onsubmit="return confirm('Удалить вопрос?')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Если нет вопросов -->
+    <div th:if="${questions.isEmpty()}" class="alert alert-info">
+        <i class="bi bi-info-circle"></i> В этом тесте пока нет вопросов.
+        <a th:href="@{'/creator/tests/' + ${test.id} + '/questions/new'}" class="alert-link">
+            Добавить первый вопрос
+        </a>
+    </div>
+</div>
+</body>
+</html>

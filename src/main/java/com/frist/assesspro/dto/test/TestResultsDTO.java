@@ -3,6 +3,7 @@ package com.frist.assesspro.dto.test;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Data
@@ -34,6 +35,32 @@ public class TestResultsDTO {
         if (percentage >= 70) return "Удовлетворительно (C)";
         if (percentage >= 60) return "Достаточно (D)";
         return "Неудовлетворительно (F)";
+    }
+
+    public Long getDurationMinutes() {
+        if (startTime == null || endTime == null) {
+            return 0L;
+        }
+        return ChronoUnit.MINUTES.between(startTime, endTime);
+    }
+
+    public String getFormattedDuration() {
+        Long minutes = getDurationMinutes();
+        if (minutes == null || minutes == 0) {
+            return "0 минут";
+        }
+
+        if (minutes < 60) {
+            return minutes + " минут";
+        } else {
+            long hours = minutes / 60;
+            long remainingMinutes = minutes % 60;
+            if (remainingMinutes == 0) {
+                return hours + " час" + (hours > 1 ? "а" : "");
+            } else {
+                return hours + " час" + (hours > 1 ? "а" : "") + " " + remainingMinutes + " минут";
+            }
+        }
     }
 
 }

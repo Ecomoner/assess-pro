@@ -6,131 +6,177 @@
         Форма вопроса
     </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <style>
-        .answer-row { margin-bottom: 10px; padding: 10px; border: 1px solid #dee2e6; border-radius: 5px; }
-        .correct-answer { background-color: #f8f9fa; }
+        .answer-row {
+            margin-bottom: 10px;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+        .answer-row:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+        }
+        .form-check-input:checked {
+            background-color: #4caf50;
+            border-color: #4caf50;
+        }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" th:href="@{/home}">Assess Pro</a>
-        <div class="navbar-nav ms-auto">
-            <span class="navbar-text me-3">
-                Создатель: <strong sec:authentication="name"></strong>
-            </span>
-            <a th:href="@{'/creator/tests/' + ${test.id} + '/questions'}" class="nav-link">← Назад к вопросам</a>
-        </div>
-    </div>
-</nav>
+<!-- Используем новый header -->
+<div th:replace="~{fragments/header :: header}"></div>
 
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0" th:text="${action == 'create' ? 'Добавление нового вопроса' : 'Редактирование вопроса'}">
-                        Форма вопроса
-                    </h4>
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Боковая панель создателя -->
+            <div th:replace="~{fragments/creator-navigation :: creator-navigation('tests')}"></div>
+
+            <!-- Инструкция -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Подсказка</h6>
                 </div>
                 <div class="card-body">
-                    <!-- Сообщения об ошибках валидации -->
-<!--                    <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger">-->
-<!--                        <p>Пожалуйста, исправьте следующие ошибки:</p>-->
-<!--                        <ul>-->
-<!--                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>-->
-<!--                        </ul>-->
-<!--                    </div>-->
+                    <small>
+                        <p>✓ Отметьте галочкой правильные ответы</p>
+                        <p>✓ Минимум 2 варианта ответа</p>
+                        <p>✓ Хотя бы 1 правильный ответ</p>
+                        <p>✓ Порядок определяет последовательность в тесте</p>
+                    </small>
+                </div>
+            </div>
+        </div>
 
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0" th:text="${action == 'create' ? 'Добавление нового вопроса' : 'Редактирование вопроса'}">
+                            Форма вопроса
+                        </h4>
+                        <a th:href="@{'/creator/tests/' + ${test.id} + '/questions'}"
+                           class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-arrow-left"></i> Назад к вопросам
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Информация о тесте -->
+                    <div class="alert alert-info mb-4">
+                        <strong><i class="bi bi-journal-text"></i> Тест:</strong>
+                        <span th:text="${test.title}"></span>
+                        <br>
+                        <small th:text="${test.description ?: 'Без описания'}"></small>
+                    </div>
+
+                    <!-- Форма -->
                     <form th:action="${action == 'create' ?
                             '/creator/tests/' + test.id + '/questions/new' :
                             '/creator/tests/' + test.id + '/questions/' + questionDTO.id + '/update'}"
-                          th:object="${questionDTO}" method="post">
-
-                        <!-- Информация о тесте -->
-                        <div class="alert alert-info mb-4">
-                            <strong>Тест:</strong> [[${test.title}]]<br>
-                            <small th:text="${test.description ?: 'Без описания'}"></small>
-                        </div>
+                          th:object="${questionDTO}" method="post" id="questionForm">
 
                         <!-- Текст вопроса -->
                         <div class="mb-4">
-                            <label for="text" class="form-label">Текст вопроса *</label>
+                            <label for="text" class="form-label">
+                                <strong>Текст вопроса *</strong>
+                            </label>
                             <textarea class="form-control" id="text"
                                       th:field="*{text}" rows="3" required
                                       placeholder="Введите текст вопроса..."></textarea>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('text')}">
-                                <span th:errors="*{text}"></span>
+                            <div class="form-text">
+                                <i class="bi bi-chat-text"></i> Сформулируйте четкий и понятный вопрос
                             </div>
-                            <div class="form-text">Сформулируйте четкий и понятный вопрос</div>
                         </div>
 
                         <!-- Порядковый номер -->
                         <div class="mb-4">
-                            <label for="orderIndex" class="form-label">Порядковый номер *</label>
+                            <label for="orderIndex" class="form-label">
+                                <strong>Порядковый номер *</strong>
+                            </label>
                             <input type="number" class="form-control" id="orderIndex"
                                    th:field="*{orderIndex}" min="0" required>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('orderIndex')}">
-                                <span th:errors="*{orderIndex}"></span>
+                            <div class="form-text">
+                                <i class="bi bi-sort-numeric-down"></i> Определяет порядок вопросов в тесте
                             </div>
-                            <div class="form-text">Определяет порядок вопросов в тесте</div>
                         </div>
 
                         <hr class="my-4">
 
                         <!-- Варианты ответов -->
-                        <h5>Варианты ответов</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5><i class="bi bi-list-check"></i> Варианты ответов</h5>
+                            <button type="button" id="add-answer" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus-lg"></i> Добавить вариант
+                            </button>
+                        </div>
+
                         <p class="text-muted mb-4">
                             Отметьте галочкой правильные варианты. Удалите строки, которые нужно убрать.
                         </p>
 
                         <div id="answers-container">
-                            <div th:each="answer, iter : ${questionDTO.answerOptions}"
-                                 class="answer-row mb-3 p-3 border rounded">
+                            <!-- Начальный пустой вариант -->
+                            <div class="answer-row mb-3 p-3 border rounded">
                                 <div class="row align-items-center">
                                     <div class="col-md-1 text-center">
                                         <input type="checkbox"
-                                               th:field="*{answerOptions[__${iter.index}__].isCorrect}"
+                                               name="answerOptions[0].isCorrect"
                                                class="form-check-input correct-checkbox">
                                     </div>
                                     <div class="col-md-9">
                                         <input type="text"
-                                               th:field="*{answerOptions[__${iter.index}__].text}"
-                                               class="form-control"
-                                               placeholder="Введите вариант ответа..."
-                                               th:classappend="${#fields.hasErrors('answerOptions[' + iter.index + '].text')} ? 'is-invalid' : ''">
-                                        <div class="invalid-feedback"
-                                             th:if="${#fields.hasErrors('answerOptions[' + iter.index + '].text')}">
-                                            <span th:errors="*{answerOptions[__${iter.index}__].text}"></span>
-                                        </div>
+                                               name="answerOptions[0].text"
+                                               class="form-control answer-text"
+                                               placeholder="Введите вариант ответа...">
                                     </div>
                                     <div class="col-md-2 text-end">
-                                        <button type="button" class="btn btn-sm btn-outline-danger remove-answer"
-                                                th:unless="${iter.first}">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-answer" disabled>
                                             Удалить
                                         </button>
                                     </div>
                                 </div>
-                                <!-- Скрытые поля для ID -->
-                                <input type="hidden"
-                                       th:field="*{answerOptions[__${iter.index}__].id}">
+                                <input type="hidden" name="answerOptions[0].id" value="">
+                            </div>
+
+                            <!-- Второй обязательный вариант -->
+                            <div class="answer-row mb-3 p-3 border rounded">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1 text-center">
+                                        <input type="checkbox"
+                                               name="answerOptions[1].isCorrect"
+                                               class="form-check-input correct-checkbox">
+                                    </div>
+                                    <div class="col-md-9">
+                                        <input type="text"
+                                               name="answerOptions[1].text"
+                                               class="form-control answer-text"
+                                               placeholder="Введите вариант ответа...">
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-answer">
+                                            Удалить
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="answerOptions[1].id" value="">
                             </div>
                         </div>
 
-                        <!-- Кнопка добавления варианта -->
-                        <div class="mb-4">
-                            <button type="button" id="add-answer" class="btn btn-sm btn-outline-primary">
-                                + Добавить вариант ответа
-                            </button>
-                            <div class="form-text mt-2">
-                                <span class="text-success">✓</span> Галочка отмечает правильный ответ
-                            </div>
+                        <div class="alert alert-warning mt-3" id="validation-warning" style="display: none;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span id="warning-text"></span>
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
                             <a th:href="@{'/creator/tests/' + ${test.id} + '/questions'}"
-                               class="btn btn-secondary">Отмена</a>
-                            <button type="submit" class="btn btn-primary">
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submit-btn">
                                 <span th:text="${action == 'create' ? 'Добавить вопрос' : 'Сохранить изменения'}"></span>
                             </button>
                         </div>
@@ -141,52 +187,140 @@
     </div>
 </div>
 
-<!-- JavaScript для динамического добавления вариантов ответов -->
+<!-- Упрощенный JavaScript -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const answersContainer = document.getElementById('answers-container');
         const addButton = document.getElementById('add-answer');
+        const validationWarning = document.getElementById('validation-warning');
+        const submitBtn = document.getElementById('submit-btn');
+        const form = document.getElementById('questionForm');
 
-        // Считаем сколько уже есть строк
-        let answerCount = document.querySelectorAll('.answer-row').length;
+        let answerCount = 2; // Начинаем с 2 вариантов
+
+        // Функция проверки валидности формы
+        function validateForm() {
+            const validAnswers = Array.from(document.querySelectorAll('.answer-text'))
+                .filter(input => input.value.trim().length > 0);
+
+            const correctAnswers = Array.from(document.querySelectorAll('.correct-checkbox:checked'))
+                .filter(checkbox => {
+                    const textInput = checkbox.closest('.answer-row').querySelector('.answer-text');
+                    return textInput && textInput.value.trim().length > 0;
+                });
+
+            validationWarning.style.display = 'none';
+            submitBtn.disabled = false;
+
+            if (validAnswers.length < 2) {
+                showWarning('Добавьте как минимум 2 варианта ответа');
+                return false;
+            }
+
+            if (correctAnswers.length === 0) {
+                showWarning('Отметьте хотя бы один правильный вариант ответа');
+                return false;
+            }
+
+            return true;
+        }
+
+        function showWarning(message) {
+            validationWarning.style.display = 'block';
+            document.getElementById('warning-text').textContent = message;
+            submitBtn.disabled = true;
+        }
 
         // Удаление варианта ответа
         answersContainer.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-answer')) {
-                e.target.closest('.answer-row').remove();
+            if (e.target.closest('.remove-answer')) {
+                const row = e.target.closest('.answer-row');
+                if (row && !row.querySelector('.remove-answer').disabled) {
+                    row.remove();
+                    reindexAnswers();
+                    validateForm();
+                }
             }
         });
 
         // Добавление нового варианта ответа
         addButton.addEventListener('click', function() {
-            const newIndex = answerCount++;
+            const rows = document.querySelectorAll('.answer-row');
+            const index = rows.length;
 
-            const newAnswerRow = document.createElement('div');
-            newAnswerRow.className = 'answer-row mb-3 p-3 border rounded';
-            newAnswerRow.innerHTML = `
-            <div class="row align-items-center">
-                <div class="col-md-1 text-center">
-                    <input type="checkbox"
-                           name="answerOptions[${newIndex}].isCorrect"
-                           class="form-check-input correct-checkbox">
+            const newRow = document.createElement('div');
+            newRow.className = 'answer-row mb-3 p-3 border rounded';
+            newRow.innerHTML = `
+                <div class="row align-items-center">
+                    <div class="col-md-1 text-center">
+                        <input type="checkbox"
+                               name="answerOptions[${index}].isCorrect"
+                               class="form-check-input correct-checkbox">
+                    </div>
+                    <div class="col-md-9">
+                        <input type="text"
+                               name="answerOptions[${index}].text"
+                               class="form-control answer-text"
+                               placeholder="Введите вариант ответа...">
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-answer">
+                            Удалить
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-9">
-                    <input type="text"
-                           name="answerOptions[${newIndex}].text"
-                           class="form-control"
-                           placeholder="Введите вариант ответа...">
-                </div>
-                <div class="col-md-2 text-end">
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-answer">
-                        Удалить
-                    </button>
-                </div>
-            </div>
-            <input type="hidden" name="answerOptions[${newIndex}].id">
-        `;
+                <input type="hidden" name="answerOptions[${index}].id" value="">
+            `;
 
-            answersContainer.appendChild(newAnswerRow);
+            answersContainer.appendChild(newRow);
+            reindexAnswers();
+            validateForm();
         });
+
+        // Переиндексация ответов
+        function reindexAnswers() {
+            const rows = document.querySelectorAll('.answer-row');
+            rows.forEach((row, index) => {
+                // Обновляем name атрибуты
+                row.querySelectorAll('[name^="answerOptions"]').forEach(input => {
+                    const oldName = input.getAttribute('name');
+                    const newName = oldName.replace(/answerOptions\[\d+\]/, `answerOptions[${index}]`);
+                    input.setAttribute('name', newName);
+                });
+
+                // Разрешаем удаление всех, кроме первого
+                const removeBtn = row.querySelector('.remove-answer');
+                if (removeBtn) {
+                    removeBtn.disabled = index === 0;
+                }
+            });
+            answerCount = rows.length;
+        }
+
+        // Валидация при изменении
+        answersContainer.addEventListener('input', function(e) {
+            if (e.target.classList.contains('answer-text')) {
+                validateForm();
+            }
+        });
+
+        answersContainer.addEventListener('change', function(e) {
+            if (e.target.classList.contains('correct-checkbox')) {
+                validateForm();
+            }
+        });
+
+        // Валидация при отправке формы
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                alert('Пожалуйста, исправьте ошибки в форме перед отправкой.');
+            }
+        });
+
+        // Инициализация
+        reindexAnswers();
+        validateForm();
     });
 </script>
 
