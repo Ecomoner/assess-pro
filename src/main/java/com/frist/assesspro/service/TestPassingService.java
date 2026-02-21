@@ -17,10 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,6 +86,7 @@ public class TestPassingService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
         if (!cooldownService.canUserTakeTest(test, user)) {
             LocalDateTime nextAvailable = cooldownService.getNextAvailableTime(test, user);
             String message = String.format(
@@ -98,14 +96,19 @@ public class TestPassingService {
             throw new RuntimeException(message);
         }
 
+        // Проверяем существующую попытку
         Optional<TestAttempt> existingAttempt = testAttemptRepository
                 .findByTestIdAndUserIdAndStatus(testId, user.getId(), TestAttempt.AttemptStatus.IN_PROGRESS);
 
         Long attemptId;
+        TestAttempt attempt;
+
         if (existingAttempt.isPresent()) {
-            attemptId = existingAttempt.get().getId();
+            attempt = existingAttempt.get();
+            attemptId = attempt.getId();
+            log.info("Продолжение попытки ID: {}", attemptId);
         } else {
-            TestAttempt attempt = new TestAttempt();
+            attempt = new TestAttempt();
             attempt.setTest(test);
             attempt.setUser(user);
             attempt.setStartTime(LocalDateTime.now());
@@ -114,17 +117,44 @@ public class TestPassingService {
 
             TestAttempt savedAttempt = testAttemptRepository.save(attempt);
             attemptId = savedAttempt.getId();
+            attempt = savedAttempt;
             log.info("Создана новая попытка теста ID: {}", testId);
         }
 
-        // Безопасное преобразование вопросов в DTO с проверкой на null
-        List<QuestionForTakingDTO> questionDTOs = new ArrayList<>();
-        if (test.getQuestions() != null && !test.getQuestions().isEmpty()) {
-            questionDTOs = test.getQuestions().stream()
-                    .sorted(Comparator.comparing(Question::getOrderIndex))
-                    .map(this::convertToQuestionForTakingDTO)
-                    .collect(Collectors.toList());
+        // Получаем все вопросы теста
+        List<Question> allQuestions = test.getQuestions();
+
+        // Получаем ID вопросов, на которые уже есть ответы в этой попытке
+        Set<Long> answeredQuestionIds = userAnswerRepository.findByAttemptId(attemptId).stream()
+                .map(userAnswer -> userAnswer.getQuestion().getId())
+                .collect(Collectors.toSet());
+
+        log.info("Вопросов всего: {}, отвечено: {}", allQuestions.size(), answeredQuestionIds.size());
+
+        // Фильтруем только неотвеченные вопросы
+        List<Question> unansweredQuestions = allQuestions.stream()
+                .filter(q -> !answeredQuestionIds.contains(q.getId()))
+                .collect(Collectors.toList());
+
+        // Если все вопросы отвечены, тест должен быть завершен
+        if (unansweredQuestions.isEmpty()) {
+            log.info("Все вопросы отвечены, завершаем тест");
+            attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
+            attempt.setEndTime(LocalDateTime.now());
+            testAttemptRepository.save(attempt);
+
+            // Возвращаем пустой результат, контроллер должен перенаправить на страницу результатов
+            return Optional.empty();
         }
+
+        // Перемешиваем только неотвеченные вопросы
+        List<Question> shuffledUnanswered = new ArrayList<>(unansweredQuestions);
+        Collections.shuffle(shuffledUnanswered);
+
+        // Конвертируем в DTO
+        List<QuestionForTakingDTO> questionDTOs = shuffledUnanswered.stream()
+                .map(this::convertToQuestionForTakingDTO)
+                .collect(Collectors.toList());
 
         // Проверяем, что у вопросов есть варианты ответов
         questionDTOs = questionDTOs.stream()
@@ -140,10 +170,28 @@ public class TestPassingService {
         dto.setTestId(test.getId());
         dto.setTestTitle(test.getTitle());
         dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
-        dto.setQuestions(questionDTOs);  // ← Гарантировано не null
-        dto.setTotalQuestions(questionDTOs.size());
+        dto.setQuestions(questionDTOs);
+        dto.setTotalQuestions(allQuestions.size());
+
+        dto.setCurrentQuestionIndex(0);
+
+
+        dto.setAnsweredQuestions(answeredQuestionIds.size());
+        dto.setRemainingQuestions(unansweredQuestions.size());
 
         return Optional.of(dto);
+    }
+
+    @Transactional
+    public Optional<TestTakingDTO> getTestForTakingByAttemptId(Long attemptId, String username) {
+        TestAttempt attempt = testAttemptRepository.findById(attemptId)
+                .orElseThrow(() -> new RuntimeException("Попытка не найдена"));
+
+        if (!attempt.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("Нет доступа к этой попытке");
+        }
+
+        return getTestForTaking(attempt.getTest().getId(), username);
     }
 
     private String formatDateTime(LocalDateTime dateTime) {
@@ -188,8 +236,10 @@ public class TestPassingService {
             throw new RuntimeException("Нет прав доступа к этой попытке!");
         }
 
+        // Проверяем статус попытки
         if (attempt.getStatus() != TestAttempt.AttemptStatus.IN_PROGRESS) {
-            throw new RuntimeException("Попытка уже завершена!");
+            log.info("Попытка ID: {} уже завершена, пропускаем сохранение ответа", attempt.getId());
+            return;
         }
 
         Question question = questionRepository.findById(testPassingDTO.getQuestionId())
@@ -200,39 +250,44 @@ public class TestPassingService {
         }
 
         AnswerOption chosenAnswer = null;
+        Boolean isCorrect = false;
+        Integer points = 0;
 
         if (testPassingDTO.getAnswerOptionId() != null) {
             chosenAnswer = answerOptionRepository.findById(testPassingDTO.getAnswerOptionId())
-                    .orElseThrow(() -> new RuntimeException("Вариант ответа не найдент!"));
+                    .orElseThrow(() -> new RuntimeException("Вариант ответа не найден!"));
+            isCorrect = chosenAnswer.getIsCorrect();
+            points = isCorrect ? 1 : 0;
         }
 
-        Optional<UserAnswer> existingAnswer = userAnswerRepository
-                .findByAttemptIdAndQuestionId(attempt.getId(), question.getId());
-
-        UserAnswer userAnswer;
-        if (existingAnswer.isPresent()) {
-            userAnswer = existingAnswer.get();
-            userAnswer.setChosenAnswerOption(chosenAnswer);
-        } else {
-            userAnswer = new UserAnswer();
-            userAnswer.setAttempt(attempt);
-            userAnswer.setQuestion(question);
-            userAnswer.setChosenAnswerOption(chosenAnswer);
+        // Используем UPSERT для атомарной операции
+        try {
+            userAnswerRepository.upsertAnswer(
+                    attempt.getId(),
+                    question.getId(),
+                    testPassingDTO.getAnswerOptionId(),
+                    isCorrect,
+                    points
+            );
+            log.debug("Ответ сохранен через UPSERT для attemptId: {}, questionId: {}",
+                    attempt.getId(), question.getId());
+        } catch (Exception e) {
+            log.error("Ошибка при UPSERT ответа", e);
+            throw new RuntimeException("Не удалось сохранить ответ", e);
         }
-
-        // Определяем, правильный ли ответ
-        if (chosenAnswer != null) {
-            userAnswer.setIsCorrect(chosenAnswer.getIsCorrect());
-            userAnswer.setPointsEarned(chosenAnswer.getIsCorrect() ? 1 : 0);
-        } else {
-            userAnswer.setIsCorrect(false);
-            userAnswer.setPointsEarned(0);
-        }
-
-        userAnswerRepository.save(userAnswer);
 
         // Обновляем общий счет
         updateAttemptTotalScore(attempt.getId());
+
+        // Проверяем, все ли вопросы отвечены
+        long answeredCount = userAnswerRepository.countByAttemptId(attempt.getId());
+        long totalQuestions = attempt.getTest().getQuestions().size();
+
+        if (answeredCount >= totalQuestions) {
+            // Все вопросы отвечены, автоматически завершаем тест
+            finishTestAndGetResults(attempt.getId(), username);
+            log.info("Тест автоматически завершен после ответа на последний вопрос");
+        }
     }
     /**
      * Получение ВСЕХ доступных тестов (без пагинации, для дашборда)
@@ -278,12 +333,18 @@ public class TestPassingService {
             throw new RuntimeException("Нет доступа к этой попытке");
         }
 
-        if (attempt.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
-            attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
-            attempt.setEndTime(LocalDateTime.now());
-            testAttemptRepository.save(attempt);
-            log.info("Завершена попытка теста ID: {}", attempt.getTest().getId());
+        // Если тест уже завершен, просто возвращаем результаты
+        if (attempt.getStatus() == TestAttempt.AttemptStatus.COMPLETED) {
+            log.info("Попытка ID: {} уже завершена, возвращаем результаты", attemptId);
+            return getTestResults(attemptId, username);
         }
+
+        // Завершаем тест
+        attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
+        attempt.setEndTime(LocalDateTime.now());
+        testAttemptRepository.save(attempt);
+        log.info("Завершена попытка теста ID: {}", attempt.getTest().getId());
+
         return getTestResults(attemptId, username);
     }
 
@@ -389,8 +450,33 @@ public class TestPassingService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
 
-        // Используем DTO проекцию вместо преобразования Entity
-        return testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
+        // Получаем DTO из репозитория
+        Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
+
+        // Для каждой записи вычисляем прогресс
+        for (TestHistoryDTO dto : historyPage.getContent()) {
+            if (dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
+                // Получаем попытку для подсчета отвеченных вопросов
+                TestAttempt attempt = testAttemptRepository.findById(dto.getAttemptId()).orElse(null);
+                if (attempt != null) {
+                    int totalQuestions = attempt.getTest().getQuestions().size();
+                    long answeredQuestions = userAnswerRepository.countByAttemptId(attempt.getId());
+
+                    if (totalQuestions > 0) {
+                        dto.setProgressPercentage((int)(answeredQuestions * 100) / totalQuestions);
+                    } else {
+                        dto.setProgressPercentage(0);
+                    }
+                } else {
+                    dto.setProgressPercentage(0);
+                }
+            } else {
+                // Для завершенных тестов прогресс 100%
+                dto.setProgressPercentage(100);
+            }
+        }
+
+        return historyPage;
     }
 
     /**
@@ -402,7 +488,30 @@ public class TestPassingService {
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
         Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").descending());
-        return testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable).getContent();
+        Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
+
+        // Вычисляем прогресс для каждой записи
+        for (TestHistoryDTO dto : historyPage.getContent()) {
+            if (dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
+                TestAttempt attempt = testAttemptRepository.findById(dto.getAttemptId()).orElse(null);
+                if (attempt != null) {
+                    int totalQuestions = attempt.getTest().getQuestions().size();
+                    long answeredQuestions = userAnswerRepository.countByAttemptId(attempt.getId());
+
+                    if (totalQuestions > 0) {
+                        dto.setProgressPercentage((int)(answeredQuestions * 100) / totalQuestions);
+                    } else {
+                        dto.setProgressPercentage(0);
+                    }
+                } else {
+                    dto.setProgressPercentage(0);
+                }
+            } else {
+                dto.setProgressPercentage(100);
+            }
+        }
+
+        return historyPage.getContent();
     }
 
     /**

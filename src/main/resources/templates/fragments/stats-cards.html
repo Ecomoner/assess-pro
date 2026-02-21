@@ -1,0 +1,19 @@
+<div th:fragment="statsCards(cards)" class="row g-2 g-md-3">
+    <div th:each="card : ${cards}" class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100 stats-card">
+            <div class="card-body p-2 p-md-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted text-uppercase small fw-semibold d-block"
+                              th:text="${card.label}">Лейбл</span>
+                        <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md"
+                            th:text="${card.value}">0</h3>
+                    </div>
+                    <div class="bg-dark bg-opacity-10 p-2 p-md-3 rounded-circle">
+                        <i class="bi" th:classappend="${card.icon}" th:class="${card.iconClass}"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

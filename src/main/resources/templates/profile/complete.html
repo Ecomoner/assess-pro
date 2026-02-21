@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Заполнение профиля')}">
+<body>
+<div th:replace="~{fragments/navigation}"></div>
+
+<div class="container py-3 py-md-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-badge text-dark display-1"></i>
+                        <h2 class="fw-bold mt-3 h3 h2-md">Заполнение профиля</h2>
+                        <p class="text-muted small">Для доступа к тестам укажите ваши данные</p>
+                    </div>
+
+                    <!-- Сообщения об ошибках -->
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span class="small" th:text="${errorMessage}">Ошибка</span>
+                        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <form th:action="@{/profile/complete}" th:object="${profileDTO}" method="post">
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label fw-semibold small">Фамилия *</label>
+                            <input type="text" class="form-control"
+                                   th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'"
+                                   id="lastName"
+                                   name="lastName"
+                                   th:value="*{lastName}"
+                                   placeholder="Иванов"
+                                   required>
+                            <div class="invalid-feedback small" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}">Ошибка</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label fw-semibold small">Имя *</label>
+                            <input type="text" class="form-control"
+                                   th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'"
+                                   id="firstName"
+                                   name="firstName"
+                                   th:value="*{firstName}"
+                                   placeholder="Иван"
+                                   required>
+                            <div class="invalid-feedback small" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}">Ошибка</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="middleName" class="form-label fw-semibold small">Отчество</label>
+                            <input type="text" class="form-control"
+                                   id="middleName"
+                                   name="middleName"
+                                   th:value="*{middleName}"
+                                   placeholder="Иванович">
+                            <small class="text-muted d-block mt-1 small">Необязательное поле</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100 py-2">
+                            <i class="bi bi-check-circle me-2"></i>Сохранить и продолжить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

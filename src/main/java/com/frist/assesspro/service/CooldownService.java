@@ -57,6 +57,7 @@ public class CooldownService {
             lastAttemptTime = lastAttempt.get().getStartTime();
         }
 
+        // 🔥 ВАЖНО: Используем effectiveCooldownHours из Test
         LocalDateTime nextAllowedTime = lastAttemptTime.plusHours(test.getEffectiveCooldownHours());
         boolean canTake = LocalDateTime.now().isAfter(nextAllowedTime);
 
@@ -177,6 +178,7 @@ public class CooldownService {
             return "Недоступно еще " + minutesRemaining + " мин";
         }
     }
+
 
     private String getDaysWord(int days) {
         if (days % 10 == 1 && days % 100 != 11) return "день";

@@ -1,592 +1,43 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
+<html xmlns:th="http://www.thymeleaf.org">
+
+
+<head th:replace="~{fragments/header :: header('Дашборд создателя')}",>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Панель создателя - Assess Pro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #4e73df;
-            --success-color: #1cc88a;
-            --info-color: #36b9cc;
-            --warning-color: #f6c23e;
-            --danger-color: #e74a3b;
-            --light-color: #f8f9fc;
-            --dark-color: #5a5c69;
-        }
-
-        .stat-card {
-            border-left: 4px solid var(--primary-color);
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
-
-        .stat-card.success { border-left-color: var(--success-color); }
-        .stat-card.info { border-left-color: var(--info-color); }
-        .stat-card.warning { border-left-color: var(--warning-color); }
-        .stat-card.danger { border-left-color: var(--danger-color); }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            font-size: 1.5rem;
-        }
-
-        .progress-thin {
-            height: 6px;
-            border-radius: 3px;
-        }
-
-        .activity-item {
-            border-left: 3px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .activity-item:hover {
-            background-color: rgba(78, 115, 223, 0.05);
-            border-left-color: var(--primary-color);
-        }
-
-        .dashboard-header {
-            background: linear-gradient(87deg, #4e73df 0, #224abe 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .dashboard-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-        }
-
-        .quick-action-btn {
-            width: 100%;
-            height: 120px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed #e3e6f0;
-            border-radius: 10px;
-            transition: all 0.3s;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .quick-action-btn:hover {
-            border-color: var(--primary-color);
-            background-color: rgba(78, 115, 223, 0.05);
-            transform: translateY(-3px);
-        }
-
-        .badge-pill {
-            border-radius: 10rem;
-            padding: 0.35em 0.65em;
-            font-size: 0.75em;
-        }
-
-        .table-smaller {
-            font-size: 0.9rem;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        .status-completed { background-color: var(--success-color); }
-        .status-in-progress { background-color: var(--warning-color); }
-        .status-not-started { background-color: var(--danger-color); }
-    </style>
-</head>
 <body>
-<!-- Навигация -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" th:href="@{/home}">
-            <i class="bi bi-speedometer2 me-2"></i>AssessPro
-        </a>
+<div th:replace="~{fragments/navigation}"></div>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link active" th:href="@{/creator/dashboard}">
-                        <i class="bi bi-house-door me-1"></i>Панель
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/creator/tests}">
-                        <i class="bi bi-journal-text me-1"></i>Мои тесты
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/creator/tests/new}">
-                        <i class="bi bi-plus-circle me-1"></i>Новый тест
-                    </a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-bar-chart me-1"></i>Статистика
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item" th:href="@{/creator/tests}">
-                                <i class="bi bi-list-check me-2"></i>Выбрать тест для статистики
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item" th:href="@{'/creator/tests/' + ${attempt.testId} + '/statistics'}"
-                               th:if="${attempt != null and attempt.testId != null}"
-                               th:each="attempt : ${recentAttempts}">
-                                <i class="bi bi-graph-up me-2"></i>Статистика теста [[${attempt.testId}]]
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-
-            <div class="navbar-nav align-items-center">
-                <div class="nav-item me-3">
-                    <div class="d-flex align-items-center">
-                        <div class="me-2">
-                            <i class="bi bi-person-circle fs-5 text-light"></i>
-                        </div>
-                        <div>
-                            <div class="text-light small">Создатель</div>
-                            <div class="text-white fw-bold" sec:authentication="name"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <form th:action="@{/logout}" method="post" class="nav-item">
-                    <button type="submit" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-box-arrow-right"></i> Выйти
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<div class="container-fluid mt-4">
-    <!-- Хлебные крошки -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/home}" class="text-decoration-none">Главная</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Панель создателя</li>
-        </ol>
-    </nav>
-
-    <!-- Приветствие и дата -->
-    <div class="dashboard-header shadow">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <h1 class="display-6 fw-bold mb-3">
-                    <i class="bi bi-gem me-3"></i>Добро пожаловать, создатель!
+<div class="container-fluid py-3 py-md-4" style="background-color: #f8f9fa;">
+    <div class="container px-2 px-md-3">
+        <!-- Заголовок -->
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 mb-md-4 gap-2">
+            <div>
+                <h1 class="h3 h2-md mb-1">
+                    <i class="bi bi-speedometer2 text-success me-2"></i>
+                    Панель создателя
                 </h1>
-                <p class="lead mb-0 opacity-75">
-                    Здесь вы можете управлять тестами, отслеживать результаты и анализировать статистику тестировщиков
-                </p>
-            </div>
-            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                <div class="d-inline-block bg-white text-dark p-3 rounded shadow-sm">
-                    <div class="h4 mb-1 fw-bold" th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}"></div>
-                    <div class="text-muted small">
-                        <i class="bi bi-clock me-1"></i>
-                        <span id="currentTime" th:text="${#temporals.format(#temporals.createNow(), 'HH:mm')}"></span>
-                    </div>
-                </div>
+                <p class="text-muted small mb-0">Добро пожаловать, <strong th:text="${firstName}">Создатель</strong>!</p>
             </div>
         </div>
-    </div>
-
-    <div class="row g-4">
-        <!-- Левая колонка - Статистика -->
-        <div class="col-xl-8">
-            <!-- Карточки статистики -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card h-100 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
+        <!-- Карточка создания теста -->
+        <div class="row g-2 g-md-4 mb-3 mb-md-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
+                    <div class="card-body p-2 p-md-3">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-25 p-2 p-md-3 rounded-circle me-2 me-md-3">
+                                    <i class="bi bi-people text-primary fs-5 fs-md-3"></i>
+                                </div>
                                 <div>
-                                    <h6 class="text-muted text-uppercase small mb-2">Всего тестов</h6>
-                                    <h3 class="fw-bold text-primary mb-0" th:text="${stats?.totalTests ?: 0}">0</h3>
-                                    <div class="small text-muted mt-1">
-                                        <i class="bi bi-arrow-up text-success me-1"></i>
-                                        <span>База знаний</span>
-                                    </div>
-                                </div>
-                                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
-                                    <i class="bi bi-journal-text"></i>
+                                    <h5 class="mb-1 h6 h5-md">Создание теста</h5>
+                                    <p class="text-muted mb-0 small">
+                                        Всего тестов: <strong th:text="${stats.totalTests}">0</strong>
+                                    </p>
                                 </div>
                             </div>
-                            <div class="progress progress-thin mt-3">
-                                <div class="progress-bar bg-primary" role="progressbar"
-                                     th:style="'width: ' + ${stats?.totalTests > 0 ? 100 : 0} + '%'"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card success h-100 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted text-uppercase small mb-2">Опубликовано</h6>
-                                    <h3 class="fw-bold text-success mb-0" th:text="${stats?.publishedTests ?: 0}">0</h3>
-                                    <div class="small text-muted mt-1">
-                                        <i class="bi bi-check-circle text-success me-1"></i>
-                                        <span>Доступно для тестирования</span>
-                                    </div>
-                                </div>
-                                <div class="stat-icon bg-success bg-opacity-10 text-success">
-                                    <i class="bi bi-check-lg"></i>
-                                </div>
-                            </div>
-                            <div class="progress progress-thin mt-3">
-                                <div class="progress-bar bg-success" role="progressbar"
-                                     th:style="'width: ' + ${stats?.totalTests > 0 ? (stats.publishedTests / stats.totalTests * 100) : 0} + '%'"
-                                     th:attr="aria-valuenow=${stats?.totalTests > 0 ? (stats.publishedTests / stats.totalTests * 100) : 0}"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card info h-100 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted text-uppercase small mb-2">Всего вопросов</h6>
-                                    <h3 class="fw-bold text-info mb-0" th:text="${stats?.totalQuestions ?: 0}">0</h3>
-                                    <div class="small text-muted mt-1">
-                                        <i class="bi bi-question-circle text-info me-1"></i>
-                                        <span>Во всех тестах</span>
-                                    </div>
-                                </div>
-                                <div class="stat-icon bg-info bg-opacity-10 text-info">
-                                    <i class="bi bi-question-square"></i>
-                                </div>
-                            </div>
-                            <div class="progress progress-thin mt-3">
-                                <div class="progress-bar bg-info" role="progressbar"
-                                     th:style="'width: ' + ${stats?.totalQuestions > 0 ? 50 : 0} + '%'"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3">
-                    <div class="card stat-card warning h-100 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-muted text-uppercase small mb-2">Уникальных тестировщиков</h6>
-                                    <h3 class="fw-bold text-warning mb-0" th:text="${totalTesters ?: 0}">0</h3>
-                                    <div class="small text-muted mt-1">
-                                        <i class="bi bi-people text-warning me-1"></i>
-                                        <span>Проходили ваши тесты</span>
-                                    </div>
-                                </div>
-                                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                                    <i class="bi bi-person-badge"></i>
-                                </div>
-                            </div>
-                            <div class="progress progress-thin mt-3">
-                                <div class="progress-bar bg-warning" role="progressbar"
-                                     th:style="'width: ' + ${totalTesters > 0 ? 75 : 0} + '%'"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Дополнительная статистика -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-6">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">
-                                <i class="bi bi-graph-up me-2 text-primary"></i>Статистика попыток
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <div class="text-center p-3 bg-light rounded">
-                                        <div class="h2 fw-bold text-primary mb-1" th:text="${stats?.totalAttempts ?: 0}">0</div>
-                                        <div class="small text-muted">Всего попыток</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-center p-3 bg-light rounded">
-                                        <div class="h2 fw-bold text-success mb-1" th:text="${stats?.completedTests ?: 0}">0</div>
-                                        <div class="small text-muted">Завершено</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-center p-3 bg-light rounded">
-                                        <div class="h2 fw-bold text-warning mb-1" th:text="${stats?.inProgressTests ?: 0}">0</div>
-                                        <div class="small text-muted">В процессе</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-center p-3 bg-light rounded">
-                                        <div class="h2 fw-bold text-info mb-1" th:text="${stats?.averageScore ?: 0}">0</div>
-                                        <div class="small text-muted">Средний балл</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small text-muted">Лучший результат:</span>
-                                    <span class="badge bg-success" th:text="${stats?.bestScore ?: 0} + ' баллов'">0 баллов</span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small text-muted">Общее время тестирования:</span>
-                                    <span class="badge bg-secondary" th:text="${stats?.totalMinutes ?: 0} + ' минут'">0 минут</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">
-                                <i class="bi bi-lightning me-2 text-warning"></i>Быстрые действия
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <a th:href="@{/creator/tests/new}" class="quick-action-btn text-center">
-                                        <div class="mb-2">
-                                            <i class="bi bi-plus-circle display-6 text-success"></i>
-                                        </div>
-                                        <div class="fw-bold">Новый тест</div>
-                                        <small class="text-muted">Создать</small>
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a th:href="@{/creator/tests}" class="quick-action-btn text-center">
-                                        <div class="mb-2">
-                                            <i class="bi bi-journal-text display-6 text-primary"></i>
-                                        </div>
-                                        <div class="fw-bold">Мои тесты</div>
-                                        <small class="text-muted">Управление</small>
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a th:href="@{/creator/tests}" class="quick-action-btn text-center">
-                                        <div class="mb-2">
-                                            <i class="bi bi-bar-chart display-6 text-info opacity-50"></i>
-                                        </div>
-                                        <div class="fw-bold opacity-50">Статистика</div>
-                                        <small class="text-muted opacity-50">Просмотреть</small>
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="#" class="quick-action-btn text-center disabled" onclick="return false;">
-                                        <div class="mb-2">
-                                            <i class="bi bi-download display-6 text-warning opacity-50"></i>
-                                        </div>
-                                        <div class="fw-bold opacity-50">Отчеты</div>
-                                        <small class="text-muted opacity-50">Скоро</small>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Последние активности тестировщиков -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="bi bi-clock-history me-2 text-primary"></i>
-                        Последние активности тестировщиков
-                        <span class="badge bg-primary ms-2" th:text="${recentAttempts != null ? recentAttempts.size() : 0}">0</span>
-                    </h6>
-                    <div>
-                        <a th:href="@{/creator/tests}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-arrow-right me-1"></i>Вся статистика
-                        </a>
-                    </div>
-                </div>
-
-                <div class="card-body p-0">
-                    <div th:if="${recentAttempts != null and not recentAttempts.isEmpty()}">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-smaller mb-0">
-                                <thead class="table-light">
-                                <tr>
-                                    <th width="50">#</th>
-                                    <th>Тестировщик</th>
-                                    <th>Тест</th>
-                                    <th>Результат</th>
-                                    <th>Длительность</th>
-                                    <th>Статус</th>
-                                    <th width="120" class="text-end">Действия</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr th:each="attempt, iter : ${recentAttempts}"
-                                    class="activity-item border-start"
-                                    th:classappend="${attempt.borderClass}">
-                                    <td class="text-muted fw-semibold">[[${iter.count}]]</td>
-
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-2">
-                                                <i class="bi bi-person-circle text-primary"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-bold">[[${attempt.testerUsername}]]</div>
-                                                <small class="text-muted">
-                                                    ID: [[${attempt.attemptId}]]
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        <small class="text-muted">
-                                            <i class="bi bi-journal-text me-1"></i>
-                                            Попытка #[[${attempt.attemptId}]]
-                                        </small>
-                                    </td>
-
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-2">
-                                                    <span class="badge rounded-pill"
-                                                          th:class="${attempt.percentageBadgeClass}">
-                                                        [[${#numbers.formatDecimal(attempt.percentage, 1, 2)}]]%
-                                                    </span>
-                                            </div>
-                                            <div>
-                                                <small class="text-muted">
-                                                    [[${attempt.score}]]/[[${attempt.maxScore}]]
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                            <span th:if="${attempt.durationMinutes > 0}" class="text-muted">
-                                                [[${attempt.formattedDuration}]]
-                                            </span>
-                                        <span th:unless="${attempt.durationMinutes > 0}" class="text-muted">
-                                                —
-                                            </span>
-                                    </td>
-
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <span th:class="${attempt.completed} ? 'status-dot status-completed' : 'status-dot status-in-progress'"></span>
-                                            <span th:text="${attempt.status}">Статус</span>
-                                        </div>
-                                    </td>
-
-                                    <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
-                                            <!-- Ссылка на агрегированную статистику тестировщика -->
-                                            <a th:href="@{'/creator/tests/' + ${attempt.testId} + '/statistics/aggregated/tester/' + ${attempt.testerUsername}}"
-                                               class="btn btn-outline-primary"
-                                               title="Агрегированная статистика тестировщика">
-                                                <i class="bi bi-person-lines-fill"></i>
-                                            </a>
-
-                                            <!-- Ссылка на детальные ответы по конкретной попытке -->
-                                            <a th:href="@{'/creator/tests/' + ${attempt.testId} + '/statistics/tester/' + ${attempt.attemptId}}"
-                                               class="btn btn-outline-info"
-                                               title="Детальные ответы">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-
-                                            <!-- Ссылка на статистику теста -->
-                                            <a th:href="@{'/creator/tests/' + ${attempt.testId} + '/statistics'}"
-                                               class="btn btn-outline-secondary"
-                                               title="Общая статистика теста">
-                                                <i class="bi bi-graph-up"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="card-footer bg-light">
-                            <div class="row align-items-center">
-                                <div class="col-md-6">
-                                    <small class="text-muted">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        Показано последних [[${recentAttempts.size()}]] активностей
-                                    </small>
-                                </div>
-                                <div class="col-md-6 text-md-end">
-                                    <small class="text-muted">
-                                        <i class="bi bi-filter me-1"></i>
-                                        Всего попыток: [[${stats?.totalAttempts ?: 0}]]
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Пустое состояние -->
-                    <div th:if="${recentAttempts == null or recentAttempts.isEmpty()}" class="text-center py-5">
-                        <div class="mb-4">
-                            <i class="bi bi-people display-1 text-muted opacity-50"></i>
-                        </div>
-                        <h5 class="text-muted mb-3">Пока нет активностей тестировщиков</h5>
-                        <p class="text-muted mb-4">
-                            Как только тестировщики начнут проходить ваши тесты,<br>
-                            их активности появятся в этой таблице.
-                        </p>
-                        <div class="d-flex justify-content-center gap-2">
-                            <a th:href="@{/creator/tests/new}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle me-1"></i> Создать первый тест
-                            </a>
-                            <a th:href="@{/creator/tests}" class="btn btn-outline-secondary">
-                                <i class="bi bi-journal-text me-1"></i> Управление тестами
+                            <a th:href="@{/creator/tests/new}" class="btn btn-dark w-100 w-sm-auto">
+                                <i class="bi bi-arrow-right me-2"></i>Создать тест
                             </a>
                         </div>
                     </div>
@@ -594,319 +45,87 @@
             </div>
         </div>
 
-        <!-- Правая колонка - Дополнительная информация -->
-        <div class="col-xl-4">
-            <!-- Информация о системе -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="bi bi-info-circle me-2 text-info"></i>Информация о системе
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
-                            <span class="text-muted">Пользователь:</span>
-                            <span class="fw-bold" sec:authentication="name"></span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
-                            <span class="text-muted">Роль:</span>
-                            <span class="badge bg-primary">Создатель тестов</span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
-                            <span class="text-muted">Дата:</span>
-                            <span th:text="${#temporals.format(#temporals.createNow(), 'dd.MM.yyyy')}"></span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
-                            <span class="text-muted">Время:</span>
-                            <span id="liveTime" th:text="${#temporals.format(#temporals.createNow(), 'HH:mm:ss')}"></span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
-                            <span class="text-muted">Статус системы:</span>
-                            <span class="badge bg-success">
-                                <i class="bi bi-check-circle me-1"></i>Работает
-                            </span>
+        <!-- Карточка управления тестировщиками -->
+        <div class="row g-2 g-md-4 mb-3 mb-md-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
+                    <div class="card-body p-2 p-md-3">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-25 p-2 p-md-3 rounded-circle me-2 me-md-3">
+                                    <i class="bi bi-people text-primary fs-5 fs-md-3"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1 h6 h5-md">Управление тестировщиками</h5>
+                                    <p class="text-muted mb-0 small">
+                                        Всего тестировщиков: <strong th:text="${totalTesters}">0</strong>
+                                    </p>
+                                </div>
+                            </div>
+                            <a th:href="@{/creator/testers}" class="btn btn-dark w-100 w-sm-auto">
+                                <i class="bi bi-arrow-right me-2"></i>Перейти к списку
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Прогресс публикации тестов -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="bi bi-graph-up me-2 text-success"></i>Прогресс публикации
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small text-muted">Опубликовано тестов</span>
-                            <span class="small fw-bold"
-                                  th:text="${stats?.publishedTests ?: 0} + '/' + ${stats?.totalTests ?: 0}">0/0</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-success" role="progressbar"
-                                 th:style="'width: ' + ${stats?.totalTests > 0 ? (stats.publishedTests / stats.totalTests * 100) : 0} + '%'"
-                                 th:attr="aria-valuenow=${stats?.totalTests > 0 ? (stats.publishedTests / stats.totalTests * 100) : 0}"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small text-muted">Активных тестировщиков</span>
-                            <span class="small fw-bold" th:text="${totalTesters ?: 0}">0</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-info" role="progressbar"
-                                 th:style="'width: ' + ${totalTesters > 0 ?
-         (totalTesters * 10 < 100 ? totalTesters * 10 : 100) : 0} + '%'">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small text-muted">Завершено попыток</span>
-                            <span class="small fw-bold"
-                                  th:text="${stats?.completedTests ?: 0} + '/' + ${stats?.totalAttempts ?: 0}">0/0</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-primary" role="progressbar"
-                                 th:style="'width: ' + ${stats?.totalAttempts > 0 ? (stats.completedTests / stats.totalAttempts * 100) : 0} + '%'">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        </div>
+        <!-- Последние попытки тестировщиков -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-2 py-md-3">
+                <h5 class="mb-0 h6 h5-md">Последние попытки тестировщиков</h5>
             </div>
-
-            <!-- Советы и рекомендации -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="bi bi-lightbulb me-2 text-warning"></i>Советы по работе
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item border-0 px-0 py-2">
-                            <div class="d-flex">
-                                <div class="me-3">
-                                    <i class="bi bi-check-circle text-success"></i>
-                                </div>
-                                <div>
-                                    <small class="fw-bold">Создавайте тесты с разными типами вопросов</small>
-                                    <p class="small text-muted mb-0">Это повышает эффективность тестирования</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item border-0 px-0 py-2">
-                            <div class="d-flex">
-                                <div class="me-3">
-                                    <i class="bi bi-check-circle text-success"></i>
-                                </div>
-                                <div>
-                                    <small class="fw-bold">Анализируйте статистику тестировщиков</small>
-                                    <p class="small text-muted mb-0">Это поможет улучшить ваши тесты</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item border-0 px-0 py-2">
-                            <div class="d-flex">
-                                <div class="me-3">
-                                    <i class="bi bi-check-circle text-success"></i>
-                                </div>
-                                <div>
-                                    <small class="fw-bold">Публикуйте тесты только после проверки</small>
-                                    <p class="small text-muted mb-0">Убедитесь, что все вопросы корректны</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="list-group-item border-0 px-0 py-2">
-                            <div class="d-flex">
-                                <div class="me-3">
-                                    <i class="bi bi-check-circle text-success"></i>
-                                </div>
-                                <div>
-                                    <small class="fw-bold">Используйте лимиты времени</small>
-                                    <p class="small text-muted mb-0">Это делает тестирование более объективным</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-light">
-                    <small class="text-muted">
-                        <i class="bi bi-arrow-repeat me-1"></i>
-                        Обновляется в реальном времени
-                    </small>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Тестировщик</th>
+                            <th class="d-none d-sm-table-cell">Тест</th>
+                            <th class="d-none d-md-table-cell">Дата</th>
+                            <th>Результат</th>
+                            <th class="d-none d-lg-table-cell">Статус</th>
+                            <th class="text-end"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="attempt : ${recentAttempts}">
+                            <td>
+                                <span class="fw-semibold" th:text="${attempt.testerUsername} ?: 'Не указан'">Иванов И.И.</span>
+                            </td>
+                            <td class="d-none d-sm-table-cell" th:text="${attempt.testTitle}">Тест по математике</td>
+                            <td class="d-none d-md-table-cell" th:text="${#temporals.format(attempt.startTime, 'dd.MM.yy HH:mm')}">01.01.24 15:30</td>
+                            <td>
+                                <span th:text="${attempt.score} + '/' + ${attempt.maxScore}">5/10</span>
+                                <span class="d-inline d-sm-none small" th:text="' (' + ${#numbers.formatDecimal(attempt.percentage, 1, 1)} + '%)'">50%</span>
+                            </td>
+                            <td class="d-none d-lg-table-cell">
+                                <span class="badge" th:classappend="${attempt.completed} ? 'bg-success' : 'bg-warning'"
+                                      th:text="${attempt.status}">Завершен</span>
+                            </td>
+                            <td class="text-end">
+                                <a th:href="@{/creator/tests/{testId}/statistics/tester/{attemptId}(testId=${attempt.testId}, attemptId=${attempt.attemptId})}"
+                                   class="btn btn-sm btn-outline-dark">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(recentAttempts)}">
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                                Нет последних попыток
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Футер -->
-<footer class="mt-5 py-4 bg-light border-top">
-    <div class="container-fluid">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <h6 class="mb-2">
-                    <i class="bi bi-speedometer2 text-primary me-2"></i>Assess Pro
-                </h6>
-                <p class="text-muted small mb-0">
-                    Система для создания и прохождения тестов<br>
-                    © 2024 Все права защищены | Версия 1.0.0
-                </p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <p class="text-muted small mb-1">
-                    <i class="bi bi-server me-1"></i>Статус: <span class="text-success">● Онлайн</span>
-                </p>
-                <p class="text-muted small mb-0">
-                    <i class="bi bi-clock me-1"></i>Время работы:
-                    <span th:text="${#temporals.format(#temporals.createNow(), 'dd.MM.yyyy HH:mm')}"></span>
-                </p>
-            </div>
-        </div>
-    </div>
-</footer>
+<div th:replace="~{fragments/footer}"></div>
 
-<!-- Модальное окно для быстрого просмотра -->
-<div class="modal fade" id="attemptDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-info-circle me-2"></i>Детали попытки
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="attemptDetailsContent">
-                <!-- Контент загружается через JavaScript -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Закрыть
-                </button>
-                <a id="fullDetailsLink" class="btn btn-primary" href="#">
-                    <i class="bi bi-eye me-1"></i>Подробнее
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-
-    // Обновление времени в реальном времени
-    function updateTime() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-        document.getElementById('liveTime').textContent = timeString;
-        document.getElementById('currentTime').textContent = timeString.substring(0, 5);
-    }
-
-    // Инициализация при загрузке
-    document.addEventListener('DOMContentLoaded', function() {
-        // Запуск обновления времени
-        updateTime();
-        setInterval(updateTime, 1000);
-
-        // Инициализация tooltips
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        // Добавление анимации при наведении на карточки
-        const statCards = document.querySelectorAll('.stat-card');
-        statCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-5px)';
-            });
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
-    });
-
-    // Функция для просмотра деталей попытки
-    function showAttemptDetails(attemptId) {
-        const modal = new bootstrap.Modal(document.getElementById('attemptDetailsModal'));
-
-        // Показываем загрузку
-        document.getElementById('attemptDetailsContent').innerHTML = `
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Загрузка...</span>
-                </div>
-                <p class="mt-3 text-muted">Загрузка данных о попытке...</p>
-            </div>
-        `;
-
-        modal.show();
-
-        // В реальном приложении здесь был бы AJAX запрос
-        // Для демонстрации покажем фиктивные данные
-        setTimeout(function() {
-            document.getElementById('attemptDetailsContent').innerHTML = `
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Детальная информация о попытке будет загружена при реализации API
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <h6>Информация о попытке ID: ${attemptId}</h6>
-                        <p class="small text-muted mb-0">
-                            Для просмотра полной информации перейдите по кнопке "Подробнее"
-                        </p>
-                    </div>
-                </div>
-            `;
-
-            // Устанавливаем ссылку на полную информацию
-            document.getElementById('fullDetailsLink').href =
-                '/creator/tests/statistics/tester/' + attemptId;
-        }, 500);
-    }
-
-    // Анимация загрузки страницы
-    window.addEventListener('load', function() {
-        const elements = document.querySelectorAll('.fade-in');
-        elements.forEach((el, index) => {
-            setTimeout(() => {
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
-    });
-
-    // Сохранение настроек темы
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark-theme');
-            localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-        });
-
-        // Восстановление темы
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-theme');
-        }
-    }
-    /*]]>*/
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

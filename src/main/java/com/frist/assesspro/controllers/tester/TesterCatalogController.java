@@ -3,6 +3,10 @@ package com.frist.assesspro.controllers.tester;
 import com.frist.assesspro.dto.category.CategoryDTO;
 import com.frist.assesspro.dto.test.TestInfoDTO;
 import com.frist.assesspro.service.TestPassingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,13 +23,17 @@ import java.util.List;
 @RequestMapping("/tester/catalog")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Каталог",description = "API для тестеров")
 public class TesterCatalogController {
 
     private final TestPassingService testPassingService;
 
-    /**
-     * Каталог категорий
-     */
+    @Operation(summary = "Каталог категорий")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping
     public String catalogCategories(Model model) {
         log.info("Открытие каталога категорий");
@@ -37,9 +45,12 @@ public class TesterCatalogController {
     }
 
 
-    /**
-     * Тесты в категории
-     */
+    @Operation(summary = "Тесты в категории")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/category/{categoryId}")
     public String catalogTestsByCategory(
             @PathVariable Long categoryId,
@@ -70,6 +81,12 @@ public class TesterCatalogController {
         return "tester/test-catalog";
     }
 
+    @Operation(summary = "Все доступные тесты в каталоге")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/all-tests")
     public String allTestsCatalog(
             @RequestParam(defaultValue = "0") int page,

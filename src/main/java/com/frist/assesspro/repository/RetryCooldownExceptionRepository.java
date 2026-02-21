@@ -11,8 +11,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface RetryCooldownExceptionRepository extends JpaRepository<RetryCooldownException, Long> {
 
@@ -37,4 +39,8 @@ public interface RetryCooldownExceptionRepository extends JpaRepository<RetryCoo
     @Transactional
     @Query("DELETE FROM RetryCooldownException r WHERE r.test = :test AND r.user = :user")
     void deleteByTestAndUser(@Param("test") Test test, @Param("user") User user);
+
+    @Query("SELECT rce.user.id FROM RetryCooldownException rce " +
+            "WHERE rce.test.id = :testId")
+    Set<Long> findUserIdsWithExceptions(@Param("testId") Long testId);
 }

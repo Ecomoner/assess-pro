@@ -10,9 +10,9 @@ spring:
 
   # PostgreSQL Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5433/dev_postgres
+    url: jdbc:postgresql://localhost:5433/dev_postgres?currentSchema=assess_pro_db
     username: postgres
-    password: postgres  # Замените на ваш пароль
+    password: postgres
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 30000
@@ -21,34 +21,25 @@ spring:
 
   # JPA Configuration
   jpa:
+    database: POSTGRESQL
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+
     hibernate:
       ddl-auto: update
-    show-sql: false
     properties:
       hibernate:
-        # Основные настройки производительности
-        default_batch_fetch_size: 20
+        format_sql: true
+        use_sql_comments: true
+        default_batch_fetch_size: 20  # Оптимизация N+1 проблем
         jdbc:
-          batch_size: 20
-          fetch_size: 100
-        order_updates: true
-        order_inserts: true
+          batch_size: 15  # Пакетная вставка
+          order_inserts: true  # Оптимизация вставок
+          order_updates: true  # Оптимизация обновлений
+        default_schema: assess_pro_db
 
-        # Оптимизация запросов
-        query:
-          in_clause_parameter_padding: true
-          plan_cache_max_size: 2048
+    open-in-view: false  # Отключить Open Session in View (лучше для производительности)
 
-        # Кэширование
-        cache:
-          use_second_level_cache: false
-          use_query_cache: false
-
-        # Статистика (только для разработки)
-        generate_statistics: false
-
-        # Форматирование SQL
-        format_sql: false
 
 
 
@@ -70,6 +61,9 @@ spring:
   sql:
     init:
       mode: never
+  devtools:
+    restart:
+      enabled: true
 
 # Server Configuration
 server:
@@ -86,3 +80,25 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: logs/assesspro.log
+
+# Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  packages-to-scan: com.frist.assesspro.controllers
+  show-actuator: true
+
+# Actuator и Prometheus
+management:
+  metrics:
+    # Включаем все основные метрики
+    use-global-registry: true
+  observations:
+    annotations:
+      enabled: true
+
+

@@ -15,7 +15,18 @@ public class TestTakingDTO {
     private Integer currentQuestionIndex = 0;
     private Integer totalQuestions;
 
+    // Новые поля для отслеживания прогресса
+    private Integer answeredQuestions = 0;
+    private Integer remainingQuestions = 0;
+
     public boolean hasTimeLimit() {
         return timeLimitMinutes != null && timeLimitMinutes > 0;
+    }
+
+    public Integer getProgressPercentage() {
+        if (totalQuestions == null || totalQuestions == 0) {
+            return 0;
+        }
+        return (answeredQuestions * 100) / totalQuestions;
     }
 }

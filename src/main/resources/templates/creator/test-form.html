@@ -1,80 +1,137 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${action == 'create' ? 'Создание теста' : 'Редактирование теста'}">Создание теста</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header(${action == 'create' ? 'Создание теста' : 'Редактирование теста'})}">
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" th:href="@{/home}">Assess Pro</a>
-        <div class="navbar-nav ms-auto">
-            <span class="navbar-text me-3">
-                Создатель: <strong sec:authentication="name"></strong>
-            </span>
-            <a th:href="@{/creator/tests}" class="nav-link">Мои тесты</a>
+<div th:replace="~{fragments/navigation}"></div>
+
+<div class="container py-3 py-md-4">
+    <div class="row">
+        <div class="col-12 mb-3 mb-md-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb flex-wrap">
+                    <li class="breadcrumb-item"><a th:href="@{/creator/tests}" class="text-decoration-none">Мои тесты</a></li>
+                    <li class="breadcrumb-item active" th:text="${action == 'create' ? 'Создание теста' : 'Редактирование теста'}">Создание</li>
+                </ol>
+            </nav>
+
+            <h1 class="h3 h2-md mb-0" th:text="${action == 'create' ? 'Создание нового теста' : 'Редактирование теста'}">Создание теста</h1>
         </div>
     </div>
-</nav>
 
-<div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0" th:text="${action == 'create' ? 'Создание нового теста' : 'Редактирование теста'}">
-                        Создание нового теста
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <form th:action="${action == 'create' ? '/creator/tests/new' : '/creator/tests/update/' + test?.id}"
-                          th:object="${test}" method="post">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow border-0">
+                <div class="card-body p-3 p-md-4">
+                    <!-- Сообщения об ошибках -->
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span class="small" th:text="${errorMessage}">Ошибка</span>
+                        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+                    </div>
 
-                        <!-- Название теста -->
+                    <form th:action="${formAction}"
+                          th:object="${test}"
+                          method="post"
+                          class="needs-validation"
+                          novalidate>
+
+                        <input type="hidden" th:if="${action == 'edit'}" th:field="*{id}">
+
                         <div class="mb-3">
-                            <label for="title" class="form-label">Название теста *</label>
-                            <input type="text" class="form-control" id="title"
-                                   th:field="*{title}" required>
-                            <div class="form-text">Краткое и понятное название</div>
+                            <label for="title" class="form-label fw-semibold small">Название теста *</label>
+                            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'"
+                                   id="title" th:field="*{title}" placeholder="Например: Основы Java" required>
+                            <div class="invalid-feedback small" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Ошибка</div>
                         </div>
 
-                        <!-- Описание -->
                         <div class="mb-3">
-                            <label for="description" class="form-label">Описание</label>
-                            <textarea class="form-control" id="description"
-                                      th:field="*{description}" rows="3"></textarea>
-                            <div class="form-text">Опишите, о чем этот тест</div>
+                            <label for="description" class="form-label fw-semibold small">Описание</label>
+                            <textarea class="form-control" id="description" th:field="*{description}"
+                                      rows="3" placeholder="Краткое описание теста"></textarea>
                         </div>
 
-                        <!-- Лимит времени -->
-                        <div class="mb-3">
-                            <label for="timeLimitMinutes" class="form-label">
-                                <i class="bi bi-clock me-1"></i>Лимит времени (минут)
-                            </label>
-                            <input type="number"
-                                   class="form-control"
-                                   id="timeLimitMinutes"
-                                   name="timeLimitMinutes"
-                                   th:field="*{timeLimitMinutes}"
-                                   min="0"
-                                   max="300"
-                                   step="5"
-                                   placeholder="0 = без ограничения">
-                            <div class="form-text">
-                                Установите 0 для теста без ограничения времени. Максимум 300 минут (5 часов).
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6 mb-2 mb-md-0">
+                                <label for="categoryId" class="form-label fw-semibold small">Категория</label>
+                                <select class="form-select" id="categoryId" th:field="*{categoryId}">
+                                    <option value="">Без категории</option>
+                                    <option th:each="cat : ${categories}"
+                                            th:value="${cat.id}"
+                                            th:text="${cat.name}"
+                                            th:selected="${test.categoryId == cat.id}">
+                                        Категория
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="timeLimitMinutes" class="form-label fw-semibold small">Таймер (минуты)</label>
+                                <input type="number" class="form-control" id="timeLimitMinutes" th:field="*{timeLimitMinutes}"
+                                       min="0" value="0">
+                                <small class="text-muted d-block mt-1 small">0 = без ограничения</small>
                             </div>
                         </div>
 
-                        <hr class="my-4">
-                        <h5>Вопросы</h5>
-                        <p class="text-muted">Вопросы можно будет добавить после создания теста</p>
+                        <div class="mb-3 mt-3">
+                            <label class="form-label fw-semibold small">Ограничение на повторное прохождение</label>
+                            <div class="card bg-light">
+                                <div class="card-body p-3">
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-6">
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="cooldownType"
+                                                       id="cooldownHours" value="hours"
+                                                       th:checked="${test.retryCooldownHours != null and test.retryCooldownHours > 0}">
+                                                <label class="form-check-label small" for="cooldownHours">
+                                                    Часы
+                                                </label>
+                                            </div>
+                                            <div class="ms-4 mb-2">
+                                                <input type="number" class="form-control form-control-sm" style="width: 100%; max-width: 120px;"
+                                                       th:field="*{retryCooldownHours}" min="1" max="336"
+                                                       placeholder="Часы" th:disabled="${test.retryCooldownHours == null or test.retryCooldownHours == 0}">
+                                            </div>
+                                        </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a th:href="@{/creator/tests}" class="btn btn-secondary">Отмена</a>
-                            <button type="submit" class="btn btn-primary">
-                                <span th:text="${action == 'create' ? 'Создать тест' : 'Сохранить изменения'}"></span>
+                                        <div class="col-12 col-md-6">
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="cooldownType"
+                                                       id="cooldownDays" value="days"
+                                                       th:checked="${test.retryCooldownDays != null and test.retryCooldownDays > 0}">
+                                                <label class="form-check-label small" for="cooldownDays">
+                                                    Дни (макс. 14)
+                                                </label>
+                                            </div>
+                                            <div class="ms-4">
+                                                <input type="number" class="form-control form-control-sm" style="width: 100%; max-width: 120px;"
+                                                       th:field="*{retryCooldownDays}" min="1" max="14"
+                                                       placeholder="Дни" th:disabled="${test.retryCooldownDays == null or test.retryCooldownDays == 0}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-2 small">Оставьте пустым, если ограничений нет</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div th:if="${action == 'edit'}" class="mb-3">
+                            <div class="alert alert-info py-2">
+                                <i class="bi bi-info-circle me-2 small"></i>
+                                <span class="small">Статус: <strong th:text="${test.published} ? 'Опубликован' : 'Черновик'"></strong></span>
+                                <span th:if="${test.published}" class="text-muted ms-2 small">(нельзя изменить)</span>
+                            </div>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <button type="submit" class="btn btn-dark px-4 py-2 w-100 w-sm-auto">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <span th:text="${action == 'create'} ? 'Создать тест' : 'Сохранить'">Сохранить</span>
                             </button>
+                            <a th:href="@{/creator/tests}" class="btn btn-outline-secondary px-4 py-2 w-100 w-sm-auto">
+                                <i class="bi bi-x-circle me-2"></i>Отмена
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -83,6 +140,31 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<div th:replace="~{fragments/footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const hoursRadio = document.getElementById('cooldownHours');
+        const daysRadio = document.getElementById('cooldownDays');
+        const hoursInput = document.querySelector('[name="retryCooldownHours"]');
+        const daysInput = document.querySelector('[name="retryCooldownDays"]');
+
+        function toggleInputs() {
+            hoursInput.disabled = !hoursRadio.checked;
+            daysInput.disabled = !daysRadio.checked;
+
+            if (hoursRadio.checked) {
+                daysInput.value = '';
+            } else if (daysRadio.checked) {
+                hoursInput.value = '';
+            }
+        }
+
+        if (hoursRadio) hoursRadio.addEventListener('change', toggleInputs);
+        if (daysRadio) daysRadio.addEventListener('change', toggleInputs);
+        toggleInputs();
+    });
+</script>
 </body>
 </html>

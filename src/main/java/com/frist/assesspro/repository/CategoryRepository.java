@@ -27,9 +27,6 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     Page<Category> findByCreatedBy(User createdBy, Pageable pageable);
 
     @EntityGraph(value = "Category.withCreatorAndTests", type = EntityGraph.EntityGraphType.LOAD)
-    Optional<Category> findByIdAndCreatedBy(Long id, User createdBy);
-
-    @EntityGraph(value = "Category.withCreatorAndTests", type = EntityGraph.EntityGraphType.LOAD)
     List<Category> findByIsActiveTrue();
 
     boolean existsByName(String name);
@@ -47,10 +44,10 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             "SUM(CASE WHEN t.isPublished = true THEN 1 ELSE 0 END)) " +
             "FROM Category c " +
             "LEFT JOIN c.tests t " +
-            "WHERE c.createdBy = :creator AND c.isActive = true " +  // ← ДОБАВЛЕНО!
+            "WHERE c.isActive = true " +
             "GROUP BY c.id, c.name, c.description, c.createdAt " +
             "ORDER BY c.name")
-    Page<CategoryDTO> findCategoryDTOsByCreator(@Param("creator") User creator, Pageable pageable);
+    Page<CategoryDTO> findAllActiveCategoryDTOs(Pageable pageable);
 
     @Query("SELECT new com.frist.assesspro.dto.category.CategoryDTO(" +
             "c.id, c.name, c.description, c.createdAt, COUNT(t.id), " +

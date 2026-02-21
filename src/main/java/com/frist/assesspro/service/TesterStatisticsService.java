@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +29,7 @@ public class TesterStatisticsService {
     private final UserAnswerRepository userAnswerRepository;
     private final TestRepository testRepository;
     private final UserRepository userRepository;
+    private final RetryCooldownExceptionRepository exceptionRepository;
 
     /**
      * 1. Получить список всех тестировщиков, проходивших тест
@@ -38,7 +40,7 @@ public class TesterStatisticsService {
     public Page<TesterAttemptDTO> getTestersByTest(Long testId,
                                                    String creatorUsername,
                                                    Pageable pageable) {
-        validateTestOwnership(testId, creatorUsername);
+        validateTestExists(testId,creatorUsername);
 
         Page<TestAttempt> attemptsPage = testAttemptRepository.findAttemptsByTestId(testId, pageable);
 
@@ -56,30 +58,30 @@ public class TesterStatisticsService {
         TesterAttemptDTO dto = new TesterAttemptDTO();
         dto.setAttemptId(attempt.getId());
         dto.setTesterUsername(attempt.getUser().getUsername());
+        dto.setTesterFullName(attempt.getUser().getFullName());
         dto.setStartTime(attempt.getStartTime());
         dto.setEndTime(attempt.getEndTime());
         dto.setScore(attempt.getTotalScore() != null ? attempt.getTotalScore() : 0);
 
-        // Добавляем testId
         if (attempt.getTest() != null) {
             dto.setTestId(attempt.getTest().getId());
+            dto.setTestTitle(attempt.getTest().getTitle());  // ← ДОБАВЛЕНО
         }
 
-        // Получаем количество вопросов из теста
         int questionCount = 0;
         if (attempt.getTest() != null && attempt.getTest().getQuestions() != null) {
             questionCount = attempt.getTest().getQuestions().size();
+            log.debug("convertToTesterAttemptDTO: attemptId={}, testId={}, questionCount={}",
+                    attempt.getId(), attempt.getTest().getId(), questionCount);
         }
         dto.setMaxScore(questionCount);
 
-        // Вычисляем процент
         if (questionCount > 0) {
             dto.setPercentage((double) dto.getScore() / questionCount * 100);
         } else {
             dto.setPercentage(0.0);
         }
 
-        // Вычисляем длительность
         dto.setDurationMinutes(calculateDurationMinutes(dto.getStartTime(), dto.getEndTime()));
 
         return dto;
@@ -103,11 +105,11 @@ public class TesterStatisticsService {
      * 2. Получить детальные ответы конкретного тестировщика
      */
     @Transactional(readOnly = true)
-    public TesterDetailedAnswersDTO getTesterDetailedAnswers(Long attemptId, String creatorUsername) {
+    public TesterDetailedAnswersDTO getTesterDetailedAnswers(Long attemptId,String creatorUsername) {
         TestAttempt attempt = testAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new RuntimeException("Попытка не найдена"));
 
-        validateTestOwnership(attempt.getTest().getId(), creatorUsername);
+        validateTestExists(attempt.getTest().getId(),creatorUsername);
 
         return buildTesterDetailedAnswersDTO(attempt);
     }
@@ -117,8 +119,8 @@ public class TesterStatisticsService {
      */
     @Transactional(readOnly = true)
     public List<TesterAttemptDTO> searchTestersByTestAndName(
-            Long testId, String creatorUsername, String testerName) {
-        validateTestOwnership(testId, creatorUsername);
+            Long testId,String creatorUsername, String testerName) {
+        validateTestExists(testId,creatorUsername);
 
         List<TestAttempt> attempts = testAttemptRepository.searchAttemptsByTestAndUsername(testId, testerName);
 
@@ -145,14 +147,45 @@ public class TesterStatisticsService {
      */
     @Transactional(readOnly = true)
     public TestSummaryDTO getTestSummary(Long testId, String creatorUsername) {
-        validateTestOwnership(testId, creatorUsername);
+        validateTestExists(testId, creatorUsername);
 
         Test test = testRepository.findById(testId)
                 .orElseThrow(() -> new RuntimeException("Тест не найден"));
 
         List<TestAttempt> attempts = testAttemptRepository.findByTestId(testId);
 
-        return calculateTestSummary(test, attempts);
+        long totalAttempts = attempts.size();
+        long uniqueTesters = attempts.stream()
+                .map(attempt -> attempt.getUser().getId())
+                .distinct()
+                .count();
+
+        List<TestAttempt> completedAttempts = attempts.stream()
+                .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.COMPLETED)
+                .collect(Collectors.toList());
+
+        double averageScore = completedAttempts.stream()
+                .mapToInt(a -> a.getTotalScore() != null ? a.getTotalScore() : 0)
+                .average()
+                .orElse(0.0);
+
+        double bestScore = completedAttempts.stream()
+                .mapToInt(a -> a.getTotalScore() != null ? a.getTotalScore() : 0)
+                .max()
+                .orElse(0);
+
+        int maxPossibleScore = test.getQuestions() != null ? test.getQuestions().size() : 0;
+        double averagePercentage = maxPossibleScore > 0 ? (averageScore / maxPossibleScore) * 100 : 0;
+        double bestPercentage = maxPossibleScore > 0 ? (bestScore / maxPossibleScore) * 100 : 0;
+
+        TestSummaryDTO summary = calculateTestSummary(test, attempts);
+
+        summary.setTotalAttempts(totalAttempts);
+        summary.setUniqueTesters(uniqueTesters);
+        summary.setAverageScore(averagePercentage);
+        summary.setBestScore(bestPercentage);
+
+        return summary;
     }
 
     /**
@@ -166,7 +199,7 @@ public class TesterStatisticsService {
             LocalDateTime dateFrom,
             LocalDateTime dateTo) {
 
-        validateTestOwnership(testId, creatorUsername);
+        validateTestExists(testId, creatorUsername);
 
         // Получаем все попытки по тесту с фильтрацией по дате
         List<TestAttempt> allAttempts = getFilteredAttempts(testId, dateFrom, dateTo);
@@ -190,6 +223,7 @@ public class TesterStatisticsService {
                 aggregatedList.size()
         );
     }
+
     /**
      * 7. Получение детальной статистики конкретного тестировщика по всем его попыткам теста
      */
@@ -199,7 +233,7 @@ public class TesterStatisticsService {
             String testerUsername,
             String creatorUsername) {
 
-        validateTestOwnership(testId, creatorUsername);
+        validateTestExists(testId, creatorUsername);
 
         User tester = userRepository.findByUsername(testerUsername)
                 .orElseThrow(() -> new RuntimeException("Тестировщик не найден"));
@@ -333,7 +367,7 @@ public class TesterStatisticsService {
      */
     @Transactional(readOnly = true)
     public List<User> getDistinctTestersByTest(Long testId, String creatorUsername) {
-        validateTestOwnership(testId, creatorUsername);
+        validateTestExists(testId, creatorUsername);
 
         List<TestAttempt> attempts = testAttemptRepository.findByTestId(testId);
 
@@ -341,6 +375,119 @@ public class TesterStatisticsService {
                 .map(TestAttempt::getUser)
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Получить все попытки тестировщика
+     */
+    @Transactional(readOnly = true)
+    public List<TesterAttemptDTO> getAllAttemptsByTester(String testerUsername) {
+        User tester = userRepository.findByUsername(testerUsername)
+                .orElseThrow(() -> new RuntimeException("Тестировщик не найден"));
+
+        List<TestAttempt> attempts = testAttemptRepository.findByUserId(tester.getId());
+
+        return attempts.stream()
+                .map(this::convertToTesterAttemptDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TesterStatisticsDTO> getTestersStatistics(Long testId,
+                                                          String creatorUsername,
+                                                          String search,
+                                                          Pageable pageable) {
+        validateTestExists(testId, creatorUsername);
+
+        // 1. Получаем попытки с пользователями
+        Page<TestAttempt> attemptsPage;
+        if (search != null && !search.trim().isEmpty()) {
+            attemptsPage = testAttemptRepository.searchByTestIdWithUser(testId, search.trim(), pageable);
+        } else {
+            attemptsPage = testAttemptRepository.findByTestIdWithUser(testId, pageable);
+        }
+
+        if (attemptsPage.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // 2. Получаем все исключения для этих пользователей одним запросом
+        Set<Long> userIdsWithExceptions = exceptionRepository.findUserIdsWithExceptions(testId);
+
+        // 3. Преобразуем в DTO
+        List<TesterStatisticsDTO> dtos = attemptsPage.getContent().stream()
+                .map(attempt -> convertToTesterStatisticsDTO(attempt, userIdsWithExceptions))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, pageable, attemptsPage.getTotalElements());
+    }
+
+    private TesterStatisticsDTO convertToTesterStatisticsDTO(TestAttempt attempt, Set<Long> userIdsWithExceptions) {
+        TesterStatisticsDTO dto = new TesterStatisticsDTO();
+
+        // Основные данные
+        dto.setAttemptId(attempt.getId());
+        dto.setTestId(attempt.getTest().getId());
+        dto.setTestTitle(attempt.getTest().getTitle());
+        dto.setStartTime(attempt.getStartTime());
+        dto.setEndTime(attempt.getEndTime());
+        dto.setScore(attempt.getTotalScore() != null ? attempt.getTotalScore() : 0);
+
+        // Данные пользователя
+        User user = attempt.getUser();
+        dto.setTesterUsername(user.getUsername());
+        dto.setTesterFullName(user.getFullName());
+        dto.setProfileComplete(user.isProfileComplete());
+
+        // Максимальный балл (количество вопросов)
+        int maxScore = attempt.getTest().getQuestions() != null ?
+                attempt.getTest().getQuestions().size() : 0;
+        dto.setMaxScore(maxScore);
+
+        // Процент
+        if (maxScore > 0) {
+            dto.setPercentage((double) dto.getScore() / maxScore * 100);
+        } else {
+            dto.setPercentage(0.0);
+        }
+
+        // Длительность
+        if (attempt.getStartTime() != null && attempt.getEndTime() != null) {
+            dto.setDurationMinutes(Duration.between(attempt.getStartTime(), attempt.getEndTime()).toMinutes());
+        } else {
+            dto.setDurationMinutes(0L);
+        }
+
+        // Статус ограничений
+        dto.setCooldownStatus(determineCooldownStatus(attempt, userIdsWithExceptions));
+
+        return dto;
+    }
+
+    private String determineCooldownStatus(TestAttempt attempt, Set<Long> userIdsWithExceptions) {
+        Long userId = attempt.getUser().getId();
+
+        // Проверяем исключение
+        if (userIdsWithExceptions.contains(userId)) {
+            return "Исключение";
+        }
+
+        // Проверяем ограничения
+        Test test = attempt.getTest();
+        if (test.hasRetryCooldown()) {
+            // Проверяем, есть ли завершенные попытки
+            long completedAttempts = testAttemptRepository.countByTestIdAndUserIdAndStatus(
+                    test.getId(),
+                    userId,
+                    TestAttempt.AttemptStatus.COMPLETED
+            );
+
+            if (completedAttempts > 0) {
+                return "Ограничение";
+            }
+        }
+
+        return "Доступен";
     }
 
 
@@ -463,20 +610,17 @@ public class TesterStatisticsService {
         return summary;
     }
 
-    private void validateTestOwnership(Long testId, String creatorUsername) {
-        Test test = testRepository.findById(testId)
-                .orElseThrow(() -> new RuntimeException("Тест не найден"));
-
-        if (!test.getCreatedBy().getUsername().equals(creatorUsername)) {
-            throw new RuntimeException("Нет прав доступа к этому тесту");
+    private void validateTestExists(Long testId, String creatorUsername) {
+        if (!testRepository.existsById(testId)) {
+            throw new RuntimeException("Тест не найден");
         }
     }
 
     /**
-     * Подсчет уникальных тестировщиков для создателя
+     * Подсчет уникальных тестировщиков
      */
     @Transactional(readOnly = true)
-    public long getTotalTestersForCreator(String creatorUsername) {
-        return testAttemptRepository.countDistinctTestersByCreator(creatorUsername);
+    public long getTotalTesters() {
+        return userRepository.countAllUsers();
     }
 }

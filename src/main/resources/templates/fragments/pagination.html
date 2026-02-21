@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Компонент пагинации -->
+<div th:fragment="pagination(currentPage, totalPages, pageSize, baseUrl)"
+     th:if="${totalPages > 1}"
+     class="d-flex flex-column flex-sm-row justify-content-center align-items-center mt-3 gap-2">
+
+    <!-- Информация на мобильных -->
+    <div class="text-muted small d-block d-sm-none mb-2">
+        Страница <span th:text="${currentPage + 1}"></span> из <span th:text="${totalPages}"></span>
+    </div>
+
+    <nav aria-label="Пагинация">
+        <ul class="pagination pagination-sm flex-wrap justify-content-center mb-0">
+            <!-- Предыдущая -->
+            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                <a class="page-link" th:href="@{${baseUrl}(page=${currentPage - 1}, size=${pageSize})}">
+                    <i class="bi bi-chevron-left"></i>
+                    <span class="d-none d-sm-inline ms-1">Назад</span>
+                </a>
+            </li>
+
+            <!-- Страницы - показываем меньше на мобильных -->
+            <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                <li class="page-item d-none d-sm-block" th:if="${i == currentPage or (i >= currentPage - 2 and i <= currentPage + 2)}"
+                    th:classappend="${i == currentPage} ? 'active'">
+                    <a class="page-link" th:href="@{${baseUrl}(page=${i}, size=${pageSize})}" th:text="${i + 1}">1</a>
+                </li>
+                <!-- На мобильных показываем только текущую и соседние -->
+                <li class="page-item d-sm-none" th:if="${i == currentPage or i == currentPage - 1 or i == currentPage + 1}"
+                    th:classappend="${i == currentPage} ? 'active'">
+                    <a class="page-link" th:href="@{${baseUrl}(page=${i}, size=${pageSize})}" th:text="${i + 1}">1</a>
+                </li>
+            </th:block>
+
+            <!-- Следующая -->
+            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                <a class="page-link" th:href="@{${baseUrl}(page=${currentPage + 1}, size=${pageSize})}">
+                    <span class="d-none d-sm-inline me-1">Вперед</span>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+</body>
+</html>

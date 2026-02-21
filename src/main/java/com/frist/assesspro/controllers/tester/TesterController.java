@@ -3,10 +3,19 @@ package com.frist.assesspro.controllers.tester;
 import com.frist.assesspro.dto.*;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.TestAttempt;
+import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.TestAttemptRepository;
 import com.frist.assesspro.service.DashboardService;
 import com.frist.assesspro.service.TestPassingService;
+import com.frist.assesspro.service.UserService;
+import com.frist.assesspro.service.metrics.MetricsService;
 import com.frist.assesspro.util.TestConstants;
+import io.micrometer.core.instrument.Timer;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -28,15 +38,26 @@ import java.util.stream.Collectors;
 @RequestMapping("/tester")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Тестер",description = "API для тестеров")
 public class TesterController {
 
     private final TestPassingService testPassingService;
     private final DashboardService dashboardService;
     private final TestAttemptRepository testAttemptRepository;
+    private final UserService userService;
+    private final MetricsService metricsService;
 
-    /**
-     * Каталог доступных тестов
-     */
+    @ModelAttribute("currentUri")
+    public String getCurrentUri(HttpServletRequest request) {
+        return request.getRequestURI();
+    }
+
+    @Operation(summary = "Каталог доступных тестов")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/tests")
     public String testCatalog(
             @RequestParam(defaultValue = "0") int page,
@@ -65,9 +86,12 @@ public class TesterController {
         return "tester/test-catalog";
     }
 
-    /**
-     * 🔥 НОВОЕ: Быстрый поиск для AJAX
-     */
+    @Operation(summary = "Быстрый поиск")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/tests/search/quick")
     @ResponseBody
     public List<TestInfoDTO> quickSearch(
@@ -77,16 +101,22 @@ public class TesterController {
         return testPassingService.quickSearchTests(term, limit);
     }
 
-    /**
-     * Начало прохождения теста
-     */
+    @Operation(summary = "Начало прохождения теста")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/test/{testId}/start")
     public String startTest(
             @PathVariable Long testId,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
 
+        Timer.Sample sample = metricsService.startTimer();
         try {
+            metricsService.incrementTestsStarted();
+            metricsService.incrementActiveUsers();
             TestTakingDTO testTakingDTO = testPassingService.getTestForTaking(testId, userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Тест не найден или недоступен"));
 
@@ -101,10 +131,14 @@ public class TesterController {
         }
     }
 
-    /**
-     * Страница прохождения теста
-     */
+    @Operation(summary = "Страница прохождения теста")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/attempt/{attemptId}")
+    @Transactional(readOnly = true)
     public String takeTest(
             @PathVariable Long attemptId,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -144,9 +178,12 @@ public class TesterController {
         }
     }
 
-    /**
-     * Обработка ответа на вопрос (AJAX)
-     */
+    @Operation(summary = "Обработка ответа")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/attempt/{attemptId}/answer")
     @ResponseBody
     public String saveAnswer(
@@ -162,16 +199,24 @@ public class TesterController {
         try {
             testPassingDTO.setAttemptId(attemptId);
             testPassingService.saveAnswer(testPassingDTO, userDetails.getUsername());
-            return "{\"status\": \"success\", \"message\": \"Ответ сохранен\"}";
+
+            // Проверяем, не завершен ли тест после сохранения
+            TestAttempt attempt = testAttemptRepository.findById(attemptId).orElse(null);
+            boolean isCompleted = attempt != null && attempt.getStatus() == TestAttempt.AttemptStatus.COMPLETED;
+
+            return String.format("{\"status\": \"success\", \"message\": \"Ответ сохранен\", \"completed\": %b}", isCompleted);
         } catch (Exception e) {
             log.error("Ошибка при сохранении ответа", e);
             return "{\"status\": \"error\", \"message\": \"" + e.getMessage() + "\"}";
         }
     }
 
-    /**
-     * Завершение теста
-     */
+    @Operation(summary = "Завершение теста")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/attempt/{attemptId}/finish")
     public String finishTest(
             @PathVariable Long attemptId,
@@ -180,7 +225,8 @@ public class TesterController {
 
         try {
             testPassingService.finishTestAndGetResults(attemptId, userDetails.getUsername());
-
+            metricsService.incrementTestsCompleted();
+            metricsService.decrementActiveUsers();
             redirectAttributes.addFlashAttribute("successMessage",
                     "Тест успешно завершен!");
             return "redirect:/tester/attempt/" + attemptId + "/results";
@@ -193,9 +239,12 @@ public class TesterController {
         }
     }
 
-    /**
-     * Результаты теста
-     */
+    @Operation(summary = "Результаты теста")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/attempt/{attemptId}/results")
     public String testResults(
             @PathVariable Long attemptId,
@@ -216,7 +265,7 @@ public class TesterController {
             }
 
             model.addAttribute("results", results);
-            return "tester/test-results-simple";
+            return "tester/test-results";
 
         } catch (Exception e) {
             log.error("Ошибка при загрузке результатов", e);
@@ -225,9 +274,12 @@ public class TesterController {
         }
     }
 
-    /**
-     * История пройденных тестов
-     */
+    @Operation(summary = "История пройденых тестов")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/history")
     public String testHistory(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -296,9 +348,12 @@ public class TesterController {
         }
     }
 
-    /**
-     * Переход к следующему вопросу
-     */
+    @Operation(summary = "Переход к следующему вопросу")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/attempt/{attemptId}/question/{questionIndex}")
     public String nextQuestion(
             @PathVariable Long attemptId,
@@ -307,14 +362,18 @@ public class TesterController {
             Model model) {
 
         try {
-            TestResultsDTO results = testPassingService.getTestResults(attemptId, userDetails.getUsername());
-
-            TestTakingDTO testTakingDTO = testPassingService.getTestForTaking(results.getTestId(), userDetails.getUsername())
+            // Получаем текущее состояние теста
+            TestTakingDTO testTakingDTO = testPassingService.getTestForTakingByAttemptId(attemptId, userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Тест не найден"));
 
-            if (questionIndex >= 0 && questionIndex < testTakingDTO.getTotalQuestions()) {
+            // Проверяем, что индекс корректен
+            if (questionIndex >= 0 && questionIndex < testTakingDTO.getQuestions().size()) {
                 testTakingDTO.setCurrentQuestionIndex(questionIndex);
+            } else {
+                // Если индекс некорректен, устанавливаем последний доступный
+                testTakingDTO.setCurrentQuestionIndex(testTakingDTO.getQuestions().size() - 1);
             }
+
             model.addAttribute("testTakingDTO", testTakingDTO);
             return "tester/test-taking";
 
@@ -324,16 +383,22 @@ public class TesterController {
         }
     }
 
+    @Operation(summary = "Дашборд тестера")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('TESTER')")
     public String testerDashboard(Model model, @AuthenticationPrincipal UserDetails userDetails) {
         try {
             DashboardStatsDTO stats = dashboardService.getTesterStats(userDetails.getUsername());
+            User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            String firstName = user != null ? user.getFirstName() : userDetails.getUsername();
 
-            // ✅ ИСПОЛЬЗУЕМ НОВЫЙ МЕТОД
             List<TestInfoDTO> availableTests = testPassingService.getAllAvailableTestsDTO();
 
-            // Для дашборда берем только первые 3 теста
             List<TestInfoDTO> recommendedTests = availableTests.stream()
                     .limit(3)
                     .collect(Collectors.toList());
@@ -341,17 +406,18 @@ public class TesterController {
             List<TestHistoryDTO> history = testPassingService.getUserTestHistory(userDetails.getUsername());
 
             List<TestHistoryDTO> inProgressAttempts = history.stream()
-                    .filter(attempt -> TestConstants.STATUS_IN_PROGRESS.equals(attempt.getStatus()))
+                    .filter(attempt -> "IN_PROGRESS".equals(attempt.getStatusString()))
                     .collect(Collectors.toList());
 
             List<TestHistoryDTO> recentCompleted = history.stream()
-                    .filter(attempt -> TestConstants.STATUS_COMPLETED.equals(attempt.getStatus()))
+                    .filter(attempt -> "COMPLETED".equals(attempt.getStatusString()))
                     .limit(5)
                     .collect(Collectors.toList());
 
             model.addAttribute("inProgressAttempts", inProgressAttempts);
             model.addAttribute("recentCompleted", recentCompleted);
             model.addAttribute("stats", stats);
+            model.addAttribute("firstName", firstName);
             model.addAttribute("recommendedTests", recommendedTests);
             model.addAttribute("username", userDetails.getUsername());
             model.addAttribute("totalAvailableTests", availableTests.size());
@@ -366,7 +432,12 @@ public class TesterController {
         }
     }
 
-
+    @Operation(summary = "Последний пройденый тест")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/attempts/last-in-progress")
     @ResponseBody
     public TestHistoryDTO getLastInProgressAttempt(

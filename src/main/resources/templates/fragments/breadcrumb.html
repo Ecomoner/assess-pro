@@ -1,0 +1,10 @@
+<nav th:fragment="breadcrumb(items)" aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb flex-wrap">
+        <li th:each="item, stat : ${items}"
+            class="breadcrumb-item"
+            th:classappend="${stat.last} ? 'active' : ''">
+            <a th:if="${!stat.last and item.url}" th:href="@{${item.url}}" class="text-decoration-none" th:text="${item.name}">Ссылка</a>
+            <span th:if="${stat.last}" th:text="${item.name}">Текущая</span>
+        </li>
+    </ol>
+</nav>

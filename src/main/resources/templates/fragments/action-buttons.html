@@ -1,0 +1,11 @@
+<div th:fragment="actionButtons(buttons)" class="action-buttons">
+    <a th:each="btn : ${buttons}"
+       th:if="${btn.condition != null ? btn.condition : true}"
+       th:href="@{${btn.url}}"
+       class="btn btn-sm w-100 w-md-auto mb-1 mb-md-0"
+       th:classappend="${btn.class} ?: 'btn-outline-dark'"
+       th:title="${btn.title}">
+        <i th:classappend="${btn.icon}"></i>
+        <span th:if="${btn.text}" class="ms-1 d-inline d-md-none">${btn.text}</span>
+    </a>
+</div>

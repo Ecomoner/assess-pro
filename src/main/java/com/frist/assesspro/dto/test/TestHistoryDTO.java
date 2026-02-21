@@ -20,6 +20,21 @@ public class TestHistoryDTO {
     private TestAttempt.AttemptStatus status;
     private Integer totalScore;
     private Long maxPossibleScore;
+    private Integer progressPercentage;
+
+    public TestHistoryDTO(Long attemptId, Long testId, String testTitle,
+                          LocalDateTime startTime, LocalDateTime endTime,
+                          TestAttempt.AttemptStatus status, Integer totalScore,
+                          Long maxPossibleScore) {
+        this.attemptId = attemptId;
+        this.testId = testId;
+        this.testTitle = testTitle;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.status = status;
+        this.totalScore = totalScore;
+        this.maxPossibleScore = maxPossibleScore;
+    }
 
     public Integer getMaxPossibleScoreInteger() {
         return maxPossibleScore != null ? maxPossibleScore.intValue() : 0;

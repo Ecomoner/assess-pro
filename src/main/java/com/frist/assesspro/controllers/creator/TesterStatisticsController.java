@@ -1,14 +1,30 @@
 package com.frist.assesspro.controllers.creator;
 
 
-import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
-import com.frist.assesspro.dto.statistics.TesterDetailedAnswersDTO;
+import com.frist.assesspro.dto.statistics.*;
 import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.service.CooldownService;
 import com.frist.assesspro.service.TestService;
 import com.frist.assesspro.service.TesterStatisticsService;
 import com.frist.assesspro.service.UserService;
+import com.itextpdf.io.font.FontProgram;
+import com.itextpdf.io.font.FontProgramFactory;
+import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,14 +40,23 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.mysql.cj.util.TimeUtil.DATE_FORMATTER;
 
 @Controller
 @RequestMapping("/creator/tests/{testId}/statistics")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Статистика тестера",description = "API для создателей")
 public class TesterStatisticsController {
 
     private final TesterStatisticsService testerStatisticsService;
@@ -39,10 +64,12 @@ public class TesterStatisticsController {
     private final CooldownService cooldownService;
     private final UserService userService;
 
-    /**
-     * Главная страница статистики теста - список тестировщиков
-     */
-
+    @Operation(summary = "Список тестировщиков для статистики")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/testers")
     public String getTestersList(
             @PathVariable Long testId,
@@ -53,45 +80,13 @@ public class TesterStatisticsController {
             Model model) {
 
         try {
-            Test test = testService.getTestById(testId, userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Тест не найден"));
+            Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
 
-            Page<TesterAttemptDTO> testersPage;
+            TestSummaryDTO testSummary = testerStatisticsService.getTestSummary(testId, userDetails.getUsername());
 
-            if (search != null && !search.trim().isEmpty()) {
-                List<TesterAttemptDTO> testers = testerStatisticsService
-                        .searchTestersByTestAndName(testId, userDetails.getUsername(), search);
-                testersPage = new PageImpl<>(
-                        testers, PageRequest.of(page, size), testers.size());
-            } else {
-                Pageable pageable = PageRequest.of(page, size);
-                testersPage = testerStatisticsService.getTestersByTest(
-                        testId, userDetails.getUsername(), pageable);
-            }
-
-            // 🔥 ИСПРАВЛЕНО: Используем UserService для получения информации о тестировщиках
-            Map<String, String> cooldownStatuses = new HashMap<>();
-            Map<String, String> fullNames = new HashMap<>();
-            Map<String, Boolean> profileCompletion = new HashMap<>();
-
-            for (TesterAttemptDTO tester : testersPage.getContent()) {
-                try {
-                    User testerUser = userService.findByUsername(tester.getTesterUsername()).orElse(null);
-                    if (testerUser != null) {
-                        // Статус ограничений
-                        String status = cooldownService.getCooldownStatus(test, testerUser);
-                        cooldownStatuses.put(tester.getTesterUsername(), status);
-
-                        // Полное имя
-                        fullNames.put(tester.getTesterUsername(), testerUser.getFullName());
-
-                        // Статус профиля
-                        profileCompletion.put(tester.getTesterUsername(), testerUser.isProfileComplete());
-                    }
-                } catch (Exception e) {
-                    log.warn("Не удалось получить данные для пользователя {}", tester.getTesterUsername(), e);
-                }
-            }
+            Pageable pageable = PageRequest.of(page, size);
+            Page<TesterStatisticsDTO> testersPage = testerStatisticsService.getTestersStatistics(
+                    testId, userDetails.getUsername(), search, pageable);
 
             model.addAttribute("test", test);
             model.addAttribute("testers", testersPage.getContent());
@@ -99,10 +94,7 @@ public class TesterStatisticsController {
             model.addAttribute("totalPages", testersPage.getTotalPages());
             model.addAttribute("totalItems", testersPage.getTotalElements());
             model.addAttribute("search", search);
-            model.addAttribute("cooldownStatuses", cooldownStatuses);
-            model.addAttribute("fullNames", fullNames);
-            model.addAttribute("profileCompletion", profileCompletion);
-            model.addAttribute("hasCooldown", test.hasRetryCooldown());
+            model.addAttribute("testSummary", testSummary);
 
             return "creator/tester-statistics-main";
 
@@ -113,9 +105,12 @@ public class TesterStatisticsController {
         }
     }
 
-    /**
-     * Детальная статистика конкретного тестировщика
-     */
+    @Operation(summary = "Детальная статистика тестировщика")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/tester/{attemptId}")
     public String getTesterDetailedAnswers(
             @PathVariable Long testId,
@@ -127,8 +122,7 @@ public class TesterStatisticsController {
             TesterDetailedAnswersDTO detailedAnswers = testerStatisticsService
                     .getTesterDetailedAnswers(attemptId, userDetails.getUsername());
 
-            Test test = testService.getTestById(testId, userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Тест не найден"));
+            Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
 
             User tester = userService.findByUsername(detailedAnswers.getTesterUsername()).orElse(null);
             if (tester != null) {
@@ -147,9 +141,13 @@ public class TesterStatisticsController {
         }
     }
 
-    /**
-     * Экспорт результатов тестировщика в PDF
-     */
+
+    @Operation(summary = "Экспорт результатов тестировщика в PDF")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/tester/{attemptId}/export")
     public ResponseEntity<byte[]> exportTesterResults(
             @PathVariable Long testId,
@@ -160,14 +158,20 @@ public class TesterStatisticsController {
             TesterDetailedAnswersDTO detailedAnswers = testerStatisticsService
                     .getTesterDetailedAnswers(attemptId, userDetails.getUsername());
 
-            // Генерация простого PDF
-            byte[] pdfContent = generateSimplePdfReport(detailedAnswers);
+            // Получаем полное имя тестировщика
+            User tester = userService.findByUsername(detailedAnswers.getTesterUsername()).orElse(null);
+            String testerFullName = tester != null ? tester.getFullName() : detailedAnswers.getTesterUsername();
+
+            // Генерация PDF с использованием iText
+            byte[] pdfContent = generateTesterAttemptPdf(detailedAnswers, testerFullName);
+
+            String filename = String.format("attempt_%d_%s.pdf",
+                    attemptId,
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"results_" +
-                                    detailedAnswers.getTesterUsername() + "_" +
-                                    attemptId + ".pdf\"")
+                            "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.APPLICATION_PDF)
                     .contentLength(pdfContent.length)
                     .body(pdfContent);
@@ -178,9 +182,12 @@ public class TesterStatisticsController {
         }
     }
 
-    /**
-     * Быстрый просмотр результатов (AJAX)
-     */
+    @Operation(summary = "Быстрый просмотр результатов")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/tester/{attemptId}/quick-view")
     @ResponseBody
     public TesterDetailedAnswersDTO getQuickView(
@@ -192,45 +199,196 @@ public class TesterStatisticsController {
                 attemptId, userDetails.getUsername());
     }
 
-    private byte[] generateSimplePdfReport(TesterDetailedAnswersDTO detailedAnswers) {
-        // Заглушка для генерации PDF
-        // В реальной реализации используйте iText, Apache PDFBox или другой PDF библиотеку
-        String reportContent = buildReportContent(detailedAnswers);
-        return reportContent.getBytes();
+    /**
+     * Генерация PDF для конкретной попытки тестировщика
+     */
+    private byte[] generateTesterAttemptPdf(TesterDetailedAnswersDTO detailedAnswers, String testerFullName) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+
+            // Загружаем шрифт с поддержкой кириллицы
+            PdfFont font = loadFont();
+            document.setFont(font);
+
+            // Заголовок
+            document.add(new Paragraph("Результаты прохождения теста")
+                    .setFontSize(20)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER));
+
+            document.add(new Paragraph(""));
+
+            // Информация о тестировщике (теперь с полным именем)
+            document.add(createTesterInfoTable(detailedAnswers, testerFullName, font));
+            document.add(new Paragraph(""));
+
+            // Сводка результатов
+            document.add(createSummaryTable(detailedAnswers.getSummary(), font));
+            document.add(new Paragraph(""));
+
+            // Детальные ответы
+            document.add(createDetailedAnswersTable(detailedAnswers, font));
+
+            // Дата генерации
+            document.add(new Paragraph(""));
+            document.add(new Paragraph("Отчет сгенерирован: " +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")))
+                    .setFontSize(8)
+                    .setTextAlignment(TextAlignment.RIGHT));
+
+            document.close();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Ошибка при генерации PDF", e);
+            throw new RuntimeException("Ошибка генерации PDF", e);
+        }
     }
 
-    private String buildReportContent(TesterDetailedAnswersDTO detailedAnswers) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Отчет по результатам тестирования\n");
-        sb.append("===================================\n\n");
-        sb.append("Тестировщик: ").append(detailedAnswers.getTesterUsername()).append("\n");
-        sb.append("Дата прохождения: ").append(detailedAnswers.getStartTime()).append("\n");
-        sb.append("Результат: ").append(detailedAnswers.getSummary().getCorrectAnswers())
-                .append("/").append(detailedAnswers.getSummary().getTotalQuestions())
-                .append(" (").append(String.format("%.1f", detailedAnswers.getSummary().getPercentage()))
-                .append("%)\n\n");
+    /**
+     * Создание таблицы с информацией о тестировщике
+     */
+    private Table createTesterInfoTable(TesterDetailedAnswersDTO dto, String testerFullName, PdfFont font) {
+        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
+                .setWidth(UnitValue.createPercentValue(100));
 
-        sb.append("Детальные ответы:\n");
-        sb.append("=================\n");
+        table.addCell(createCell("Тестировщик:", true, font));
+        table.addCell(createCell(testerFullName, false, font));  // ← теперь полное имя
 
-        for (int i = 0; i < detailedAnswers.getQuestionAnswers().size(); i++) {
-            var answer = detailedAnswers.getQuestionAnswers().get(i);
-            sb.append("\n").append(i + 1).append(". ").append(answer.getQuestionText()).append("\n");
+        table.addCell(createCell("Логин:", true, font));
+        table.addCell(createCell(dto.getTesterUsername(), false, font));
 
-            if (answer.getChosenAnswer() != null) {
-                sb.append("   Выбранный ответ: ").append(answer.getChosenAnswer().getAnswerText());
-                sb.append(" [").append(answer.getIsCorrect() ? "✓" : "✗").append("]\n");
-            } else {
-                sb.append("   Ответ не выбран\n");
+        table.addCell(createCell("Дата начала:", true, font));
+        table.addCell(createCell(dto.getStartTime().format(DATE_FORMATTER), false, font));
+
+        table.addCell(createCell("Дата завершения:", true, font));
+        String endTimeStr = dto.getEndTime() != null ?
+                dto.getEndTime().format(DATE_FORMATTER) : "Не завершен";
+        table.addCell(createCell(endTimeStr, false, font));
+
+        table.addCell(createCell("Длительность:", true, font));
+        table.addCell(createCell(dto.getFormattedDuration(), false, font));
+
+        return table;
+    }
+
+    /**
+     * Создание таблицы со сводкой результатов
+     */
+    private Table createSummaryTable(TestSummaryDTO summary, PdfFont font) {
+        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        table.addCell(createCell("Всего вопросов:", true, font));
+        table.addCell(createCell(String.valueOf(summary.getTotalQuestions()), false, font));
+
+        table.addCell(createCell("Отвечено:", true, font));
+        table.addCell(createCell(String.valueOf(summary.getAnsweredQuestions()), false, font));
+
+        table.addCell(createCell("Правильных ответов:", true, font));
+        table.addCell(createCell(String.valueOf(summary.getCorrectAnswers()), false, font));
+
+        table.addCell(createCell("Результат:", true, font));
+        String resultText = String.format("%d/%d (%.1f%%)",
+                summary.getCorrectAnswers(),
+                summary.getTotalQuestions(),
+                summary.getPercentage());
+        Cell resultCell = createCell(resultText, false, font);
+        if (summary.getPercentage() >= 70) {
+            resultCell.setFontColor(com.itextpdf.kernel.colors.ColorConstants.GREEN);
+        } else if (summary.getPercentage() >= 50) {
+            resultCell.setFontColor(com.itextpdf.kernel.colors.ColorConstants.ORANGE);
+        } else {
+            resultCell.setFontColor(com.itextpdf.kernel.colors.ColorConstants.RED);
+        }
+        table.addCell(resultCell);
+
+        return table;
+    }
+
+    /**
+     * Создание таблицы с детальными ответами
+     */
+    private Table createDetailedAnswersTable(TesterDetailedAnswersDTO dto, PdfFont font) {
+        Table table = new Table(UnitValue.createPercentArray(new float[]{5, 40, 25, 30}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        // Заголовки
+        table.addHeaderCell(createCell("№", true, font));
+        table.addHeaderCell(createCell("Вопрос", true, font));
+        table.addHeaderCell(createCell("Ответ тестировщика", true, font));
+        table.addHeaderCell(createCell("Правильный ответ", true, font));
+
+        int num = 1;
+        for (QuestionAnswerDetailDTO answer : dto.getQuestionAnswers()) {
+            table.addCell(createCell(String.valueOf(num++), true, font));
+            table.addCell(createCell(answer.getQuestionText(), false, font));
+
+            // Ответ тестировщика
+            String chosenText = answer.getChosenAnswer() != null ?
+                    answer.getChosenAnswer().getAnswerText() : "Не отвечено";
+            Cell chosenCell = createCell(chosenText, false, font);
+            if (Boolean.TRUE.equals(answer.getIsCorrect())) {
+                chosenCell.setFontColor(com.itextpdf.kernel.colors.ColorConstants.GREEN);
+            } else if (answer.getChosenAnswer() != null) {
+                chosenCell.setFontColor(com.itextpdf.kernel.colors.ColorConstants.RED);
             }
+            table.addCell(chosenCell);
 
-            if (!answer.getIsCorrect() && answer.getCorrectAnswer() != null) {
-                sb.append("   Правильный ответ: ").append(answer.getCorrectAnswer().getAnswerText()).append("\n");
-            }
+            // Правильный ответ
+            String correctText = answer.getCorrectAnswer() != null ?
+                    answer.getCorrectAnswer().getAnswerText() : "Нет правильного ответа";
+            table.addCell(createCell(correctText, false, font));
         }
 
-        return sb.toString();
+        return table;
     }
+
+    /**
+     * Загрузка шрифта с поддержкой кириллицы
+     */
+    private PdfFont loadFont() {
+        // Код загрузки шрифта из StatisticsExportService
+        try (InputStream fontStream = getClass().getResourceAsStream("/fonts/arial.ttf")) {
+            if (fontStream != null) {
+                byte[] fontBytes = fontStream.readAllBytes();
+                FontProgram fontProgram = FontProgramFactory.createFont(fontBytes);
+                return PdfFontFactory.createFont(fontProgram, PdfEncodings.IDENTITY_H);
+            }
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить шрифт из ресурсов", e);
+        }
+
+        try {
+            return PdfFontFactory.createFont("Helvetica", "Cp1251",
+                    PdfFontFactory.EmbeddingStrategy.PREFER_NOT_EMBEDDED);
+        } catch (Exception e) {
+            log.error("Не удалось загрузить шрифт", e);
+            throw new RuntimeException("Не удалось загрузить шрифт для PDF", e);
+        }
+    }
+
+    /**
+     * Создание ячейки таблицы
+     */
+    private Cell createCell(String text, boolean isHeader, PdfFont font) {
+        Cell cell = new Cell();
+        Paragraph paragraph = new Paragraph(text != null ? text : "-");
+        paragraph.setFont(font);
+
+        if (isHeader) {
+            paragraph.setBold();
+            cell.setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY);
+        }
+
+        cell.add(paragraph);
+        cell.setPadding(5);
+        return cell;
+    }
+
+
 }
 
 

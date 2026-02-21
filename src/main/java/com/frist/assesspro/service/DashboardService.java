@@ -1,7 +1,6 @@
 package com.frist.assesspro.service;
 
 import com.frist.assesspro.dto.DashboardStatsDTO;
-import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.*;
@@ -13,11 +12,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +35,7 @@ public class DashboardService {
         DashboardStatsDTO stats = new DashboardStatsDTO();
 
         // 1. Используем оптимизированные запросы
-        stats.setTotalTests(testRepository.countByCreator(creator));
+        stats.setTotalTests(testRepository.countByTests(creator));
         stats.setPublishedTests(testRepository.countPublishedByCreator(creator));
 
         // 2. Используем нативный запрос для подсчета вопросов

@@ -57,7 +57,6 @@ public class User implements UserDetails {
     @Column(name = "middle_name")
     private String middleName;
 
-    // 🔥 НОВОЕ: Флаг заполненности профиля
     @Column(name = "is_profile_complete", nullable = false)
     private Boolean isProfileComplete = false;
 
@@ -125,11 +124,12 @@ public class User implements UserDetails {
     }
 
     public static class Roles {
+        public static final String ADMIN = "ROLE_ADMIN";
         public static final String CREATOR = "ROLE_CREATOR";
         public static final String TESTER = "ROLE_TESTER";
 
         public static boolean isValidRole(String role) {
-            return CREATOR.equals(role) || TESTER.equals(role);
+            return ADMIN.equals(role) || CREATOR.equals(role) || TESTER.equals(role);
         }
     }
 

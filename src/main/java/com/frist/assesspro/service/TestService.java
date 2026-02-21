@@ -41,6 +41,7 @@ public class TestService {
      */
     @Transactional
     public Test createTest(TestDTO testDTO, String username) {
+        // Валидация
         if (testDTO.getTitle() == null || testDTO.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Название теста обязательно");
         }
@@ -53,40 +54,49 @@ public class TestService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        // Проверка уникальности (case-insensitive)
+        // Проверка уникальности названия для этого создателя
         boolean titleExists = testRepository.findByCreatedBy(user).stream()
                 .anyMatch(t -> t.getTitle().equalsIgnoreCase(title));
-
         if (titleExists) {
             throw new IllegalArgumentException("Тест с таким названием уже существует");
         }
 
-        // Проверка на максимальную длину описания
-        String description = testDTO.getDescription();
-        if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
-            description = description.substring(0, MAX_DESCRIPTION_LENGTH);
-            log.warn("Описание теста обрезано до {} символов", MAX_DESCRIPTION_LENGTH);
-        }
-
+        // Создание теста
         Test test = new Test();
         test.setTitle(title);
-        test.setDescription(description);
+        test.setDescription(testDTO.getDescription());
         test.setCreatedBy(user);
         test.setIsPublished(false);
+
+        // Таймер
         test.setTimeLimitMinutes(testDTO.getTimeLimitMinutes() != null ?
                 Math.min(testDTO.getTimeLimitMinutes(), 300) : 0);
-        test.setRetryCooldownHours(testDTO.getRetryCooldownHours() != null ?
-                Math.min(testDTO.getRetryCooldownHours(), 336) : 0);
-        test.setRetryCooldownDays(testDTO.getRetryCooldownDays() != null ?
-                Math.min(testDTO.getRetryCooldownDays(), 14) : 0);
 
+        // 🔥 ВАЖНО: Устанавливаем cooldown поля
+        // Приоритет у дней, если указаны дни - часы игнорируем
+        if (testDTO.getRetryCooldownDays() != null && testDTO.getRetryCooldownDays() > 0) {
+            test.setRetryCooldownDays(Math.min(testDTO.getRetryCooldownDays(), 14));
+            test.setRetryCooldownHours(testDTO.getRetryCooldownDays() * 24);
+        } else if (testDTO.getRetryCooldownHours() != null && testDTO.getRetryCooldownHours() > 0) {
+            test.setRetryCooldownHours(Math.min(testDTO.getRetryCooldownHours(), 336));
+            test.setRetryCooldownDays(testDTO.getRetryCooldownHours() / 24);
+        } else {
+            test.setRetryCooldownHours(0);
+            test.setRetryCooldownDays(0);
+        }
+
+        // Категория
         if (testDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(testDTO.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Категория не найдена"));
             test.setCategory(category);
         }
 
-        return testRepository.save(test);
+        Test savedTest = testRepository.save(test);
+        log.info("Создан тест: {} с ограничением на повтор: {}",
+                savedTest.getTitle(), savedTest.getRetryCooldownDisplay());
+
+        return savedTest;
     }
 
     /**
@@ -152,21 +162,25 @@ public class TestService {
             throw new RuntimeException("Нет прав для редактирования теста");
         }
 
-        // Обновляем только разрешенные поля
+        // Обновляем поля
         existingTest.setTitle(updateDTO.getTitle().trim());
         existingTest.setDescription(updateDTO.getDescription());
         existingTest.setTimeLimitMinutes(
                 updateDTO.getTimeLimitMinutes() != null ?
                         Math.min(updateDTO.getTimeLimitMinutes(), 300) : 0
         );
-        existingTest.setRetryCooldownHours(
-                updateDTO.getRetryCooldownHours() != null ?
-                        Math.min(updateDTO.getRetryCooldownHours(), 336) : 0
-        );
-        existingTest.setRetryCooldownDays(
-                updateDTO.getRetryCooldownDays() != null ?
-                        Math.min(updateDTO.getRetryCooldownDays(), 14) : 0
-        );
+
+
+        if (updateDTO.getRetryCooldownDays() != null && updateDTO.getRetryCooldownDays() > 0) {
+            existingTest.setRetryCooldownDays(Math.min(updateDTO.getRetryCooldownDays(), 14));
+            existingTest.setRetryCooldownHours(updateDTO.getRetryCooldownDays() * 24);
+        } else if (updateDTO.getRetryCooldownHours() != null && updateDTO.getRetryCooldownHours() > 0) {
+            existingTest.setRetryCooldownHours(Math.min(updateDTO.getRetryCooldownHours(), 336));
+            existingTest.setRetryCooldownDays(updateDTO.getRetryCooldownHours() / 24);
+        } else {
+            existingTest.setRetryCooldownHours(0);
+            existingTest.setRetryCooldownDays(0);
+        }
 
         // Обновляем категорию
         if (updateDTO.getCategoryId() != null) {
@@ -175,10 +189,11 @@ public class TestService {
             existingTest.setCategory(category);
         }
 
-        log.info("Обновлен тест '{}' (ID: {}) пользователем {}",
-                existingTest.getTitle(), testId, username);
+        Test updatedTest = testRepository.save(existingTest);
+        log.info("Обновлен тест: {}, ограничение на повтор: {}",
+                updatedTest.getTitle(), updatedTest.getRetryCooldownDisplay());
 
-        return testRepository.save(existingTest);
+        return updatedTest;
     }
 
     /**
@@ -349,6 +364,22 @@ public class TestService {
         return Optional.of(dto);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Test> getTestWithAllData(Long testId, String username) {
+        // Сначала загружаем тест с категорией
+        Optional<Test> testOpt = testRepository.findByIdWithCategory(testId);
+
+        if (testOpt.isPresent()) {
+            Test test = testOpt.get();
+            // Затем загружаем вопросы с ответами и устанавливаем их
+            List<Question> questions = questionRepository.findQuestionsWithAnswersByTestId(testId);
+            test.setQuestions(questions);
+            return Optional.of(test);
+        }
+
+        return Optional.empty();
+    }
+
     @Transactional
     public void removeRetryCooldownForUser(Long testId, String testerUsername, String creatorUsername) {
         Test test = testRepository.findById(testId)
@@ -415,9 +446,62 @@ public class TestService {
     }
 
     /**
+     * 🔥 НОВОЕ: Получение ВСЕХ тестов для создателя (не только своих)
+     */
+    @Transactional(readOnly = true)
+    public Page<TestDTO> getAllTestsForCreator(String username,
+                                               Pageable pageable,
+                                               String status,
+                                               String search,
+                                               Long categoryId,
+                                               Long creatorId) {
+
+        log.debug("Получение всех тестов с фильтрацией: status={}, search={}, categoryId={}, creatorId={}",
+                status, search, categoryId, creatorId);
+
+        return testRepository.findAllTestsWithFilters(status, categoryId, creatorId, search, pageable);
+    }
+
+    /**
+     * 🔥 НОВОЕ: Проверка, является ли пользователь владельцем теста
+     */
+    @Transactional(readOnly = true)
+    public boolean isTestOwner(Long testId, String username) {
+        return testRepository.findById(testId)
+                .map(test -> test.getCreatedBy().getUsername().equals(username))
+                .orElse(false);
+    }
+
+    /**
+     * 🔥 НОВОЕ: Получение теста без проверки владельца (для статистики и ограничений)
+     */
+    @Transactional(readOnly = true)
+    public Test getTestByIdWithoutOwnershipCheck(Long testId) {
+        return testRepository.findById(testId)
+                .orElseThrow(() -> new RuntimeException("Тест не найден"));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Test> getTestWithAllDataWithoutOwnershipCheck(Long testId) {
+        // 1. Сначала загружаем тест с категорией (без вопросов)
+        Optional<Test> testOpt = testRepository.findByIdWithCategory(testId);
+
+        if (testOpt.isPresent()) {
+            Test test = testOpt.get();
+            // 2. Затем отдельно загружаем вопросы с ответами
+            List<Question> questions = questionRepository.findQuestionsWithAnswersByTestId(testId);
+            test.setQuestions(questions);
+            return Optional.of(test);
+        }
+
+        return Optional.empty();
+    }
+
+
+    /**
      * Конвертирует Entity Test в TestDTO
      */
-    private TestDTO convertToDTO(Test test) {
+    public TestDTO convertToDTO(Test test) {
         TestDTO dto = new TestDTO();
         dto.setId(test.getId());
         dto.setTitle(test.getTitle());
@@ -426,6 +510,14 @@ public class TestService {
         dto.setQuestionCount((long) test.getQuestionCount());
         dto.setCreatedAt(test.getCreatedAt());
         dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
+        dto.setRetryCooldownHours(test.getRetryCooldownHours());
+        dto.setRetryCooldownDays(test.getRetryCooldownDays());
+
+        if (test.getCategory() != null) {
+            dto.setCategoryId(test.getCategory().getId());
+            dto.setCategoryName(test.getCategory().getName());
+        }
+
         return dto;
     }
 }

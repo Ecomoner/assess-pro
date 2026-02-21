@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Управление пользователями')}">
+<body>
+<div th:replace="~{fragments/navigation}"></div>
+<div class="container-fluid py-3 py-md-4" style="background-color: #f8f9fa;">
+    <div class="container-fluid px-2 px-md-3">
+        <!-- Заголовок -->
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 mb-md-4 gap-2">
+            <h1 class="h3 h2-md mb-0">
+                <i class="bi bi-people text-success me-2"></i>
+                Управление пользователями
+            </h1>
+            <div class="d-flex w-100 w-sm-auto gap-2">
+                <a th:href="@{/admin/users/export}" class="btn btn-outline-success flex-fill flex-sm-grow-0">
+                    <i class="bi bi-file-pdf me-1"></i>
+                    <span class="d-none d-sm-inline">Экспорт</span>
+                </a>
+                <a th:href="@{/admin/users/new}" class="btn btn-dark flex-fill flex-sm-grow-0">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    <span class="d-none d-sm-inline">Добавить</span>
+                </a>
+            </div>
+        </div>
+        <!-- Фильтры и поиск -->
+        <div class="card border-0 shadow-sm mb-3 mb-md-4">
+            <div class="card-body p-3 p-md-4">
+                <form th:action="@{/admin/users}" method="get" class="row g-2 g-md-3">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label fw-semibold small d-none d-md-block">Поиск</label>
+                        <input type="text" class="form-control form-control-sm" name="search" th:value="${search}"
+                               placeholder="Имя, логин...">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label fw-semibold small d-none d-md-block">Роль</label>
+                        <select class="form-select form-select-sm" name="role">
+                            <option value="">Все</option>
+                            <option value="ROLE_ADMIN" th:selected="${role == 'ROLE_ADMIN'}">Админ</option>
+                            <option value="ROLE_CREATOR" th:selected="${role == 'ROLE_CREATOR'}">Создатель</option>
+                            <option value="ROLE_TESTER" th:selected="${role == 'ROLE_TESTER'}">Тестер</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label fw-semibold small d-none d-md-block">Статус</label>
+                        <select class="form-select form-select-sm" name="active">
+                            <option value="">Все</option>
+                            <option value="true" th:selected="${active == true}">Активен</option>
+                            <option value="false" th:selected="${active == false}">Неактивен</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label fw-semibold small d-none d-md-block">Размер</label>
+                        <select class="form-select form-select-sm" name="size">
+                            <option value="20" th:selected="${pageSize == 20}">20</option>
+                            <option value="50" th:selected="${pageSize == 50}">50</option>
+                            <option value="100" th:selected="${pageSize == 100}">100</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-dark flex-fill btn-sm">
+                            <i class="bi bi-filter me-1"></i>Применить
+                        </button>
+                        <a th:href="@{/admin/users}" class="btn btn-outline-secondary flex-fill btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Сброс
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Сообщения -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show py-2">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span class="small" th:text="${successMessage}">Успех</span>
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span class="small" th:text="${errorMessage}">Ошибка</span>
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+        <!-- Таблица пользователей -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="usersTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="d-none d-md-table-cell sortable" data-sort="id">ID</th>
+                            <th class="sortable" data-sort="username">Логин</th>
+                            <th class="d-none d-sm-table-cell sortable" data-sort="fullName">ФИО</th>
+                            <th class="sortable" data-sort="role">Роль</th>
+                            <th class="d-none d-lg-table-cell sortable" data-sort="createdAt">Дата</th>
+                            <th>Статус</th>
+                            <th class="d-none d-md-table-cell">Профиль</th>
+                            <th class="text-end">Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="user : ${users}">
+                            <td class="d-none d-md-table-cell" th:text="${user.id}">1</td>
+                            <td><span class="fw-semibold" th:text="${user.username}">user</span></td>
+                            <td class="d-none d-sm-table-cell"><span th:text="${user.fullName} ?: '-'">Иванов И.И.</span></td>
+                            <td>
+        <span class="badge" th:classappend="${user.role == 'ROLE_ADMIN'} ? 'bg-dark' :
+                                         (${user.role == 'ROLE_CREATOR'} ? 'bg-primary' : 'bg-info')"
+              th:text="${user.role == 'ROLE_ADMIN' ? 'Админ' :
+                       (user.role == 'ROLE_CREATOR' ? 'Созд' : 'Тест')}">Тест</span>
+                            </td>
+                            <td class="d-none d-lg-table-cell" th:text="${#temporals.format(user.createdAt, 'dd.MM.yy')}">01.01.24</td>
+                            <td>
+        <span class="badge" th:classappend="${user.isActive} ? 'bg-success' : 'bg-danger'"
+              th:text="${user.isActive} ? 'Активен' : 'Неакт'">Активен</span>
+                            </td>
+                            <td class="d-none d-md-table-cell">
+        <span class="badge" th:classappend="${user.isProfileComplete} ? 'bg-success' : 'bg-warning'"
+              th:text="${user.isProfileComplete} ? 'Да' : 'Нет'">Да</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a th:href="@{/admin/users/{id}(id=${user.id})}" class="btn btn-outline-dark" title="Просмотр">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" class="btn btn-outline-primary" title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger delete-user-btn"
+                                            th:data-id="${user.id}"
+                                            th:data-username="${user.username}"
+                                            title="Удалить">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <form th:id="'deleteForm' + ${user.id}" th:action="@{/admin/users/delete/{id}(id=${user.id})}"
+                                      method="post" style="display: none;"></form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Пагинация -->
+            <div th:replace="~{fragments/pagination :: pagination(
+                currentPage=${currentPage},
+                totalPages=${totalPages},
+                pageSize=${pageSize},
+                baseUrl='/admin/users'
+            )}"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white py-2">
+                <h5 class="modal-title small">Подтверждение удаления</h5>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3">
+                <p class="mb-2 small">Удалить пользователя <strong id="deleteUsername"></strong>?</p>
+                <p class="text-danger small mb-0"><i class="bi bi-info-circle me-1"></i>Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-footer p-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-sm btn-danger" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/table-sort.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.delete-user-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const username = this.dataset.username;
+                confirmDelete(id, username);
+            });
+        });
+    });
+
+    function confirmDelete(id, username) {
+        if (confirm('Удалить пользователя ' + username + '?')) {
+            document.getElementById('deleteForm' + id).submit();
+        }
+    }
+</script>
+</body>
+</html>

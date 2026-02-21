@@ -6,6 +6,11 @@ import com.frist.assesspro.dto.category.CategoryUpdateDTO;
 import com.frist.assesspro.entity.Category;
 import com.frist.assesspro.service.CategoryService;
 import com.frist.assesspro.util.PaginationUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,24 +33,31 @@ import java.util.Map;
 @RequestMapping("/creator/categories")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Категории",description = "API для создателей")
 public class CategoryController {
 
     private final CategoryService categoryService;
 
-    /**
-     * Список категорий создателя
-     */
+    @ModelAttribute("currentUri")
+    public String getCurrentUri(HttpServletRequest request) {
+        return request.getRequestURI();
+    }
+
+    @Operation(summary = "Список категорий")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping
     public String getAllCategories(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sort,
-            Model model,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            Model model) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort).ascending());
-        Page<CategoryDTO> categoriesPage = categoryService.getCategoriesByCreator(
-                userDetails.getUsername(), pageable);
+        Page<CategoryDTO> categoriesPage = categoryService.getAllCategories(pageable);
 
         Map<String, String> params = new HashMap<>();
         params.put("size", String.valueOf(size));
@@ -60,9 +72,12 @@ public class CategoryController {
         return "creator/category-list";
     }
 
-    /**
-     * Форма создания категории
-     */
+    @Operation(summary = "Форма создания категории")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/new")
     public String showCreateForm(Model model) {
         model.addAttribute("categoryDTO", new CategoryCreateDTO());
@@ -70,9 +85,12 @@ public class CategoryController {
         return "creator/category-form";
     }
 
-    /**
-     * Создание категории
-     */
+    @Operation(summary = "Создание категории")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/new")
     public String createCategory(
             @Valid @ModelAttribute CategoryCreateDTO categoryCreateDTO,
@@ -101,14 +119,16 @@ public class CategoryController {
         }
     }
 
-    /**
-     * Форма редактирования категории
-     */
+    @Operation(summary = "Форма редактирования категории")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id,
-                               Model model,
-                               @AuthenticationPrincipal UserDetails userDetails) {
-        return categoryService.getCategoryById(id, userDetails.getUsername())
+                               Model model) {
+        return categoryService.getCategoryById(id)
                 .map(category -> {
                     CategoryUpdateDTO updateDTO = new CategoryUpdateDTO();
                     updateDTO.setName(category.getName());
@@ -117,15 +137,19 @@ public class CategoryController {
 
                     model.addAttribute("categoryDTO", updateDTO);
                     model.addAttribute("categoryId", id);
+                    model.addAttribute("formAction", "/creator/categories/update/" + id);
                     model.addAttribute("action", "edit");
                     return "creator/category-form";
                 })
                 .orElse("redirect:/creator/categories?error=not_found");
     }
 
-    /**
-     * Обновление категории
-     */
+    @Operation(summary = "Обновление категории")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/update/{id}")
     public String updateCategory(
             @PathVariable Long id,
@@ -155,9 +179,12 @@ public class CategoryController {
         }
     }
 
-    /**
-     * Удаление категории
-     */
+    @Operation(summary = "Удаление категории")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/delete/{id}")
     public String deleteCategory(
             @PathVariable Long id,

@@ -26,6 +26,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     private static final int MAX_NAME_LENGTH = 100;
     private static final int MAX_DESCRIPTION_LENGTH = 500;
@@ -68,30 +69,20 @@ public class CategoryService {
      * Получение категории по ID с проверкой прав
      */
     @Transactional(readOnly = true)
-    public Optional<Category> getCategoryById(Long categoryId, String username) {
-        User creator = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-
-        return categoryRepository.findActiveByIdAndCreatedBy(categoryId, creator);
-    }
-
-    /**
-     * Получение категории по ID (без проверки прав, для публичного доступа)
-     */
-    @Transactional(readOnly = true)
     public Optional<Category> getCategoryById(Long categoryId) {
         return categoryRepository.findById(categoryId);
     }
 
     /**
+     * Получение категории по ID (без проверки прав, для публичного доступа)
+     */
+
+    /**
      * Получение DTO списка категорий создателя
      */
     @Transactional(readOnly = true)
-    public Page<CategoryDTO> getCategoriesByCreator(String username, Pageable pageable) {
-        User creator = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-
-        return categoryRepository.findCategoryDTOsByCreator(creator, pageable);
+    public Page<CategoryDTO> getAllCategories(Pageable pageable) {
+        return categoryRepository.findAllActiveCategoryDTOs(pageable);
     }
 
     /**
@@ -109,8 +100,12 @@ public class CategoryService {
     @Transactional
     @CacheEvict(value = {"categories", "activeCategories"}, allEntries = true)
     public Category updateCategory(Long categoryId, CategoryUpdateDTO updateDTO, String username) {
-        Category category = getCategoryById(categoryId, username)
-                .orElseThrow(() -> new RuntimeException("Категория не найдена или нет прав доступа"));
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Категория не найдена"));
+
+        if (!userService.isAdmin(username) && !category.getCreatedBy().getUsername().equals(username)) {
+            throw new RuntimeException("Нет прав на редактирование этой категории");
+        }
 
         // Проверка уникальности названия (исключая текущую категорию)
         if (!category.getName().equalsIgnoreCase(updateDTO.getName().trim()) &&
@@ -142,8 +137,12 @@ public class CategoryService {
     @Transactional
     @CacheEvict(value = {"categories", "activeCategories"}, allEntries = true)
     public void deleteCategory(Long categoryId, String username) {
-        Category category = getCategoryById(categoryId, username)
-                .orElseThrow(() -> new RuntimeException("Категория не найдена или нет прав доступа"));
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Категория не найдена"));
+
+        if (!userService.isAdmin(username) && !category.getCreatedBy().getUsername().equals(username)) {
+            throw new RuntimeException("Нет прав на удаление этой категории");
+        }
 
         // Проверяем, есть ли тесты в категории
         if (category.getTests() != null && !category.getTests().isEmpty()) {

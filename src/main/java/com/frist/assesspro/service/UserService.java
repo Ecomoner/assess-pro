@@ -4,6 +4,8 @@ import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,8 +59,12 @@ public class UserService {
      * Получение всех тестировщиков (для админки)
      */
     @Transactional(readOnly = true)
-    public List<User> getAllTesters() {
-        return userRepository.findByRole(User.Roles.TESTER);
+    public Page<User> findAllTesters(String search, Pageable pageable) {
+        if (search != null && !search.trim().isEmpty()) {
+            return userRepository.searchTesters(search.trim(), pageable);
+        } else {
+            return userRepository.findByRole("ROLE_TESTER", pageable);
+        }
     }
 
     /**
@@ -79,4 +85,16 @@ public class UserService {
         }
         return userRepository.findByUsernameContainingIgnoreCase(searchTerm.trim());
     }
+
+    @Transactional(readOnly = true)
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    public boolean isAdmin(String username) {
+        return userRepository.findByUsername(username)
+                .map(user -> user.getRole().equals(User.Roles.ADMIN))
+                .orElse(false);
+    }
+
 }

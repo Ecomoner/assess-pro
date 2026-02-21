@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class TesterAttemptDTO {
     private Long attemptId;
+    private String testTitle;
     private String testerUsername;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -19,6 +20,7 @@ public class TesterAttemptDTO {
     private Double percentage;
     private Long durationMinutes;
     private Long testId;
+    private String testerFullName;
 
     /**
      * Получает форматированную строку длительности

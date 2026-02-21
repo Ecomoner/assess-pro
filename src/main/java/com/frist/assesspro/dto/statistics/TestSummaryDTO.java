@@ -13,6 +13,10 @@ public class TestSummaryDTO {
     private Integer correctAnswers;
     private Integer totalScore;
     private Double percentage;
+    private Long totalAttempts;
+    private Long uniqueTesters;
+    private Double averageScore;
+    private Double bestScore;
 
     /**
      * Получает процент отвеченных вопросов

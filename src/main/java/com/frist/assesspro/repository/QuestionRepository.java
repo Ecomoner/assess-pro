@@ -24,5 +24,10 @@ public interface QuestionRepository extends JpaRepository<Question,Long> {
     @Query("SELECT COUNT(q) FROM Question q WHERE q.test.id = :testId")
     int countByTestId(@Param("testId") Long testId);
 
+    @Query("SELECT q FROM Question q " +
+            "LEFT JOIN FETCH q.answerOptions " +
+            "WHERE q.test.id = :testId " +
+            "ORDER BY q.orderIndex")
+    List<Question> findQuestionsWithAnswersByTestId(@Param("testId") Long testId);
 
 }

@@ -1,15 +1,14 @@
 package com.frist.assesspro.repository;
 
 import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
+import com.frist.assesspro.dto.statistics.TesterStatisticsDTO;
 import com.frist.assesspro.dto.test.TestHistoryDTO;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,10 +33,11 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     @EntityGraph(value = "TestAttempt.withTest", type = EntityGraph.EntityGraphType.LOAD)
     Page<TestAttempt> findByUserIdOrderByStartTimeDesc(Long userId, Pageable pageable);
 
+    List<TestAttempt> findByUserId(Long userId);
+
     // DTO проекция для истории тестов
     @Query("SELECT new com.frist.assesspro.dto.test.TestHistoryDTO(" +
-            "ta.id, t.id, t.title, ta.startTime, ta.endTime, " +
-            "ta.status, ta.totalScore, " +
+            "ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore, " +
             "COUNT(q.id)) " +
             "FROM TestAttempt ta " +
             "JOIN ta.test t " +
@@ -45,8 +45,7 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             "WHERE ta.user.id = :userId " +
             "GROUP BY ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore " +
             "ORDER BY ta.startTime DESC")
-    Page<TestHistoryDTO> findTestHistoryDTOsByUserId(
-            @Param("userId") Long userId, Pageable pageable);
+    Page<TestHistoryDTO> findTestHistoryDTOsByUserId(@Param("userId") Long userId, Pageable pageable);
 
     // Метод для DashboardService
     @EntityGraph(value = "TestAttempt.withTest", type = EntityGraph.EntityGraphType.LOAD)
@@ -78,7 +77,7 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     /**
      * DTO проекция для списка тестировщиков теста
      */
-    @EntityGraph(attributePaths = {"user", "test", "test.questions"})
+    @EntityGraph(attributePaths = {"user", "test"})
     @Query("SELECT ta FROM TestAttempt ta " +
             "WHERE ta.test.id = :testId " +
             "ORDER BY ta.startTime DESC")
@@ -125,5 +124,29 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             nativeQuery = true)
     List<Object[]> findAggregatedStatsByCreator(@Param("creatorId") Long creatorId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM TestAttempt a WHERE a.id = :id")
+    Optional<TestAttempt> findByIdWithLock(@Param("id") Long id);
+
+    @Query("SELECT ta FROM TestAttempt ta " +
+            "JOIN FETCH ta.user " +
+            "WHERE ta.test.id = :testId " +
+            "ORDER BY ta.startTime DESC")
+    Page<TestAttempt> findByTestIdWithUser(@Param("testId") Long testId, Pageable pageable);
+
+    @Query("SELECT ta FROM TestAttempt ta " +
+            "JOIN FETCH ta.user " +
+            "WHERE ta.test.id = :testId " +
+            "AND (LOWER(ta.user.username) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR LOWER(ta.user.lastName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR LOWER(ta.user.firstName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY ta.startTime DESC")
+    Page<TestAttempt> searchByTestIdWithUser(@Param("testId") Long testId,
+                                             @Param("search") String search,
+                                             Pageable pageable);
+
+
+
+    long countByTestIdAndUserIdAndStatus(Long testId, Long userId, TestAttempt.AttemptStatus status);
 
 }

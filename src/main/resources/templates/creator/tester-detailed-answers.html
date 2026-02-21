@@ -1,372 +1,111 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Ответы тестировщика - [[${detailedAnswers.testerUsername}]]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <style>
-        .answer-card {
-            border-left: 4px solid #dee2e6;
-            transition: all 0.3s;
-        }
-        .answer-card.correct {
-            border-left-color: #198754;
-            background-color: rgba(25, 135, 84, 0.05);
-        }
-        .answer-card.incorrect {
-            border-left-color: #dc3545;
-            background-color: rgba(220, 53, 69, 0.05);
-        }
-        .answer-detail {
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
-        }
-        .chosen-answer {
-            border: 2px solid #0d6efd;
-        }
-        .correct-answer {
-            border: 2px solid #198754;
-        }
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-        .question-number {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-        }
-    </style>
-</head>
+<head th:replace="~{fragments/header :: header('Детальные ответы')}">
 <body>
-<div th:replace="~{fragments/header :: header}"></div>
-
-<div class="container mt-4">
-    <!-- Хлебные крошки -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a th:href="@{/creator/tests}">
-                    <i class="bi bi-house-door"></i> Мои тесты
-                </a>
-            </li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/creator/tests/{id}/statistics/testers(id=${test.id})}">
-                    Статистика теста: [[${test.title}]]
-                </a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">
-                Ответы: [[${detailedAnswers.testerUsername}]]
-            </li>
-        </ol>
-    </nav>
-
-    <!-- Шапка с общей информацией -->
-    <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
+<div th:replace="~{fragments/navigation}"></div>
+<div class="container-fluid py-3 py-md-4" style="background-color: #f8f9fa;">
+    <div class="container px-2 px-md-3">
+        <div class="mb-3 mb-md-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb flex-wrap">
+                    <li class="breadcrumb-item"><a th:href="@{/creator/tests}" class="text-decoration-none">Мои тесты</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/creator/tests/{testId}/statistics/testers(testId=${test.id})}"
+                                                   class="text-decoration-none">Статистика</a></li>
+                    <li class="breadcrumb-item active">Детальные ответы</li>
+                </ol>
+            </nav>
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
                 <div>
-                    <h4 class="mb-0">
-                        <i class="bi bi-person-circle"></i>
-                        Детальные ответы тестировщика
-                    </h4>
-                    <p class="mb-0 mt-1">
-                        Тест: <strong>[[${test.title}]]</strong> |
-                        Тестировщик: <strong>[[${detailedAnswers.testerUsername}]]</strong>
+                    <h1 class="h3 h2-md mb-1" th:text="${test.title}">Название теста</h1>
+                    <p class="text-muted small mb-0">
+                        Тестировщик: <strong th:text="${detailedAnswers.testerUsername}">username</strong>
+                        <span th:if="${testerFullName}" th:text="' (' + ${testerFullName} + ')'">(Иванов И.И.)</span>
                     </p>
                 </div>
-                <a th:href="@{/creator/tests/{id}/statistics/testers(id=${test.id})}"
-                   class="btn btn-light">
-                    <i class="bi bi-arrow-left"></i> Назад к списку
-                </a>
+                <div class="d-flex w-100 w-sm-auto gap-2">
+                    <a th:href="@{/creator/tests/{testId}/statistics/tester/{attemptId}/export(testId=${test.id}, attemptId=${detailedAnswers.attemptId})}"
+                       class="btn btn-dark flex-fill flex-sm-grow-0">
+                        <i class="bi bi-file-pdf me-2"></i>
+                        <span class="d-none d-sm-inline">PDF</span>
+                    </a>
+                    <a th:href="@{/creator/tests/{testId}/statistics/testers(testId=${test.id})}" class="btn btn-outline-secondary flex-fill flex-sm-grow-0">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        <span class="d-none d-sm-inline">Назад</span>
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="card-body">
-            <!-- Статистика в карточках -->
-            <div class="row text-center mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="card border-success h-100">
-                        <div class="card-body">
-                            <div class="stats-number text-success">
-                                [[${detailedAnswers.summary.correctAnswers}]]
-                            </div>
-                            <p class="text-muted mb-0">Правильных ответов</p>
-                        </div>
+        <!-- Информация о попытке -->
+        <div class="card border-0 shadow-sm mb-3 mb-md-4">
+            <div class="card-header bg-white py-2">
+                <h5 class="mb-0 h6 h5-md">Информация о попытке</h5>
+            </div>
+            <div class="card-body p-3">
+                <div class="row g-2">
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">Дата</small>
+                        <span class="small" th:text="${#temporals.format(detailedAnswers.startTime, 'dd.MM.yy HH:mm')}">01.01.24 15:30</span>
                     </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card border-info h-100">
-                        <div class="card-body">
-                            <div class="stats-number text-info">
-                                [[${#numbers.formatDecimal(detailedAnswers.summary.percentage, 1, 2)}]]%
-                            </div>
-                            <p class="text-muted mb-0">Процент успеха</p>
-                        </div>
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">Результат</small>
+                        <span class="small" th:text="${detailedAnswers.summary.correctAnswers} + '/' + ${detailedAnswers.summary.totalQuestions}">5/10</span>
                     </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card border-warning h-100">
-                        <div class="card-body">
-                            <div class="stats-number text-warning">
-                                [[${detailedAnswers.summary.totalScore}]]
-                            </div>
-                            <p class="text-muted mb-0">Общий балл</p>
-                        </div>
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">Процент</small>
+                        <span class="small" th:text="${#numbers.formatDecimal(detailedAnswers.summary.percentage, 1, 1)} + '%'">50%</span>
                     </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card border-secondary h-100">
-                        <div class="card-body">
-                            <div class="stats-number text-secondary">
-                                [[${detailedAnswers.summary.answeredQuestions}]]/[[${detailedAnswers.summary.totalQuestions}]]
-                            </div>
-                            <p class="text-muted mb-0">Отвечено вопросов</p>
-                        </div>
+                    <div class="col-6 col-md-3">
+                        <small class="text-muted d-block">Длительность</small>
+                        <span class="small" th:text="${detailedAnswers.formattedDuration}">15 мин</span>
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Детальные ответы -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-2">
+                <h5 class="mb-0 h6 h5-md">Ответы на вопросы</h5>
+            </div>
+            <div class="card-body p-2 p-md-3">
+                <div th:each="answer, stat : ${detailedAnswers.questionAnswers}" class="mb-3 pb-2 border-bottom">
+                    <div class="d-flex">
+                        <div class="me-2 me-md-3">
+                            <i class="bi fs-5" th:classappend="${answer.isCorrect} ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="fw-bold mb-1 small" th:text="${stat.count} + '. ' + ${answer.questionText}">
+                                1. Текст вопроса
+                            </p>
 
-            <!-- Детальная информация -->
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">
-                                <i class="bi bi-info-circle"></i> Информация о попытке
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-sm">
-                                <tbody>
-                                <tr>
-                                    <td><strong>Начало:</strong></td>
-                                    <td>[[${#temporals.format(detailedAnswers.startTime, 'dd.MM.yyyy HH:mm:ss')}]]</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Завершение:</strong></td>
-                                    <td>
-                                                <span th:if="${detailedAnswers.endTime}">
-                                                    [[${#temporals.format(detailedAnswers.endTime, 'dd.MM.yyyy HH:mm:ss')}]]
-                                                </span>
-                                        <span th:unless="${detailedAnswers.endTime}" class="text-warning">
-                                                    Не завершено
-                                                </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Длительность:</strong></td>
-                                    <td>
-                                                <span th:if="${detailedAnswers.endTime}">
-                                                    [[${detailedAnswers.formattedDuration}]]
-                                                </span>
-                                        <span th:unless="${detailedAnswers.endTime}" class="text-warning">
-                                                    В процессе
-                                                </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>ID попытки:</strong></td>
-                                    <td>[[${detailedAnswers.attemptId}]]</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">
-                                <i class="bi bi-graph-up"></i> Оценка результата
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="progress mb-3" style="height: 25px;">
-                                <div class="progress-bar"
-                                     role="progressbar"
-                                     th:style="'width: ' + ${detailedAnswers.summary.percentage} + '%;'"
-                                     th:class="${detailedAnswers.summary.percentageClass.replace('text', 'bg')}"
-                                     th:aria-valuenow="${detailedAnswers.summary.percentage}"
-                                     aria-valuemin="0"
-                                     aria-valuemax="100">
-                                    [[${#numbers.formatDecimal(detailedAnswers.summary.percentage, 1, 2)}]]%
+                            <div class="row g-1">
+                                <div class="col-12 col-md-6">
+                                    <p class="mb-0"><small class="text-muted">Ответ:</small></p>
+                                    <p th:if="${answer.chosenAnswer != null}"
+                                       class="mb-0 small"
+                                       th:text="${answer.chosenAnswer.answerText}"
+                                       th:classappend="${answer.isCorrect} ? 'text-success' : 'text-danger'">
+                                        Вариант ответа
+                                    </p>
+                                    <p th:if="${answer.chosenAnswer == null}" class="text-muted small mb-0">
+                                        <i>Не выбран</i>
+                                    </p>
+                                </div>
+
+                                <div class="col-12 col-md-6" th:if="${!answer.isCorrect and answer.correctAnswer != null}">
+                                    <p class="mb-0"><small class="text-muted">Правильный:</small></p>
+                                    <p class="text-success small mb-0" th:text="${answer.correctAnswer.answerText}">
+                                        Правильный ответ
+                                    </p>
                                 </div>
                             </div>
-
-                            <div class="text-center">
-                                <h5>[[${detailedAnswers.summary.grade}]]</h5>
-                                <p class="text-muted small">
-                                    [[${detailedAnswers.summary.correctAnswers}]] из [[${detailedAnswers.summary.totalQuestions}]] вопросов
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Детальные ответы на вопросы -->
-    <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">
-                <i class="bi bi-question-circle"></i>
-                Детальные ответы на вопросы
-                <span class="badge bg-secondary ms-2">
-                        [[${detailedAnswers.questionAnswers.size()}]]
-                    </span>
-            </h5>
-        </div>
-        <div class="card-body">
-            <div th:if="${detailedAnswers.questionAnswers.isEmpty()}" class="text-center py-5">
-                <i class="bi bi-chat-square-text display-1 text-muted"></i>
-                <h5 class="mt-3 text-muted">Нет ответов на вопросы</h5>
-                <p class="text-muted">Тестировщик еще не ответил ни на один вопрос.</p>
-            </div>
-
-            <div th:each="answer, iterStat : ${detailedAnswers.questionAnswers}"
-                 class="answer-card mb-4 p-3 rounded"
-                 th:class="${answer.isCorrect} ? 'correct' : 'incorrect'">
-
-                <!-- Заголовок вопроса -->
-                <div class="d-flex align-items-start mb-3">
-                    <div class="question-number me-3"
-                         th:class="${answer.isCorrect} ? 'bg-success text-white' : 'bg-danger text-white'">
-                        [[${iterStat.count}]]
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1">[[${answer.questionText}]]</h6>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                Порядковый номер: [[${answer.questionOrder}]]
-                            </small>
-                            <span class="badge"
-                                  th:class="${answer.isCorrect} ? 'bg-success' : 'bg-danger'">
-                                    <i th:class="${answer.isCorrect} ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
-                                    [[${answer.isCorrect} ? 'Правильно' : 'Неправильно']]
-                                    ([[${answer.pointsEarned}]] балл)
-                                </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ответы -->
-                <div class="row">
-                    <!-- Выбранный ответ -->
-                    <div class="col-md-6 mb-3">
-                        <div class="answer-detail chosen-answer">
-                            <h6 class="mb-2">
-                                <i class="bi bi-cursor"></i>
-                                <strong>Выбранный ответ:</strong>
-                            </h6>
-                            <div th:if="${answer.chosenAnswer}">
-                                <p class="mb-2">[[${answer.chosenAnswer.answerText}]]</p>
-                                <small th:class="${answer.chosenAnswer.isCorrect} ? 'text-success' : 'text-danger'">
-                                    <i th:class="${answer.chosenAnswer.isCorrect} ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
-                                    [[${answer.chosenAnswer.isCorrect} ? 'Это правильный вариант' : 'Это неправильный вариант']]
-                                </small>
-                            </div>
-                            <div th:unless="${answer.chosenAnswer}" class="text-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                Тестировщик не выбрал ответ на этот вопрос
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Правильный ответ (показываем только если неправильно) -->
-                    <div class="col-md-6 mb-3" th:if="${not answer.isCorrect and answer.correctAnswer != null}">
-                        <div class="answer-detail correct-answer">
-                            <h6 class="mb-2">
-                                <i class="bi bi-check-circle"></i>
-                                <strong>Правильный ответ:</strong>
-                            </h6>
-                            <p class="mb-2">[[${answer.correctAnswer.answerText}]]</p>
-                            <small class="text-success">
-                                <i class="bi bi-check-circle"></i> Это правильный вариант
-                            </small>
-                        </div>
-                    </div>
-
-                    <!-- Сообщение о правильном ответе -->
-                    <div class="col-md-6 mb-3" th:if="${answer.isCorrect}">
-                        <div class="answer-detail border-success">
-                            <div class="text-center py-3">
-                                <i class="bi bi-check-circle display-4 text-success mb-3"></i>
-                                <h5 class="text-success">
-                                    <strong>Ответ верный!</strong>
-                                </h5>
-                                <p class="text-muted mb-0">
-                                    Тестировщик выбрал правильный вариант ответа
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Разделитель между вопросами -->
-                <hr th:if="${not iterStat.last}" class="mt-4">
-            </div>
-        </div>
-    </div>
-
-    <!-- Кнопки действий -->
-    <div class="mt-4 d-flex justify-content-between">
-        <div>
-            <a th:href="@{/creator/tests/{id}/statistics/testers(id=${test.id})}"
-               class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Назад к списку тестировщиков
-            </a>
-            <a th:href="@{/creator/tests/{id}/questions(id=${test.id})}"
-               class="btn btn-outline-secondary ms-2">
-                <i class="bi bi-list-check"></i> К вопросам теста
-            </a>
-        </div>
-        <div>
-            <a th:href="@{/creator/tests/{testId}/statistics/tester/{attemptId}/export(testId=${test.id}, attemptId=${detailedAnswers.attemptId})}"
-               class="btn btn-primary">
-                <i class="bi bi-download"></i> Скачать PDF отчет
-            </a>
-            <button type="button" class="btn btn-success ms-2" onclick="window.print()">
-                <i class="bi bi-printer"></i> Распечатать
-            </button>
         </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // Подсветка правильных/неправильных ответов при наведении
-    document.addEventListener('DOMContentLoaded', function() {
-        const answerCards = document.querySelectorAll('.answer-card');
-
-        answerCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-4px)';
-                this.style.boxShadow = '0 6px 12px rgba(0,0,0,0.15)';
-            });
-
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = 'none';
-            });
-        });
-
-        // Показываем уведомление при попытке печати
-        const originalPrint = window.print;
-        window.print = function() {
-            console.log('Печать отчета тестировщика:',
-                '[[${detailedAnswers.testerUsername}]]',
-                'Тест: [[${test.title}]]'
-            );
-            originalPrint.call(window);
-        };
-    });
-</script>
+<div th:replace="~{fragments/footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

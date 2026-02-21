@@ -16,7 +16,8 @@ public class CategoryDTO {
     private Long publishedTestsCount;
 
     public CategoryDTO(Long id, String name, String description,
-                       LocalDateTime createdAt, Long testsCount, Long publishedTestsCount) {
+                       LocalDateTime createdAt, Long testsCount,
+                       Long publishedTestsCount) {
         this.id = id;
         this.name = name;
         this.description = description;

@@ -1,0 +1,119 @@
+<nav th:fragment="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/home}">
+            <i class="bi bi-check-circle-fill me-1 me-md-2"></i>
+            <span class="d-none d-sm-inline">Assess Pro</span>
+            <span class="d-inline d-sm-none">AP</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav"
+             th:with="role=${#authentication != null and #authentication.isAuthenticated() ? #authentication.authorities.iterator().next().authority : 'ROLE_ANONYMOUS'}">
+
+            <!-- Левая часть навигации (только для авторизованных) -->
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <!-- ADMIN MENU -->
+                <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
+                    <a class="nav-link" th:href="@{/admin/dashboard}">
+                        <i class="bi bi-speedometer2 me-1"></i>
+                        <span class="d-inline">Панель</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
+                    <a class="nav-link" th:href="@{/admin/users}">
+                        <i class="bi bi-people me-1"></i>
+                        <span class="d-inline">Пользователи</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
+                    <a class="nav-link" th:href="@{/admin/statistics}">
+                        <i class="bi bi-bar-chart me-1"></i>
+                        <span class="d-inline">Статистика</span>
+                    </a>
+                </li>
+
+                <!-- CREATOR MENU -->
+                <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
+                    <a class="nav-link" th:href="@{/creator/dashboard}">
+                        <i class="bi bi-speedometer2 me-1"></i>
+                        <span class="d-inline">Панель</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
+                    <a class="nav-link" th:href="@{/creator/tests}">
+                        <i class="bi bi-file-text me-1"></i>
+                        <span class="d-inline">Тесты</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
+                    <a class="nav-link" th:href="@{/creator/categories}">
+                        <i class="bi bi-tags me-1"></i>
+                        <span class="d-inline">Категории</span>
+                    </a>
+                </li>
+
+                <!-- TESTER MENU -->
+                <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
+                    <a class="nav-link" th:href="@{/tester/dashboard}">
+                        <i class="bi bi-speedometer2 me-1"></i>
+                        <span class="d-inline">Панель</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
+                    <a class="nav-link" th:href="@{/tester/catalog}">
+                        <i class="bi bi-grid me-1"></i>
+                        <span class="d-inline">Категории</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
+                    <a class="nav-link" th:href="@{/tester/tests}">
+                        <i class="bi bi-collection me-1"></i>
+                        <span class="d-inline">Все тесты</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
+                    <a class="nav-link" th:href="@{/tester/history}">
+                        <i class="bi bi-clock-history me-1"></i>
+                        <span class="d-inline">История</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Правая часть навигации -->
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown" th:if="${#authentication != null and #authentication.isAuthenticated()}">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <span class="d-none d-sm-inline" th:text="${#authentication.name}">User</span>
+                        <span class="badge bg-secondary ms-1 d-none d-md-inline" th:text="${role.replace('ROLE_', '')}">ROLE</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" th:href="@{/profile/edit}"><i class="bi bi-pencil-square me-2"></i>Профиль</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Выйти
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item" th:if="${#authentication == null or not #authentication.isAuthenticated()}">
+                    <a class="nav-link" th:href="@{/login}">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>
+                        <span class="d-none d-sm-inline">Вход</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${#authentication == null or not #authentication.isAuthenticated()}">
+                    <a class="nav-link" th:href="@{/register}">
+                        <i class="bi bi-person-plus me-1"></i>
+                        <span class="d-none d-sm-inline">Регистрация</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

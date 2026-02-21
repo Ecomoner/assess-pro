@@ -56,9 +56,10 @@ public class SecurityConfig {
                                 "/login/**"
                         ).permitAll()
                         // Защищенные пути по ролям
-                        .requestMatchers("/creator/**").hasRole("CREATOR")
-                        .requestMatchers("/tester/**").hasRole("TESTER")
+                        .requestMatchers("/creator/**").hasAnyRole("CREATOR", "ADMIN")
+                        .requestMatchers("/tester/**").hasAnyRole("TESTER", "ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/profile/**").authenticated()
                         // Все остальные пути требуют аутентификации
                         .anyRequest().authenticated()
                 )

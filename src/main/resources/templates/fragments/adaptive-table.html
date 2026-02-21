@@ -1,0 +1,17 @@
+<div th:fragment="tableHeader(columns)" class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+        <tr>
+            <th th:each="col : ${columns}"
+                th:classappend="${col.hideMobile} ? 'd-none d-md-table-cell' : ''"
+                th:text="${col.name}">
+                Колонка
+            </th>
+            <th class="text-end">Действия</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- содержимое -->
+        </tbody>
+    </table>
+</div>

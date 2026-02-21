@@ -21,7 +21,6 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final TestRepository testRepository;
-    private final UserRepository userRepository;
 
     /**
      * Создание вопроса из DTO
@@ -76,19 +75,22 @@ public class QuestionService {
         existingQuestion.setText(questionDTO.getText().trim());
         existingQuestion.setOrderIndex(questionDTO.getOrderIndex());
 
-        existingQuestion.clearAnswerOptions();
+        // Получаем существующие варианты ответов
+        List<AnswerOption> existingAnswers = existingQuestion.getAnswerOptions();
 
-        if (questionDTO.getAnswerOptions() != null && !questionDTO.getAnswerOptions().isEmpty()) {
-            List<AnswerOptionDTO> validAnswers = filterAndValidateAnswers(questionDTO.getAnswerOptions());
+        // Проверяем, что количество вариантов совпадает
+        if (existingAnswers.size() != questionDTO.getAnswerOptions().size()) {
+            log.warn("Количество вариантов не совпадает: БД={}, DTO={}",
+                    existingAnswers.size(), questionDTO.getAnswerOptions().size());
+        }
 
-            for (AnswerOptionDTO answerDTO : validAnswers) {
-                AnswerOption answerOption = new AnswerOption();
-                answerOption.setText(answerDTO.getText().trim());
-                answerOption.setIsCorrect(answerDTO.getIsCorrect() != null && answerDTO.getIsCorrect());
+        // Обновляем каждый существующий вариант
+        for (int i = 0; i < existingAnswers.size() && i < questionDTO.getAnswerOptions().size(); i++) {
+            AnswerOption existingAnswer = existingAnswers.get(i);
+            AnswerOptionDTO answerDTO = questionDTO.getAnswerOptions().get(i);
 
-
-                existingQuestion.addAnswerOption(answerOption);
-            }
+            existingAnswer.setText(answerDTO.getText().trim());
+            existingAnswer.setIsCorrect(answerDTO.getIsCorrect() != null && answerDTO.getIsCorrect());
         }
 
         Question updatedQuestion = questionRepository.save(existingQuestion);

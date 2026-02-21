@@ -6,7 +6,14 @@ import com.frist.assesspro.dto.QuestionDTO;
 import com.frist.assesspro.dto.QuestionWithStatsDTO;
 import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
+import com.frist.assesspro.repository.UserRepository;
 import com.frist.assesspro.service.QuestionService;
+import com.frist.assesspro.service.TestService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +32,22 @@ import java.util.stream.Collectors;
 @RequestMapping("/creator/tests/{testId}/questions")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Вопросы",description = "API для создателей")
 public class QuestionController {
 
     private final QuestionService questionService;
 
-    /**
-     * Страница управления вопросами теста
-     */
+    @ModelAttribute("currentUri")
+    public String getCurrentUri(HttpServletRequest request) {
+        return request.getRequestURI();
+    }
 
+    @Operation(summary = "Страница управления вопросами теста")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping
     public String manageQuestions(
             @PathVariable Long testId,
@@ -81,10 +96,12 @@ public class QuestionController {
         );
     }
 
-    /**
-     * Форма создания нового вопроса
-     */
-
+    @Operation(summary = "Форма создания нового вопроса")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/new")
     public String showCreateQuestionForm(
             @PathVariable Long testId,
@@ -114,6 +131,7 @@ public class QuestionController {
             model.addAttribute("test", test);
             model.addAttribute("questionDTO", questionDTO);
             model.addAttribute("action", "create");
+            model.addAttribute("formAction", "/creator/tests/" + testId + "/questions/new");
 
             log.info("Создана НОВАЯ форма. Вариантов ответов: {}",
                     questionDTO.getAnswerOptions().size());
@@ -127,9 +145,12 @@ public class QuestionController {
     }
 
 
-    /**
-     * Создание нового вопроса
-     */
+    @Operation(summary = "Создание нового вопроса")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/new")
     public String createQuestion(
             @PathVariable Long testId,
@@ -193,10 +214,12 @@ public class QuestionController {
         }
     }
 
-    /**
-     * Форма редактирования вопроса
-     */
-
+    @Operation(summary = "Форма редактирования вопроса")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/{questionId}/edit")
     public String showEditQuestionForm(
             @PathVariable Long testId,
@@ -215,6 +238,7 @@ public class QuestionController {
             model.addAttribute("test", test);
             model.addAttribute("questionDTO", questionDTO);
             model.addAttribute("action", "edit");
+            model.addAttribute("formAction", "/creator/tests/" + testId + "/questions/" + questionId + "/update");
             return "creator/question-form";
 
         } catch (Exception e) {
@@ -223,10 +247,12 @@ public class QuestionController {
         }
     }
 
-    /**
-     * Обновление вопроса
-     */
-
+    @Operation(summary = "Обновление вопроса")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/{questionId}/update")
     public String updateQuestion(
             @PathVariable Long testId,
@@ -276,9 +302,12 @@ public class QuestionController {
         }
     }
 
-    /**
-     * Удаление вопроса
-     */
+    @Operation(summary = "Удаление вопроса")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/{questionId}/delete")
     public String deleteQuestion(
             @PathVariable Long testId,
@@ -300,8 +329,4 @@ public class QuestionController {
             return "redirect:/creator/tests/" + testId + "/questions";
         }
     }
-
-
-
-
 }

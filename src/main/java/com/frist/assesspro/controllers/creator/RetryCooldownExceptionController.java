@@ -8,6 +8,10 @@ import com.frist.assesspro.service.CooldownService;
 import com.frist.assesspro.service.TestService;
 import com.frist.assesspro.service.TesterStatisticsService;
 import com.frist.assesspro.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,6 +30,7 @@ import java.util.Map;
 @RequestMapping("/creator/tests/{testId}/exceptions")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Ограничение повторного прохождения",description = "API для создателей")
 public class RetryCooldownExceptionController {
 
     private final CooldownService cooldownService;
@@ -33,17 +38,19 @@ public class RetryCooldownExceptionController {
     private final TesterStatisticsService testerStatisticsService;
     private final UserService userService;
 
-    /**
-     * Страница управления исключениями для конкретного теста
-     */
+    @Operation(summary = "Управление ограничением")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping
     public String manageExceptions(
             @PathVariable Long testId,
             @AuthenticationPrincipal UserDetails userDetails,
             Model model) {
 
-        Test test = testService.getTestById(testId, userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Тест не найден"));
+        Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
 
         // 🔥 НОВОЕ: Получаем список всех тестировщиков, проходивших тест
         List<User> testers = testerStatisticsService.getDistinctTestersByTest(testId, userDetails.getUsername());
@@ -53,9 +60,12 @@ public class RetryCooldownExceptionController {
         return "creator/retry-exceptions";
     }
 
-    /**
-     * Снятие ограничений для конкретного тестировщика
-     */
+    @Operation(summary = "Снятие ограничений")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/remove/{testerUsername}")
     public String removeException(
             @PathVariable Long testId,
@@ -64,8 +74,7 @@ public class RetryCooldownExceptionController {
             RedirectAttributes redirectAttributes) {
 
         try {
-            Test test = testService.getTestById(testId, userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Тест не найден"));
+            Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
 
             // 🔥 ИСПРАВЛЕНО: Используем UserService
             User tester = userService.getUserByUsername(testerUsername);
@@ -84,9 +93,12 @@ public class RetryCooldownExceptionController {
         return "redirect:/creator/tests/" + testId + "/statistics/testers";
     }
 
-    /**
-     * Создание исключения (снятие ограничений с таймером)
-     */
+    @Operation(summary = "Снятие ограничений с таймером")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/create")
     public String createException(
             @PathVariable Long testId,
@@ -98,8 +110,7 @@ public class RetryCooldownExceptionController {
             RedirectAttributes redirectAttributes) {
 
         try {
-            Test test = testService.getTestById(testId, userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Тест не найден"));
+            Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
 
             // 🔥 ИСПРАВЛЕНО: Используем UserService
             User tester = userService.getUserByUsername(testerUsername);
@@ -119,9 +130,12 @@ public class RetryCooldownExceptionController {
         return "redirect:/creator/tests/" + testId + "/statistics/testers";
     }
 
-    /**
-     * AJAX: Получение статуса ограничений для тестировщика
-     */
+    @Operation(summary = "Получение статуса ограничения")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/status/{testerUsername}")
     @ResponseBody
     public Map<String, Object> getCooldownStatus(
@@ -132,8 +146,7 @@ public class RetryCooldownExceptionController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            Test test = testService.getTestById(testId, userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Тест не найден"));
+            Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
 
             User tester = userService.getUserByUsername(testerUsername);
 

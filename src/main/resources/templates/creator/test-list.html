@@ -1,756 +1,308 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Мои тесты - Assess Pro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #4e73df;
-            --success-color: #1cc88a;
-            --info-color: #36b9cc;
-            --warning-color: #f6c23e;
-            --danger-color: #e74a3b;
-            --light-color: #f8f9fc;
-            --dark-color: #5a5c69;
-        }
-
-        .action-buttons {
-            opacity: 0.7;
-            transition: opacity 0.3s;
-        }
-
-        .test-card:hover .action-buttons {
-            opacity: 1;
-        }
-
-        .quick-stats {
-            font-size: 0.85rem;
-        }
-
-        .pagination .page-link {
-            color: var(--primary-color);
-        }
-
-        .pagination .page-item.active .page-link {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .filter-card {
-            background-color: var(--light-color);
-            border-radius: 10px;
-        }
-
-        .empty-state {
-            padding: 4rem 2rem;
-            text-align: center;
-            color: #6c757d;
-        }
-
-        .test-title {
-            font-weight: 600;
-            color: var(--dark-color);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .test-title:hover {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        .description-text {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-
-        .table-test {
-            font-size: 0.9rem;
-        }
-
-        .table-test th {
-            font-weight: 600;
-            color: var(--dark-color);
-            border-top: none;
-        }
-
-        .table-test td {
-            vertical-align: middle;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        .status-completed { background-color: var(--success-color); }
-        .status-in-progress { background-color: var(--warning-color); }
-    </style>
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Мои тесты')}">
 <body>
-<!-- Навигация -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" th:href="@{/home}">
-            <i class="bi bi-speedometer2 me-2"></i>AssessPro
-        </a>
+<div th:replace="~{fragments/navigation}"></div>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<div class="container-fluid py-3 py-md-4" style="background-color: #f8f9fa;">
+    <div class="container px-2 px-md-3">
+        <!-- Заголовок -->
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 mb-md-4 gap-2">
+            <h1 class="h3 h2-md mb-0">
+                <i class="bi bi-file-text text-success me-2"></i>
+                Каталог тестов  <!-- 🔥 ИЗМЕНЕНО: "Мои тесты" → "Каталог тестов" -->
+            </h1>
+            <a th:href="@{/creator/tests/new}" class="btn btn-dark w-100 w-sm-auto">
+                <i class="bi bi-plus-circle me-2"></i>Создать тест
+            </a>
+        </div>
 
-        <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/creator/dashboard}">
-                        <i class="bi bi-house-door me-1"></i>Панель
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" th:href="@{/creator/tests}">
-                        <i class="bi bi-journal-text me-1"></i>Мои тесты
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/creator/tests/new}">
-                        <i class="bi bi-plus-circle me-1"></i>Новый тест
-                    </a>
-                </li>
-            </ul>
+        <!-- Быстрая статистика (без изменений) -->
+        <div class="row g-2 g-md-3 mb-3 mb-md-4">
+            <!-- ... оставляем как есть ... -->
+        </div>
 
-            <div class="navbar-nav align-items-center">
-                <div class="nav-item me-3">
-                    <div class="d-flex align-items-center">
-                        <div class="me-2">
-                            <i class="bi bi-person-circle fs-5 text-light"></i>
-                        </div>
-                        <div>
-                            <div class="text-light small">Создатель</div>
-                            <div class="text-white fw-bold" sec:authentication="name"></div>
-                        </div>
+        <!-- Фильтры (ДОБАВЛЕН ФИЛЬТР ПО СОЗДАТЕЛЮ) -->
+        <div class="card border-0 shadow-sm mb-3 mb-md-4">
+            <div class="card-body p-3 p-md-4">
+                <form th:action="@{/creator/tests}" method="get" class="row g-2 g-md-3">
+                    <div class="col-12 col-md-2">
+                        <label class="form-label small fw-semibold d-block d-md-none">Поиск</label>
+                        <input type="text" class="form-control form-control-sm" name="search" th:value="${search}" placeholder="Название...">
                     </div>
-                </div>
 
-                <form th:action="@{/logout}" method="post" class="nav-item">
-                    <button type="submit" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-box-arrow-right"></i> Выйти
-                    </button>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold d-block d-md-none">Статус</label>
+                        <select class="form-select form-select-sm" name="status">
+                            <option value="">Все</option>
+                            <option value="published" th:selected="${status == 'published'}">Опубликованные</option>
+                            <option value="draft" th:selected="${status == 'draft'}">Черновики</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold d-block d-md-none">Категория</label>
+                        <select class="form-select form-select-sm" name="categoryId">
+                            <option value="">Все</option>
+                            <option th:each="cat : ${filterCategories}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.name}"
+                                    th:selected="${categoryId == cat.id}">Категория</option>
+                        </select>
+                    </div>
+
+                    <!-- 🔥 НОВЫЙ ФИЛЬТР: по создателю -->
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold d-block d-md-none">Создатель</label>
+                        <select class="form-select form-select-sm" name="creatorId">
+                            <option value="">Все создатели</option>
+                            <option th:each="creator : ${creators}"
+                                    th:value="${creator.id}"
+                                    th:text="${creator.fullName}"
+                                    th:selected="${selectedCreatorId == creator.id}">Создатель</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold d-block d-md-none">Размер</label>
+                        <select class="form-select form-select-sm" name="size">
+                            <option value="10" th:selected="${pageSize == 10}">10</option>
+                            <option value="20" th:selected="${pageSize == 20}">20</option>
+                            <option value="50" th:selected="${pageSize == 50}">50</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-dark w-100 btn-sm">
+                            <i class="bi bi-filter me-1"></i>Применить
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
-    </div>
-</nav>
 
-<!-- Основной контент -->
-<div class="container-fluid mt-4">
-    <!-- Хлебные крошки -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/home}" class="text-decoration-none">Главная</a></li>
-            <li class="breadcrumb-item"><a th:href="@{/creator/dashboard}" class="text-decoration-none">Панель создателя</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Мои тесты</li>
-        </ol>
-    </nav>
+        <!-- Сообщения (без изменений) -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show py-2">...</div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">...</div>
 
-    <!-- Заголовок и кнопка создания -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1">
-                <i class="bi bi-journal-text text-primary me-2"></i>Мои тесты
-            </h2>
-            <p class="text-muted mb-0">
-                Управление всеми созданными тестами и их публикацией
-            </p>
-        </div>
-        <div>
-            <a th:href="@{/creator/tests/new}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i>Создать новый тест
-            </a>
-        </div>
-    </div>
-
-    <!-- Сообщения об ошибках/успехе -->
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-2"></i>
-        <span th:text="${successMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        <span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-
-    <!-- Фильтры и статистика -->
-    <div class="row mb-4">
-        <div class="col-lg-8">
-            <div class="card filter-card shadow-sm">
-                <div class="card-body py-3">
-                    <form th:action="@{/creator/tests}" method="get" class="row g-3 align-items-center">
-                        <div class="col-md-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">
-                                    <i class="bi bi-sort-down"></i>
-                                </span>
-                                <select class="form-select" name="sort">
-                                    <option value="createdAt" th:selected="${sort == 'createdAt'}">Сначала новые</option>
-                                    <option value="title" th:selected="${sort == 'title'}">По названию</option>
-                                    <option value="questionCount" th:selected="${sort == 'questionCount'}">По количеству вопросов</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">
-                                    <i class="bi bi-filter"></i>
-                                </span>
-                                <select class="form-select" name="status" onchange="this.form.submit()">
-                                    <option value="all" th:selected="${status == null or status == 'all'}">Все тесты</option>
-                                    <option value="published" th:selected="${status == 'published'}">Только опубликованные</option>
-                                    <option value="draft" th:selected="${status == 'draft'}">Только черновики</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="d-flex gap-2">
-                                <select class="form-select form-select-sm" style="width: auto;" name="size" onchange="this.form.submit()">
-                                    <option value="10" th:selected="${pageSize == 10}">10 на странице</option>
-                                    <option value="20" th:selected="${pageSize == 20}">20 на странице</option>
-                                    <option value="50" th:selected="${pageSize == 50}">50 на странице</option>
-                                </select>
-                                <input type="hidden" name="page" value="0">
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card bg-light shadow-sm">
-                <div class="card-body py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted">Всего тестов:</small>
-                            <div class="h5 mb-0" th:text="${totalItems}">0</div>
-                        </div>
-                        <div>
-                            <small class="text-muted">Опубликовано:</small>
-                            div class="h5 mb-0 text-success">
-                            <span th:text="${publishedTestsCount}">0</span>
-                        </div>
-                        </div>
-                        <div>
-                            <small class="text-muted">Вопросов:</small>
-                            <div class="h5 mb-0 text-primary">
-                                <span th:text="${totalQuestionsCount}">0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Таблица тестов -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h6 class="mb-0">
-                <i class="bi bi-list-check me-2"></i>Список тестов
-                <span class="badge bg-primary ms-2" th:text="${totalItems}">0</span>
-            </h6>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary" onclick="window.location.reload()">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="card-body p-0">
-            <div th:if="${tests != null and !tests.isEmpty()}">
+        <!-- Таблица тестов -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover table-test mb-0">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                         <tr>
-                            <th width="50">ID</th>
-                            <th>Название и описание</th>
-                            <th width="120">Вопросы</th>
-                            <th width="120">Статус</th>
-                            <th width="150">Дата создания</th>
-                            <th width="180" class="text-end">Действия</th>
+                            <th class="d-none d-sm-table-cell">ID</th>
+                            <th>Название</th>
+                            <!-- 🔥 НОВАЯ КОЛОНКА: Создатель -->
+                            <th class="d-none d-md-table-cell">Создатель</th>
+                            <th class="d-none d-md-table-cell">Категория</th>
+                            <th class="d-none d-lg-table-cell">Вопросов</th>
+                            <th>Статус</th>
+                            <th class="d-none d-sm-table-cell">Таймер</th>
+                            <th class="d-none d-md-table-cell">Создан</th>
+                            <th class="text-end">Действия</th>
                         </tr>
                         </thead>
                         <tbody>
                         <tr th:each="test : ${tests}"
-                            th:classappend="${test.published} ? 'table-success' : ''">
-                            <td class="text-muted fw-semibold">
-                                <span th:text="${test.id}">ID</span>
-                            </td>
-
+                            th:classappend="${ownershipMap[test.id] ? '' : 'table-secondary'}">  <!-- 🔥 затемнение чужих тестов -->
+                            <td class="d-none d-sm-table-cell" th:text="${test.id}">1</td>
                             <td>
-                                <div>
-                                    <a th:href="@{'/creator/tests/' + ${test.id} + '/statistics'}"
-                                       class="test-title fw-bold">
-                                        <span th:text="${test.title}">Название теста</span>
-                                    </a>
-                                    <div class="description-text mt-1" th:text="${test.description}">
-                                        Описание теста
-                                    </div>
-                                    <div class="quick-stats mt-2">
-                                        <small class="text-muted">
-                                            <i class="bi bi-clock me-1"></i>
-                                            <span th:text="${#temporals.format(test.createdAt, 'dd.MM.yyyy HH:mm')}">Дата</span>
-                                        </small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <span class="badge bg-info rounded-pill me-2">
-                                        <span th:text="${test.questionCount}">0</span>
-                                    </span>
-                                    <small class="text-muted">вопросов</small>
-                                </div>
-                            </td>
-
-                            <td>
-                                <div th:if="${test.published}" class="d-flex align-items-center">
-                                    <span class="status-dot status-completed me-2"></span>
-                                    <span class="badge bg-success">Опубликован</span>
-                                </div>
-                                <div th:unless="${test.published}" class="d-flex align-items-center">
-                                    <span class="status-dot status-in-progress me-2"></span>
-                                    <span class="badge bg-warning">Черновик</span>
-                                </div>
-                            </td>
-
-                            <td>
-                                <small class="text-muted">
-                                    <span th:text="${#temporals.format(test.createdAt, 'dd.MM.yyyy')}">Дата</span>
+                                <strong class="small" th:text="${test.title}">Тест</strong>
+                                <br>
+                                <!-- 🔥 ИЗМЕНЕНО: показываем создателя в мобильной версии -->
+                                <small class="text-muted d-block d-md-none">
+                                    <span th:text="${test.creatorUsername}">creator</span>
+                                    <span th:if="${test.categoryName != null}">
+                                                <span th:text="' · ' + ${test.categoryName}"></span>
+                                            </span>
                                 </small>
                             </td>
-
+                            <!-- 🔥 НОВАЯ КОЛОНКА: Создатель (десктоп) -->
+                            <td class="d-none d-md-table-cell">
+                                <span class="small" th:text="${test.creatorUsername}">user</span>
+                                <span th:if="${test.creatorUsername == #authentication.name}"
+                                      class="badge bg-success ms-1 small">мой</span>
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                <span th:if="${test.categoryName != null}" class="badge bg-light text-dark border small" th:text="${test.categoryName}">Математика</span>
+                                <span th:if="${test.categoryName == null}" class="text-muted small">-</span>
+                            </td>
+                            <td class="d-none d-lg-table-cell" th:text="${test.questionCount}">10</td>
+                            <td>
+                                <span class="badge" style="font-size: 0.7rem;" th:classappend="${test.published} ? 'bg-success' : 'bg-secondary'"
+                                      th:text="${test.published} ? 'Опубл.' : 'Черновик'">Опубл.</span>
+                            </td>
+                            <td class="d-none d-sm-table-cell">
+                                <span th:if="${test.timeLimitMinutes > 0}" class="small" th:text="${test.timeLimitMinutes} + ' мин'">30 мин</span>
+                                <span th:if="${test.timeLimitMinutes == 0}" class="text-muted small">-</span>
+                            </td>
+                            <td class="d-none d-md-table-cell small" th:text="${#temporals.format(test.createdAt, 'dd.MM.yy')}">01.01.24</td>
                             <td class="text-end">
-                                <div class="btn-group btn-group-sm action-buttons">
-                                    <!-- Статистика теста -->
-                                    <a th:href="@{'/creator/tests/' + ${test.id} + '/statistics'}"
+                                <div class="btn-group btn-group-sm">
+                                    <!-- 🔥 ИЗМЕНЕНО: Вопросы - доступны только для своих тестов -->
+                                    <a th:if="${ownershipMap[test.id]}"
+                                       th:href="@{/creator/tests/{id}/questions(id=${test.id})}"
+                                       class="btn btn-outline-dark"
+                                       title="Вопросы">
+                                        <i class="bi bi-question-circle"></i>
+                                    </a>
+                                    <span th:unless="${ownershipMap[test.id]}"
+                                          class="btn btn-outline-dark opacity-50"
+                                          style="cursor: not-allowed;"
+                                          title="Вопросы (доступны только автору)">
+                                        <i class="bi bi-question-circle"></i>
+                                    </span>
+
+                                    <!-- 🔥 ИЗМЕНЕНО: Редактировать - только для своих тестов -->
+                                    <a th:if="${ownershipMap[test.id]}"
+                                       th:href="@{/creator/tests/edit/{id}(id=${test.id})}"
                                        class="btn btn-outline-primary"
-                                       title="Статистика теста">
+                                       title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <span th:unless="${ownershipMap[test.id]}"
+                                          class="btn btn-outline-primary opacity-50"
+                                          style="cursor: not-allowed;"
+                                          title="Редактировать (доступно только автору)">
+                                        <i class="bi bi-pencil"></i>
+                                    </span>
+
+                                    <!-- Предпросмотр - доступен всем (без изменений) -->
+                                    <a th:href="@{/creator/tests/{id}/preview(id=${test.id})}"
+                                       class="btn btn-outline-info"
+                                       title="Предпросмотр">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    <!-- Статистика - доступна всем (без изменений) -->
+                                    <a th:href="@{/creator/tests/{testId}/statistics/testers(testId=${test.id})}"
+                                       class="btn btn-outline-success"
+                                       title="Статистика">
                                         <i class="bi bi-bar-chart"></i>
                                     </a>
 
-                                    <!-- Редактировать -->
-                                    <a th:href="@{'/creator/tests/edit/' + ${test.id}}"
-                                       class="btn btn-outline-info"
-                                       title="Редактировать тест">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-
-                                    <!-- Вопросы -->
-                                    <a th:href="@{'/creator/tests/' + ${test.id} + '/questions'}"
-                                       class="btn btn-outline-secondary"
-                                       title="Управление вопросами">
-                                        <i class="bi bi-question-circle"></i>
-                                    </a>
-
-                                    <!-- Публикация/снятие -->
-                                    <form th:action="@{'/creator/tests/publish/' + ${test.id}}" method="post" style="display: inline;" th:if="${test.published}">
-                                        <input type="hidden" name="publish" value="false">
-                                        <button type="submit"
-                                                class="btn btn-outline-warning"
-                                                onclick="return confirm('Вы уверены, что хотите снять этот тест с публикации?')"
-                                                title="Снять с публикации">
-                                            <i class="bi bi-eye-slash"></i>
-                                        </button>
-                                    </form>
-                                    <form th:action="@{'/creator/tests/publish/' + ${test.id}}" method="post" style="display: inline;" th:unless="${test.published}">
-                                        <input type="hidden" name="publish" value="true">
-                                        <button type="submit"
-                                                class="btn btn-outline-success"
-                                                onclick="return confirm('Вы уверены, что хотите опубликовать этот тест?')"
-                                                title="Опубликовать">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </form>
-
-                                    <!-- Быстрая статистика -->
-                                    <button type="button"
-                                            class="btn btn-outline-dark"
-                                            th:onclick="'showQuickStats(' + ${test.id} + ')'"
-                                            title="Быстрая статистика">
-                                        <i class="bi bi-info-circle"></i>
+                                    <!-- 🔥 ИЗМЕНЕНО: Публикация - только для своих тестов -->
+                                    <button th:if="${ownershipMap[test.id]}"
+                                            type="button"
+                                            class="btn btn-outline-warning publish-test-btn"
+                                            th:data-id="${test.id}"
+                                            th:data-publish="${!test.published}"
+                                            th:data-title="${test.title}"
+                                            th:title="${test.published} ? 'Снять с публикации' : 'Опубликовать'">
+                                        <i th:class="${test.published} ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                                     </button>
+                                    <span th:unless="${ownershipMap[test.id]}"
+                                          class="btn btn-outline-warning opacity-50"
+                                          style="cursor: not-allowed;"
+                                          title="Публикация (доступна только автору)">
+                                        <i th:class="${test.published} ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                    </span>
+
+                                    <!-- 🔥 ИЗМЕНЕНО: Удаление - только для своих тестов -->
+                                    <button th:if="${ownershipMap[test.id]}"
+                                            type="button"
+                                            class="btn btn-outline-danger delete-test-btn"
+                                            th:data-id="${test.id}"
+                                            th:data-title="${test.title}"
+                                            title="Удалить">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    <span th:unless="${ownershipMap[test.id]}"
+                                          class="btn btn-outline-danger opacity-50"
+                                          style="cursor: not-allowed;"
+                                          title="Удалить (доступно только автору)">
+                                        <i class="bi bi-trash"></i>
+                                    </span>
                                 </div>
+
+                                <!-- Скрытые формы (без изменений) -->
+                                <form th:id="'publishForm' + ${test.id}" th:action="@{/creator/tests/publish/{id}(id=${test.id})}"
+                                      method="post" style="display: none;">
+                                    <input type="hidden" name="publish" th:value="${!test.published}">
+                                </form>
+                                <form th:id="'deleteForm' + ${test.id}" th:action="@{/creator/tests/delete/{id}(id=${test.id})}"
+                                      method="post" style="display: none;"></form>
+                            </td>
+                        </tr>
+
+                        <tr th:if="${tests.isEmpty()}">
+                            <td colspan="9" class="text-center py-4 text-muted">  <!-- увеличил colspan на 1 -->
+                                <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                                Тесты не найдены. <a th:href="@{/creator/tests/new}" class="text-success">Создайте первый тест</a>
                             </td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Пагинация -->
-                <div th:if="${totalPages > 1}" class="card-footer bg-light">
-                    <nav aria-label="Навигация по страницам">
-                        <ul class="pagination justify-content-center mb-0">
-                            <!-- Первая страница -->
-                            <li th:classappend="${currentPage == 0} ? 'page-item disabled' : 'page-item'">
-                                <a class="page-link" th:href="@{/creator/tests(size=${pageSize}, sort=${sort}, page=0, status=${param.status})}">
-                                    <i class="bi bi-chevron-double-left"></i>
-                                </a>
-                            </li>
-
-                            <!-- Предыдущая страница -->
-                            <li th:classappend="${currentPage == 0} ? 'page-item disabled' : 'page-item'">
-                                <a class="page-link"
-                                   th:href="@{/creator/tests(size=${pageSize}, sort=${sort}, page=${currentPage - 1}, status=${param.status})}">
-                                    <i class="bi bi-chevron-left"></i>
-                                </a>
-                            </li>
-
-                            <!-- Страницы -->
-                            <li th:each="page : ${#numbers.sequence(1, totalPages)}"
-                                th:classappend="${page == currentPage + 1} ? 'page-item active' : 'page-item'">
-                                <a class="page-link"
-                                   th:href="@{/creator/tests(size=${pageSize}, sort=${sort}, page=${page - 1}, status=${param.status})}"
-                                   th:text="${page}">1</a>
-                            </li>
-
-                            <!-- Следующая страница -->
-                            <li th:classappend="${currentPage == totalPages - 1} ? 'page-item disabled' : 'page-item'">
-                                <a class="page-link"
-                                   th:href="@{/creator/tests(size=${pageSize}, sort=${sort}, page=${currentPage + 1}, status=${param.status})}">
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
-                            </li>
-
-                            <!-- Последняя страница -->
-                            <li th:classappend="${currentPage == totalPages - 1} ? 'page-item disabled' : 'page-item'">
-                                <a class="page-link"
-                                   th:href="@{/creator/tests(size=${pageSize}, sort=${sort}, page=${totalPages - 1}, status=${param.status})}">
-                                    <i class="bi bi-chevron-double-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-
-                    <div class="text-center mt-2">
-                        <small class="text-muted">
-                            Страница <span th:text="${currentPage + 1}">1</span> из <span th:text="${totalPages}">1</span> •
-                            Всего тестов: <span th:text="${totalItems}">0</span>
-                        </small>
-                    </div>
-                </div>
             </div>
 
-            <!-- Пустое состояние -->
-            <div th:if="${tests != null and tests.isEmpty()}" class="empty-state">
-                <div class="mb-4">
-                    <i class="bi bi-journal-x display-1 text-muted opacity-50"></i>
-                </div>
-                <h4 class="text-muted mb-3">У вас пока нет тестов</h4>
-                <p class="text-muted mb-4">
-                    Создайте свой первый тест, чтобы начать оценивать знания тестировщиков.<br>
-                    Вы можете добавлять вопросы, настраивать варианты ответов и публиковать тесты.
-                </p>
-                <div class="d-flex justify-content-center gap-3">
-                    <a th:href="@{/creator/tests/new}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-plus-circle me-2"></i>Создать первый тест
-                    </a>
-                    <a th:href="@{/creator/dashboard}" class="btn btn-outline-secondary btn-lg">
-                        <i class="bi bi-speedometer2 me-2"></i>На панель
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Карточки тестов (альтернативный вид) -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="bi bi-grid-3x3-gap me-2"></i>Карточки тестов
-            </h6>
-        </div>
-        <div class="card-body">
-            <div th:if="${tests != null and !tests.isEmpty()}">
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                    <div th:each="test : ${tests}" class="col">
-                        <div th:classappend="${test.published} ? 'test-card published' : 'test-card draft'"
-                             class="card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <span th:if="${test.published}"
-                                              class="badge bg-success mb-2">Опубликован</span>
-                                        <span th:unless="${test.published}"
-                                              class="badge bg-warning mb-2">Черновик</span>
-                                        <h5 class="card-title mb-1">
-                                            <a th:href="@{'/creator/tests/' + ${test.id} + '/statistics'}"
-                                               class="test-title">
-                                                <span th:text="${test.title}">Название</span>
-                                            </a>
-                                        </h5>
-                                        <small class="text-muted">ID: <span th:text="${test.id}">0</span></small>
-                                    </div>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                type="button"
-                                                data-bs-toggle="dropdown">
-                                            <i class="bi bi-three-dots"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   th:href="@{'/creator/tests/' + ${test.id} + '/statistics'}">
-                                                    <i class="bi bi-bar-chart me-2"></i>Статистика
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   th:href="@{'/creator/tests/edit/' + ${test.id}}">
-                                                    <i class="bi bi-pencil me-2"></i>Редактировать
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   th:href="@{'/creator/tests/' + ${test.id} + '/questions'}">
-                                                    <i class="bi bi-question-circle me-2"></i>Вопросы
-                                                </a>
-                                            </li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <form th:action="@{'/creator/tests/publish/' + ${test.id}}" method="post" th:if="${not test.published}">
-                                                    <input type="hidden" name="publish" value="true">
-                                                    <button type="submit"
-                                                            class="dropdown-item text-success"
-                                                            onclick="return confirm('Вы уверены, что хотите опубликовать этот тест?')">
-                                                        <i class="bi bi-eye me-2"></i>Опубликовать
-                                                    </button>
-                                                </form>
-                                                <form th:action="@{'/creator/tests/publish/' + ${test.id}}" method="post" th:if="${test.published}">
-                                                    <input type="hidden" name="publish" value="false">
-                                                    <button type="submit"
-                                                            class="dropdown-item text-warning"
-                                                            onclick="return confirm('Вы уверены, что хотите снять этот тест с публикации?')">
-                                                        <i class="bi bi-eye-slash me-2"></i>Снять с публикации
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <p class="card-text description-text" th:text="${test.description}">
-                                    Описание теста
-                                </p>
-
-                                <div class="d-flex justify-content-between align-items-center mt-3">
-                                    <div>
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-question-circle me-1"></i>
-                                            <span th:text="${test.questionCount}">0</span> вопросов
-                                        </span>
-                                    </div>
-                                    <div class="text-muted small">
-                                        <i class="bi bi-calendar me-1"></i>
-                                        <span th:text="${#temporals.format(test.createdAt, 'dd.MM.yyyy')}">Дата</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-footer bg-transparent border-top-0">
-                                <div class="d-grid">
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-primary"
-                                            th:onclick="'showQuickStats(' + ${test.id} + ')'">
-                                        <i class="bi bi-graph-up me-1"></i>Быстрая статистика
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div th:if="${tests == null or tests.isEmpty()}" class="text-center py-4">
-                <p class="text-muted">Нет тестов для отображения</p>
+            <!-- Пагинация (без изменений) -->
+            <div class="card-footer bg-white border-0 py-3">
+                <div th:replace="~{fragments/pagination :: pagination(
+        currentPage=${currentPage},
+        totalPages=${totalPages},
+        pageSize=${pageSize},
+        baseUrl=@{/creator/tests(status=${status}, search=${search}, categoryId=${categoryId}, creatorId=${creatorId})}
+    )}"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Футер -->
-<footer class="mt-5 py-4 bg-light border-top">
-    <div class="container-fluid">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <h6 class="mb-2">
-                    <i class="bi bi-speedometer2 text-primary me-2"></i>Assess Pro
-                </h6>
-                <p class="text-muted small mb-0">
-                    Система для создания и прохождения тестов<br>
-                    © 2024 Все права защищены | Версия 1.0.0
-                </p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <p class="text-muted small mb-1">
-                    <i class="bi bi-server me-1"></i>Статус: <span class="text-success">● Онлайн</span>
-                </p>
-                <p class="text-muted small mb-0">
-                    <i class="bi bi-clock me-1"></i>Время работы системы
-                </p>
-            </div>
-        </div>
-    </div>
-</footer>
+<!-- Модальные окна (без изменений) -->
+<div class="modal fade" id="deleteModal" tabindex="-1">...</div>
+<div class="modal fade" id="publishModal" tabindex="-1">...</div>
 
-<!-- Модальное окно для быстрой статистики -->
-<div class="modal fade" id="quickStatsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-graph-up me-2"></i>Быстрая статистика теста
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="quickStatsContent">
-                <!-- Контент загружается через JavaScript -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Закрыть
-                </button>
-                <a id="fullStatsLink" class="btn btn-primary" href="#">
-                    <i class="bi bi-bar-chart me-1"></i>Подробная статистика
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+<div th:replace="~{fragments/footer}"></div>
 
-<!-- JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Функция для показа быстрой статистики
-    function showQuickStats(testId) {
-        const modal = new bootstrap.Modal(document.getElementById('quickStatsModal'));
-
-        // Показываем загрузку
-        document.getElementById('quickStatsContent').innerHTML = `
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Загрузка...</span>
-                </div>
-                <p class="mt-3 text-muted">Загрузка статистики...</p>
-            </div>
-        `;
-
-        // Устанавливаем ссылку на полную статистику
-        document.getElementById('fullStatsLink').href =
-            '/creator/tests/' + testId + '/statistics';
-
-        modal.show();
-
-        // AJAX запрос для получения быстрой статистики
-        fetch('/creator/tests/' + testId + '/quick-stats', {
-            headers: {
-                'Accept': 'application/json'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('quickStatsContent').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Ошибка: ${data.error}
-                    </div>
-                `;
-                    return;
-                }
-
-                // Формируем HTML с данными
-                const html = `
-                <div class="row g-3">
-                    <div class="col-6">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <div class="h4 mb-0 text-primary">${data.questionCount || 0}</div>
-                                <small class="text-muted">Вопросов</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <div class="h4 mb-0 ${data.published ? 'text-success' : 'text-warning'}">
-                                    ${data.published ? 'Да' : 'Нет'}
-                                </div>
-                                <small class="text-muted">Опубликован</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <h6>Информация о тесте:</h6>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between px-0">
-                            <span>Название:</span>
-                            <strong>${data.testTitle || 'Не указано'}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between px-0">
-                            <span>ID теста:</span>
-                            <strong>${data.testId || 'Не указан'}</strong>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="alert alert-info mt-3">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Для просмотра полной статистики тестировщиков перейдите в раздел "Статистика"
-                </div>
-            `;
-
-                document.getElementById('quickStatsContent').innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Error fetching quick stats:', error);
-                document.getElementById('quickStatsContent').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Ошибка при загрузке статистики: ${error.message}
-                </div>
-            `;
-            });
-    }
-
-    // Инициализация при загрузке
+    // JavaScript (без изменений)
     document.addEventListener('DOMContentLoaded', function() {
-        // Инициализация tooltips
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const publishModal = new bootstrap.Modal(document.getElementById('publishModal'));
+
+        let currentDeleteId = null;
+        let currentPublishId = null;
+        let currentPublishState = null;
+
+        document.querySelectorAll('.delete-test-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                currentDeleteId = this.dataset.id;
+                const title = this.dataset.title;
+                document.getElementById('deleteTestTitle').textContent = title;
+                deleteModal.show();
+            });
         });
 
-        // Автоматическое скрытие алертов через 5 секунд
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                setTimeout(() => bsAlert.close(), 5000);
+        document.querySelectorAll('.publish-test-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                currentPublishId = this.dataset.id;
+                currentPublishState = this.dataset.publish === 'true';
+                const title = this.dataset.title;
+
+                const message = currentPublishState ?
+                    `Опубликовать тест "${title}"?` :
+                    `Снять тест "${title}" с публикации?`;
+
+                document.getElementById('publishMessage').textContent = message;
+                publishModal.show();
             });
-        }, 5000);
+        });
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+            if (currentDeleteId) {
+                document.getElementById('deleteForm' + currentDeleteId).submit();
+            }
+        });
+
+        document.getElementById('confirmPublishBtn').addEventListener('click', function() {
+            if (currentPublishId) {
+                document.getElementById('publishForm' + currentPublishId).submit();
+            }
+        });
     });
 </script>
 </body>

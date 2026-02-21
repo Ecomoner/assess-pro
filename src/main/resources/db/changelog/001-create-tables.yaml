@@ -1,4 +1,4 @@
-databaseChangeLog:
+#databaseChangeLog:
   - changeSet:
       id: 001-create-users-table
       author: your_name

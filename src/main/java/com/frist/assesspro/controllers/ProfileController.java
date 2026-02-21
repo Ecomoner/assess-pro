@@ -4,6 +4,11 @@ package com.frist.assesspro.controllers;
 import com.frist.assesspro.dto.profile.ProfileCompletionDTO;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.service.ProfileService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +27,22 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/profile")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Профиль",description = "API для профиля")
 public class ProfileController {
 
     private final ProfileService profileService;
 
-    /**
-     * Страница заполнения профиля
-     */
+    @ModelAttribute("currentUri")
+    public String getCurrentUri(HttpServletRequest request) {
+        return request.getRequestURI();
+    }
+
+    @Operation(summary = "Страница заполнения профиля")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/complete")
     public String showProfileForm(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -46,9 +60,12 @@ public class ProfileController {
         return "profile/complete";
     }
 
-    /**
-     * Обработка заполнения профиля
-     */
+    @Operation(summary = "Обработка заполнения профиля")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/complete")
     public String completeProfile(
             @Valid @ModelAttribute("profileDTO") ProfileCompletionDTO profileDTO,
@@ -87,9 +104,12 @@ public class ProfileController {
         }
     }
 
-    /**
-     * Просмотр/редактирование профиля
-     */
+    @Operation(summary = "Просмотр/редактирование профиля")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @GetMapping("/edit")
     public String editProfile(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -100,9 +120,12 @@ public class ProfileController {
         return "profile/edit";
     }
 
-    /**
-     * Обновление профиля
-     */
+    @Operation(summary = "Обновление профиля")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping("/edit")
     public String updateProfile(
             @Valid @ModelAttribute("profileDTO") ProfileCompletionDTO profileDTO,
@@ -124,4 +147,5 @@ public class ProfileController {
             return "redirect:/profile/edit";
         }
     }
+
 }
