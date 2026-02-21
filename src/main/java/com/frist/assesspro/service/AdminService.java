@@ -184,7 +184,7 @@ public class AdminService {
     public AppStatisticsDTO getAppStatistics() {
         AppStatisticsDTO stats = new AppStatisticsDTO();
 
-        // 1. Статистика пользователей
+        // ============= 1. СТАТИСТИКА ПОЛЬЗОВАТЕЛЕЙ =============
         stats.setTotalUsers(userRepository.countAllUsers());
         stats.setTotalAdmins(userRepository.countByRole(User.Roles.ADMIN));
         stats.setTotalCreators(userRepository.countByRole(User.Roles.CREATOR));
@@ -196,15 +196,14 @@ public class AdminService {
         stats.setActiveUsers(userRepository.countByIsActive(true));
         stats.setInactiveUsers(userRepository.countByIsActive(false));
 
-        // 2. Статистика тестов
+        // ============= 2. СТАТИСТИКА ТЕСТОВ =============
         stats.setTotalTests(testRepository.countAllTests());
-        // 🔥 ИСПРАВЛЕНО: используем правильные методы
         stats.setPublishedTests(testRepository.countByIsPublished(true));
         stats.setDraftTests(testRepository.countByIsPublished(false));
         stats.setTotalQuestions(questionRepository.count());
         stats.setTotalCategories(categoryRepository.count());
 
-        // 3. Статистика прохождений
+        // ============= 3. СТАТИСТИКА ПРОХОЖДЕНИЙ =============
         List<TestAttempt> allAttempts = testAttemptRepository.findAll();
         stats.setTotalAttempts((long) allAttempts.size());
 
@@ -231,11 +230,11 @@ public class AdminService {
                 .sum();
         stats.setTotalTimeSpentMinutes(totalMinutes);
 
-        // 4. Регистрации по дням (последние 30 дней)
+        // ============= 4. ДИНАМИКА =============
+
+        // Регистрации по дням (последние 30 дней)
         Map<LocalDate, Long> registrations = new LinkedHashMap<>();
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-
-        // 🔥 ИСПРАВЛЕНО: используем правильный метод
         userRepository.findByCreatedAtAfter(thirtyDaysAgo).stream()
                 .collect(Collectors.groupingBy(
                         u -> u.getCreatedAt().toLocalDate(),
@@ -244,14 +243,56 @@ public class AdminService {
                 .entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(e -> registrations.put(e.getKey(), e.getValue()));
-
         stats.setRegistrationsByDay(registrations);
 
-        // 5. Топ создателей
+        // Прохождения по дням (последние 30 дней)
+        Map<LocalDate, Long> attemptsByDay = allAttempts.stream()
+                .filter(a -> a.getStartTime() != null &&
+                        a.getStartTime().isAfter(thirtyDaysAgo))
+                .collect(Collectors.groupingBy(
+                        a -> a.getStartTime().toLocalDate(),
+                        Collectors.counting()
+                ))
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
+        stats.setAttemptsByDay(attemptsByDay);
+
+        // Тесты по категориям
+        Map<String, Long> testsByCategory = new LinkedHashMap<>();
+        List<Object[]> categoryStats = testRepository.countTestsByCategory();
+        for (Object[] stat : categoryStats) {
+            if (stat.length >= 2 && stat[0] != null) {
+                String categoryName = (String) stat[0];
+                Long count = ((Number) stat[1]).longValue();
+                testsByCategory.put(categoryName, count);
+            }
+        }
+        stats.setTestsByCategory(testsByCategory);
+
+        // Средний балл по категориям
+        Map<String, Double> avgScoreByCategory = new LinkedHashMap<>();
+        List<Object[]> avgStats = testRepository.averageScoreByCategory();
+        for (Object[] stat : avgStats) {
+            if (stat.length >= 2 && stat[0] != null) {
+                String categoryName = (String) stat[0];
+                Double avgrScore = ((Number) stat[1]).doubleValue();
+                avgScoreByCategory.put(categoryName, avgrScore);
+            }
+        }
+        stats.setAverageScoreByCategory(avgScoreByCategory);
+
+        // ============= 5. ТОПЫ =============
+
+        // Топ создателей (по количеству тестов)
         List<UserManagementDTO> topCreators = userRepository.findByRole(User.Roles.CREATOR).stream()
                 .map(creator -> {
-                    UserManagementDTO dto = convertToUserManagementDTO(creator);
-                    // 🔥 ИСПРАВЛЕНО: используем правильный метод
+                    UserManagementDTO dto = UserManagementDTO.fromEntity(creator);
                     dto.setTestsCreated(testRepository.countByCreatedBy(creator));
                     return dto;
                 })
@@ -260,39 +301,40 @@ public class AdminService {
                 .collect(Collectors.toList());
         stats.setTopCreators(topCreators);
 
-        // 6. Топ тестировщиков
-        List<UserManagementDTO> topTesters = userRepository.findByRole(User.Roles.TESTER).stream()
-                .map(tester -> {
-                    UserManagementDTO dto = convertToUserManagementDTO(tester);
-                    dto.setTestsPassed(testAttemptRepository.countByUserIdAndStatus(
-                            tester.getId(), TestAttempt.AttemptStatus.COMPLETED));
+        // Топ тестировщиков (по количеству прохождений) и лучшие по среднему баллу
+        List<User> allTesters = userRepository.findByRole(User.Roles.TESTER);
+        List<UserManagementDTO> topTesters = new ArrayList<>();
+        List<UserManagementDTO> bestTesters = new ArrayList<>();
 
-                    Double avg = testAttemptRepository.findAverageScoreByUserId(tester.getId());
-                    dto.setAverageScore(avg != null ? avg : 0.0);
-                    return dto;
-                })
-                .sorted((a, b) -> Long.compare(b.getTestsPassed(), a.getTestsPassed()))
-                .limit(10)
-                .collect(Collectors.toList());
-        stats.setTopTesters(topTesters);
+        for (User tester : allTesters) {
+            UserManagementDTO dto = UserManagementDTO.fromEntity(tester);
 
-        // 7. Лучшие тестировщики по среднему баллу
-        List<UserManagementDTO> bestTesters = userRepository.findByRole(User.Roles.TESTER).stream()
-                .map(tester -> {
-                    UserManagementDTO dto = convertToUserManagementDTO(tester);
-                    Double avg = testAttemptRepository.findAverageScoreByUserId(tester.getId());
-                    dto.setAverageScore(avg != null ? avg : 0.0);
-                    return dto;
-                })
-                .sorted((a, b) -> Double.compare(b.getAverageScore(), a.getAverageScore()))
-                .limit(10)
-                .collect(Collectors.toList());
-        stats.setBestTesters(bestTesters);
+            // Статистика тестировщика
+            long completedAttempts = testAttemptRepository.countByUserIdAndStatus(
+                    tester.getId(), TestAttempt.AttemptStatus.COMPLETED);
+            Double avgScoreForTester = testAttemptRepository.findAverageScoreByUserId(tester.getId());
 
-        // 8. Тесты по категориям
-        Map<String, Long> testsByCategory = new LinkedHashMap<>();
-        // Здесь можно добавить запрос для получения статистики по категориям
-        stats.setTestsByCategory(testsByCategory);
+            dto.setTestsPassed(completedAttempts);
+            dto.setAverageScore(avgScoreForTester != null ? avgScoreForTester : 0.0);
+
+            topTesters.add(dto);
+            bestTesters.add(dto);
+        }
+
+        // Сортируем и ограничиваем топы
+        stats.setTopTesters(
+                topTesters.stream()
+                        .sorted((a, b) -> Long.compare(b.getTestsPassed(), a.getTestsPassed()))
+                        .limit(10)
+                        .collect(Collectors.toList())
+        );
+
+        stats.setBestTesters(
+                bestTesters.stream()
+                        .sorted((a, b) -> Double.compare(b.getAverageScore(), a.getAverageScore()))
+                        .limit(10)
+                        .collect(Collectors.toList())
+        );
 
         return stats;
     }

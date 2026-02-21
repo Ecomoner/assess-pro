@@ -15,4 +15,14 @@ public class AnswerOptionDTO {
 
     @NotNull(message = "Поле isCorrect обязательно")
     private Boolean isCorrect = false;
+
+    public AnswerOptionDTO(){
+
+    }
+
+    public AnswerOptionDTO(Long id, String text, Boolean isCorrect) {
+        this.id = id;
+        this.text = text;
+        this.isCorrect = isCorrect;
+    }
 }

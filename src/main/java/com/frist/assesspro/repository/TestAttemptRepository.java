@@ -1,7 +1,5 @@
 package com.frist.assesspro.repository;
 
-import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
-import com.frist.assesspro.dto.statistics.TesterStatisticsDTO;
 import com.frist.assesspro.dto.test.TestHistoryDTO;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
@@ -130,6 +128,8 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
 
     @Query("SELECT ta FROM TestAttempt ta " +
             "JOIN FETCH ta.user " +
+            "JOIN FETCH ta.test " +
+            "LEFT JOIN FETCH ta.test.questions " +  // ← ДОБАВЛЕНО
             "WHERE ta.test.id = :testId " +
             "ORDER BY ta.startTime DESC")
     Page<TestAttempt> findByTestIdWithUser(@Param("testId") Long testId, Pageable pageable);
@@ -144,9 +144,20 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     Page<TestAttempt> searchByTestIdWithUser(@Param("testId") Long testId,
                                              @Param("search") String search,
                                              Pageable pageable);
-
-
-
     long countByTestIdAndUserIdAndStatus(Long testId, Long userId, TestAttempt.AttemptStatus status);
+
+    @Query("SELECT ta FROM TestAttempt ta " +
+            "JOIN FETCH ta.user " +
+            "JOIN FETCH ta.test " +
+            "LEFT JOIN FETCH ta.test.questions " +
+            "WHERE ta.test.id = :testId " +
+            "ORDER BY ta.startTime DESC")
+    Page<TestAttempt> findAttemptsByTestIdWithAllData(@Param("testId") Long testId, Pageable pageable);
+
+    @Query("SELECT ta.user.id, COUNT(ta), COALESCE(AVG(ta.totalScore), 0) " +
+            "FROM TestAttempt ta " +
+            "WHERE ta.user.role = 'ROLE_TESTER' AND ta.status = 'COMPLETED' " +
+            "GROUP BY ta.user.id")
+    List<Object[]> getTesterStats();
 
 }

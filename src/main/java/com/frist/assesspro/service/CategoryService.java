@@ -74,10 +74,6 @@ public class CategoryService {
     }
 
     /**
-     * Получение категории по ID (без проверки прав, для публичного доступа)
-     */
-
-    /**
      * Получение DTO списка категорий создателя
      */
     @Transactional(readOnly = true)

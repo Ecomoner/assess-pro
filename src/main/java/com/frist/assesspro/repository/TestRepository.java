@@ -1,7 +1,10 @@
 package com.frist.assesspro.repository;
 
 import com.frist.assesspro.dto.TestDTO;
+import com.frist.assesspro.dto.test.AnswerPreviewDTO;
+import com.frist.assesspro.dto.test.QuestionPreviewDTO;
 import com.frist.assesspro.dto.test.TestInfoDTO;
+import com.frist.assesspro.dto.test.TestPreviewDTO;
 import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
 
@@ -16,6 +19,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -67,13 +71,9 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             nativeQuery = true)
     Long countQuestionsByCreatorId(@Param("creatorId") Long creatorId);
 
-    @EntityGraph(value = "Test.withQuestionsAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(value = "Test.withCreatorAndCategory", type = EntityGraph.EntityGraphType.LOAD)
     @Query("SELECT t FROM Test t WHERE t.id = :id AND t.createdBy = :creator")
-    Optional<Test> findByIdWithQuestionsAndAnswers(@Param("id") Long id, @Param("creator") User creator);
-
-    @EntityGraph(value = "Test.withQuestionsAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
-    @Query("SELECT t FROM Test t WHERE t.id = :id")
-    Optional<Test> findByIdWithQuestionsAndAnswers(@Param("id") Long id);
+    Optional<Test> findByIdWithCreatorAndCategory(@Param("id") Long id, @Param("creator") User creator);
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
             "t.id, t.title, t.description, " +
@@ -86,6 +86,27 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "t.category.id, t.category.name " +
             "ORDER BY t.createdAt DESC")
     List<TestInfoDTO> findPublishedTestInfoDTOsByCategoryId(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT new com.frist.assesspro.dto.test.TestPreviewDTO(" +
+            "t.id, t.title, t.description, t.timeLimitMinutes, " +
+            "t.createdBy.id, t.createdBy.username) " +
+            "FROM Test t " +
+            "WHERE t.id = :testId")
+    Optional<TestPreviewDTO> findTestPreviewDTO(@Param("testId") Long testId);
+
+    @Query("SELECT new com.frist.assesspro.dto.test.QuestionPreviewDTO(" +
+            "q.id, q.text, q.orderIndex) " +
+            "FROM Question q " +
+            "WHERE q.test.id = :testId " +
+            "ORDER BY q.orderIndex")
+    List<QuestionPreviewDTO> findQuestionPreviewDTOs(@Param("testId") Long testId);
+
+    @Query("SELECT new com.frist.assesspro.dto.test.AnswerPreviewDTO(" +
+            "a.id, a.text, a.isCorrect) " +
+            "FROM AnswerOption a " +
+            "WHERE a.question.id = :questionId " +
+            "ORDER BY a.id")
+    List<AnswerPreviewDTO> findAnswerPreviewDTOs(@Param("questionId") Long questionId);
 
     // ============= СТАРЫЕ МЕТОДЫ (ИСПРАВЛЕНЫ) =============
 
@@ -260,4 +281,29 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "WHERE q.test.id = :testId " +
             "ORDER BY q.orderIndex")
     List<Question> findQuestionsWithAnswersByTestId(@Param("testId") Long testId);
+
+    @Query("SELECT t FROM Test t " +
+            "LEFT JOIN FETCH t.questions q " +
+            "LEFT JOIN FETCH q.answerOptions " +
+            "WHERE t.id = :id AND t.isPublished = true")
+    Optional<Test> findByIdAndIsPublishedTrueWithAllData(@Param("id") Long id);
+
+    @Query("SELECT t.createdBy.id, COUNT(t) FROM Test t " +
+            "WHERE t.createdBy.role = 'ROLE_CREATOR' " +
+            "GROUP BY t.createdBy.id")
+    Map<Long, Long> countTestsByCreators();
+
+    @Query("SELECT t.category.name, COUNT(t) FROM Test t " +
+            "WHERE t.category IS NOT NULL " +
+            "GROUP BY t.category.name")
+    List<Object[]> countTestsByCategory();
+
+    @Query("SELECT t.category.name, AVG(ta.totalScore) FROM Test t " +
+            "JOIN t.attempts ta " +
+            "WHERE t.category IS NOT NULL AND ta.status = 'COMPLETED' " +
+            "GROUP BY t.category.name")
+    List<Object[]> averageScoreByCategory();
+
+
+
 }

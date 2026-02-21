@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -43,6 +44,7 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Cacheable
 public class Test {
 
     @Id

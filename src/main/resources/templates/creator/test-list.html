@@ -10,7 +10,7 @@
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 mb-md-4 gap-2">
             <h1 class="h3 h2-md mb-0">
                 <i class="bi bi-file-text text-success me-2"></i>
-                Каталог тестов  <!-- 🔥 ИЗМЕНЕНО: "Мои тесты" → "Каталог тестов" -->
+                Каталог тестов
             </h1>
             <a th:href="@{/creator/tests/new}" class="btn btn-dark w-100 w-sm-auto">
                 <i class="bi bi-plus-circle me-2"></i>Создать тест
@@ -22,7 +22,7 @@
             <!-- ... оставляем как есть ... -->
         </div>
 
-        <!-- Фильтры (ДОБАВЛЕН ФИЛЬТР ПО СОЗДАТЕЛЮ) -->
+        <!-- Фильтры -->
         <div class="card border-0 shadow-sm mb-3 mb-md-4">
             <div class="card-body p-3 p-md-4">
                 <form th:action="@{/creator/tests}" method="get" class="row g-2 g-md-3">
@@ -51,7 +51,7 @@
                         </select>
                     </div>
 
-                    <!-- 🔥 НОВЫЙ ФИЛЬТР: по создателю -->
+                    <!-- Фильтр по создателю -->
                     <div class="col-6 col-md-2">
                         <label class="form-label small fw-semibold d-block d-md-none">Создатель</label>
                         <select class="form-select form-select-sm" name="creatorId">
@@ -81,7 +81,7 @@
             </div>
         </div>
 
-        <!-- Сообщения (без изменений) -->
+        <!-- Сообщения -->
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show py-2">...</div>
         <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">...</div>
 
@@ -94,7 +94,6 @@
                         <tr>
                             <th class="d-none d-sm-table-cell">ID</th>
                             <th>Название</th>
-                            <!-- 🔥 НОВАЯ КОЛОНКА: Создатель -->
                             <th class="d-none d-md-table-cell">Создатель</th>
                             <th class="d-none d-md-table-cell">Категория</th>
                             <th class="d-none d-lg-table-cell">Вопросов</th>
@@ -106,20 +105,18 @@
                         </thead>
                         <tbody>
                         <tr th:each="test : ${tests}"
-                            th:classappend="${ownershipMap[test.id] ? '' : 'table-secondary'}">  <!-- 🔥 затемнение чужих тестов -->
+                            th:classappend="${ownershipMap[test.id] ? '' : 'table-secondary'}">
                             <td class="d-none d-sm-table-cell" th:text="${test.id}">1</td>
                             <td>
                                 <strong class="small" th:text="${test.title}">Тест</strong>
                                 <br>
-                                <!-- 🔥 ИЗМЕНЕНО: показываем создателя в мобильной версии -->
                                 <small class="text-muted d-block d-md-none">
                                     <span th:text="${test.creatorUsername}">creator</span>
                                     <span th:if="${test.categoryName != null}">
-                                                <span th:text="' · ' + ${test.categoryName}"></span>
-                                            </span>
+                                        <span th:text="' · ' + ${test.categoryName}"></span>
+                                    </span>
                                 </small>
                             </td>
-                            <!-- 🔥 НОВАЯ КОЛОНКА: Создатель (десктоп) -->
                             <td class="d-none d-md-table-cell">
                                 <span class="small" th:text="${test.creatorUsername}">user</span>
                                 <span th:if="${test.creatorUsername == #authentication.name}"
@@ -141,7 +138,7 @@
                             <td class="d-none d-md-table-cell small" th:text="${#temporals.format(test.createdAt, 'dd.MM.yy')}">01.01.24</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
-                                    <!-- 🔥 ИЗМЕНЕНО: Вопросы - доступны только для своих тестов -->
+                                    <!-- Вопросы - только для своих тестов -->
                                     <a th:if="${ownershipMap[test.id]}"
                                        th:href="@{/creator/tests/{id}/questions(id=${test.id})}"
                                        class="btn btn-outline-dark"
@@ -155,7 +152,7 @@
                                         <i class="bi bi-question-circle"></i>
                                     </span>
 
-                                    <!-- 🔥 ИЗМЕНЕНО: Редактировать - только для своих тестов -->
+                                    <!-- Редактировать - только для своих тестов -->
                                     <a th:if="${ownershipMap[test.id]}"
                                        th:href="@{/creator/tests/edit/{id}(id=${test.id})}"
                                        class="btn btn-outline-primary"
@@ -169,21 +166,21 @@
                                         <i class="bi bi-pencil"></i>
                                     </span>
 
-                                    <!-- Предпросмотр - доступен всем (без изменений) -->
+                                    <!-- Предпросмотр - доступен всем (используем правильный URL) -->
                                     <a th:href="@{/creator/tests/{id}/preview(id=${test.id})}"
                                        class="btn btn-outline-info"
                                        title="Предпросмотр">
                                         <i class="bi bi-eye"></i>
                                     </a>
 
-                                    <!-- Статистика - доступна всем (без изменений) -->
+                                    <!-- Статистика - доступна всем -->
                                     <a th:href="@{/creator/tests/{testId}/statistics/testers(testId=${test.id})}"
                                        class="btn btn-outline-success"
                                        title="Статистика">
                                         <i class="bi bi-bar-chart"></i>
                                     </a>
 
-                                    <!-- 🔥 ИЗМЕНЕНО: Публикация - только для своих тестов -->
+                                    <!-- 🔥 ИСПРАВЛЕНО: Публикация - используем правильный URL /publish/{id} -->
                                     <button th:if="${ownershipMap[test.id]}"
                                             type="button"
                                             class="btn btn-outline-warning publish-test-btn"
@@ -200,7 +197,7 @@
                                         <i th:class="${test.published} ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                                     </span>
 
-                                    <!-- 🔥 ИЗМЕНЕНО: Удаление - только для своих тестов -->
+                                    <!-- 🔥 ИСПРАВЛЕНО: Удаление - используем правильный URL /delete/{id} -->
                                     <button th:if="${ownershipMap[test.id]}"
                                             type="button"
                                             class="btn btn-outline-danger delete-test-btn"
@@ -217,18 +214,24 @@
                                     </span>
                                 </div>
 
-                                <!-- Скрытые формы (без изменений) -->
-                                <form th:id="'publishForm' + ${test.id}" th:action="@{/creator/tests/publish/{id}(id=${test.id})}"
-                                      method="post" style="display: none;">
+                                <!-- 🔥 ИСПРАВЛЕНО: Скрытые формы с правильными URL -->
+                                <form th:id="'publishForm' + ${test.id}"
+                                      th:action="@{/creator/tests/{id}/publish(id=${test.id})}"
+                                      method="post"
+                                      style="display: none;">
                                     <input type="hidden" name="publish" th:value="${!test.published}">
                                 </form>
-                                <form th:id="'deleteForm' + ${test.id}" th:action="@{/creator/tests/delete/{id}(id=${test.id})}"
-                                      method="post" style="display: none;"></form>
+
+                                <form th:id="'deleteForm' + ${test.id}"
+                                      th:action="@{/creator/tests/delete/{id}(id=${test.id})}"
+                                      method="post"
+                                      style="display: none;">
+                                </form>
                             </td>
                         </tr>
 
                         <tr th:if="${tests.isEmpty()}">
-                            <td colspan="9" class="text-center py-4 text-muted">  <!-- увеличил colspan на 1 -->
+                            <td colspan="9" class="text-center py-4 text-muted">
                                 <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
                                 Тесты не найдены. <a th:href="@{/creator/tests/new}" class="text-success">Создайте первый тест</a>
                             </td>
@@ -238,7 +241,7 @@
                 </div>
             </div>
 
-            <!-- Пагинация (без изменений) -->
+            <!-- Пагинация -->
             <div class="card-footer bg-white border-0 py-3">
                 <div th:replace="~{fragments/pagination :: pagination(
         currentPage=${currentPage},
@@ -251,15 +254,48 @@
     </div>
 </div>
 
-<!-- Модальные окна (без изменений) -->
-<div class="modal fade" id="deleteModal" tabindex="-1">...</div>
-<div class="modal fade" id="publishModal" tabindex="-1">...</div>
+<!-- Модальные окна -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить тест "<span id="deleteTestTitle"></span>"?</p>
+                <p class="text-danger">Это действие необратимо!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="publishModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="publishMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmPublishBtn">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div th:replace="~{fragments/footer}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // JavaScript (без изменений)
     document.addEventListener('DOMContentLoaded', function() {
         const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
         const publishModal = new bootstrap.Modal(document.getElementById('publishModal'));

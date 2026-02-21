@@ -8,12 +8,15 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
 @Table(name = "answer_options")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Cacheable
+
 public class AnswerOption {
 
     @Id

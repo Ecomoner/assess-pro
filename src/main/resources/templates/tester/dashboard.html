@@ -192,7 +192,7 @@
                                     </a>
                                 </td>
                             </tr>
-                            <tr th:if="${recentCompleted.isEmpty()}">
+                            <tr th:if="${recentCompleted == null or recentCompleted.isEmpty()}">
                                 <td colspan="5" class="text-center py-3 text-muted small">
                                     Пока нет завершенных тестов
                                 </td>

@@ -23,5 +23,14 @@ public class QuestionDTO {
     private List<AnswerOptionDTO> answerOptions = new ArrayList<>();
 
     public QuestionDTO() {
+
+    }
+
+    public QuestionDTO(Long id, String text, Integer orderIndex,
+                       List<AnswerOptionDTO> answerOptions) {
+        this.id = id;
+        this.text = text;
+        this.orderIndex = orderIndex;
+        this.answerOptions = answerOptions != null ? answerOptions : new ArrayList<>();
     }
 }

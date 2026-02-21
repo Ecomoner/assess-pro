@@ -67,6 +67,17 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
         <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core-jakarta</artifactId>
+            <version>5.6.14.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>3.10.8</version>
+            <classifier>jakarta</classifier>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

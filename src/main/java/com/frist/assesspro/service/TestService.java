@@ -2,9 +2,7 @@ package com.frist.assesspro.service;
 
 
 import com.frist.assesspro.dto.TestDTO;
-import com.frist.assesspro.dto.test.QuestionForTakingDTO;
-import com.frist.assesspro.dto.test.TestTakingDTO;
-import com.frist.assesspro.dto.test.TestUpdateDTO;
+import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.*;
 import com.frist.assesspro.repository.*;
 import com.frist.assesspro.repository.specification.TestSpecifications;
@@ -208,58 +206,39 @@ public class TestService {
         Test test = testRepository.findById(testId)
                 .orElseThrow(() -> new RuntimeException("Тест не найден"));
 
-        // Проверяем права
         if (!test.getCreatedBy().getId().equals(creator.getId())) {
             throw new RuntimeException("Нет прав для изменения статуса теста");
         }
 
         if (publish) {
-            // 1. Проверяем наличие вопросов
-            int questionCount = questionRepository.countByTestId(testId);
-            if (questionCount == 0) {
-                throw new RuntimeException("Нельзя опубликовать тест без вопросов");
-            }
+            // ЗАМЕНИТЬ на один запрос вместо нескольких
+            List<Question> questions = questionRepository.findQuestionsWithAnswersByTestId(testId);
 
-            // 2. Проверяем, что у ВСЕХ вопросов есть варианты ответов
-            List<Question> questions = questionRepository.findByTestIdOrderByOrderIndex(testId);
             if (questions.isEmpty()) {
-                throw new RuntimeException("Тест не содержит вопросов");
+                throw new RuntimeException("Нельзя опубликовать тест без вопросов");
             }
 
             for (Question question : questions) {
                 if (question.getAnswerOptions() == null || question.getAnswerOptions().isEmpty()) {
-                    throw new RuntimeException(
-                            String.format("Вопрос '%s' не содержит вариантов ответов",
-                                    question.getText().length() > 50 ?
-                                            question.getText().substring(0, 50) + "..." :
-                                            question.getText())
-                    );
+                    throw new RuntimeException("Вопрос не содержит вариантов ответов");
                 }
 
-                // 3. Проверяем, что есть хотя бы один правильный ответ
                 boolean hasCorrectAnswer = question.getAnswerOptions().stream()
                         .anyMatch(AnswerOption::getIsCorrect);
 
                 if (!hasCorrectAnswer) {
-                    throw new RuntimeException(
-                            String.format("В вопросе '%s' нет правильного ответа",
-                                    question.getText().length() > 50 ?
-                                            question.getText().substring(0, 50) + "..." :
-                                            question.getText())
-                    );
+                    throw new RuntimeException("В вопросе нет правильного ответа");
                 }
             }
+
         }
-
-        test.setIsPublished(publish);
-        Test savedTest = testRepository.save(test);
-
         log.info("Тест '{}' (ID: {}) {} пользователем {}",
-                savedTest.getTitle(), testId,
+                test.getTitle(), testId,
                 publish ? "опубликован" : "снят с публикации",
                 username);
 
-        return savedTest;
+        test.setIsPublished(publish);
+        return testRepository.save(test);
     }
 
 
@@ -308,55 +287,60 @@ public class TestService {
      */
     @Transactional(readOnly = true)
     public Optional<TestTakingDTO> getTestForPreview(Long testId, String creatorUsername) {
-        Test test = testRepository.findById(testId)
+        // 1. Получаем основную информацию о тесте
+        TestPreviewDTO testPreview = testRepository.findTestPreviewDTO(testId)
                 .orElse(null);
 
-        if (test == null) {
+        if (testPreview == null) {
             return Optional.empty();
         }
 
-        // Проверяем права создателя
-        if (!test.getCreatedBy().getUsername().equals(creatorUsername)) {
+        // 2. Проверяем права создателя
+        if (!testPreview.getCreatorUsername().equals(creatorUsername)) {
             throw new RuntimeException("Нет прав для просмотра этого теста");
         }
 
-        // Конвертируем в DTO для просмотра
-        TestTakingDTO dto = new TestTakingDTO();
-        dto.setTestId(test.getId());
-        dto.setTestTitle(test.getTitle());
-        dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
+        // 3. Получаем все вопросы теста
+        List<QuestionPreviewDTO> questions = testRepository.findQuestionPreviewDTOs(testId);
 
-        // Безопасное преобразование вопросов
-        List<QuestionForTakingDTO> questionDTOs = new ArrayList<>();
-        if (test.getQuestions() != null && !test.getQuestions().isEmpty()) {
-            questionDTOs = test.getQuestions().stream()
-                    .sorted(Comparator.comparing(Question::getOrderIndex))
-                    .map(question -> {
-                        QuestionForTakingDTO questionDTO = new QuestionForTakingDTO();
-                        questionDTO.setId(question.getId());
-                        questionDTO.setText(question.getText());
-                        questionDTO.setOrderIndex(question.getOrderIndex());
-
-                        // ВАЖНО: Для создателя показываем ВСЕ варианты, включая правильные
-                        if (question.getAnswerOptions() != null) {
-                            List<QuestionForTakingDTO.AnswerOptionForTakingDTO> answerDTOs =
-                                    question.getAnswerOptions().stream()
-                                            .map(answer -> {
-                                                QuestionForTakingDTO.AnswerOptionForTakingDTO answerDTO =
-                                                        new QuestionForTakingDTO.AnswerOptionForTakingDTO();
-                                                answerDTO.setId(answer.getId());
-                                                answerDTO.setText(answer.getText() +
-                                                        (answer.getIsCorrect() ? " ✓" : ""));
-                                                return answerDTO;
-                                            })
-                                            .collect(Collectors.toList());
-                            questionDTO.setAnswerOptions(answerDTOs);
-                        }
-
-                        return questionDTO;
-                    })
-                    .collect(Collectors.toList());
+        // 4. Для каждого вопроса загружаем ответы
+        for (QuestionPreviewDTO question : questions) {
+            List<AnswerPreviewDTO> answers = testRepository.findAnswerPreviewDTOs(question.getId());
+            question.setAnswerOptions(answers);
         }
+
+        testPreview.setQuestions(questions);
+
+        // 5. Конвертируем в TestTakingDTO для отображения
+        TestTakingDTO dto = new TestTakingDTO();
+        dto.setTestId(testPreview.getId());
+        dto.setTestTitle(testPreview.getTitle());
+        dto.setTimeLimitMinutes(testPreview.getTimeLimitMinutes());
+
+        // 6. Преобразуем вопросы
+        List<QuestionForTakingDTO> questionDTOs = questions.stream()
+                .map(q -> {
+                    QuestionForTakingDTO questionDTO = new QuestionForTakingDTO();
+                    questionDTO.setId(q.getId());
+                    questionDTO.setText(q.getText());
+                    questionDTO.setOrderIndex(q.getOrderIndex());
+
+                    List<QuestionForTakingDTO.AnswerOptionForTakingDTO> answerDTOs =
+                            q.getAnswerOptions().stream()
+                                    .map(a -> {
+                                        QuestionForTakingDTO.AnswerOptionForTakingDTO answerDTO =
+                                                new QuestionForTakingDTO.AnswerOptionForTakingDTO();
+                                        answerDTO.setId(a.getId());
+                                        answerDTO.setText(a.getText() + (a.getIsCorrect() ? " ✓" : ""));
+                                        return answerDTO;
+                                    })
+                                    .collect(Collectors.toList());
+
+                    questionDTO.setAnswerOptions(answerDTOs);
+                    return questionDTO;
+                })
+                .sorted(Comparator.comparing(QuestionForTakingDTO::getOrderIndex))
+                .collect(Collectors.toList());
 
         dto.setQuestions(questionDTOs);
         dto.setTotalQuestions(questionDTOs.size());
@@ -364,41 +348,6 @@ public class TestService {
         return Optional.of(dto);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Test> getTestWithAllData(Long testId, String username) {
-        // Сначала загружаем тест с категорией
-        Optional<Test> testOpt = testRepository.findByIdWithCategory(testId);
-
-        if (testOpt.isPresent()) {
-            Test test = testOpt.get();
-            // Затем загружаем вопросы с ответами и устанавливаем их
-            List<Question> questions = questionRepository.findQuestionsWithAnswersByTestId(testId);
-            test.setQuestions(questions);
-            return Optional.of(test);
-        }
-
-        return Optional.empty();
-    }
-
-    @Transactional
-    public void removeRetryCooldownForUser(Long testId, String testerUsername, String creatorUsername) {
-        Test test = testRepository.findById(testId)
-                .orElseThrow(() -> new RuntimeException("Тест не найден"));
-
-        if (!test.getCreatedBy().getUsername().equals(creatorUsername)) {
-            throw new RuntimeException("Нет прав для управления этим тестом");
-        }
-
-        User tester = userRepository.findByUsername(testerUsername)
-                .orElseThrow(() -> new RuntimeException("Тестировщик не найден"));
-
-        // Логируем снятие ограничений
-        log.info("Создатель {} снял ограничения на повторное прохождение теста '{}' для пользователя {}",
-                creatorUsername, test.getTitle(), testerUsername);
-
-        // Здесь мы не удаляем ограничение полностью, а создаем запись об исключении
-        // Для простоты сейчас просто логируем - в следующем шаге добавим таблицу exceptions
-    }
     /**
      *  Поиск тестов создателя по названию
      */
@@ -431,20 +380,65 @@ public class TestService {
      * Получение теста с вопросами и ответами (только когда нужно)
      */
     @Transactional(readOnly = true)
-    public Optional<Test> getTestWithQuestionsAndAnswers(Long testId, String username) {
+    public Optional<TestTakingDTO> getTestPreviewDTO(Long testId, String username) {
         User creator = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        // Используем оптимизированный запрос с EntityGraph
-        return testRepository.findByIdWithQuestionsAndAnswers(testId, creator);
+        // 1. Загружаем тест для проверки прав
+        Optional<Test> testOpt = testRepository.findByIdWithCreatorAndCategory(testId, creator);
+
+        if (testOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Test test = testOpt.get();
+
+        // 2. Загружаем вопросы с ответами
+        List<Question> questions = questionRepository.findQuestionsWithAnswersByTestId(testId);
+
+        // 3. Сразу конвертируем в DTO внутри транзакции
+        TestTakingDTO dto = new TestTakingDTO();
+        dto.setTestId(test.getId());
+        dto.setTestTitle(test.getTitle());
+        dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
+
+        List<QuestionForTakingDTO> questionDTOs = questions.stream()
+                .sorted(Comparator.comparing(Question::getOrderIndex))
+                .map(this::convertToQuestionForTakingDTO)
+                .collect(Collectors.toList());
+
+        dto.setQuestions(questionDTOs);
+        dto.setTotalQuestions(questionDTOs.size());
+        dto.setAnsweredQuestions(0);
+        dto.setRemainingQuestions(questionDTOs.size());
+
+        return Optional.of(dto);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Test> getTestForEdit(Long testId, String username) {
-        // Используем тот же метод - он загружает все что нужно
-        return getTestWithQuestionsAndAnswers(testId, username);
+    private QuestionForTakingDTO convertToQuestionForTakingDTO(Question question) {
+        QuestionForTakingDTO dto = new QuestionForTakingDTO();
+        dto.setId(question.getId());
+        dto.setText(question.getText());
+        dto.setOrderIndex(question.getOrderIndex());
+
+        if (question.getAnswerOptions() != null) {
+            List<QuestionForTakingDTO.AnswerOptionForTakingDTO> answerDTOs =
+                    question.getAnswerOptions().stream()
+                            .map(this::convertToAnswerOptionForTakingDTO)
+                            .collect(Collectors.toList());
+            dto.setAnswerOptions(answerDTOs);
+        }
+
+        return dto;
     }
 
+    private QuestionForTakingDTO.AnswerOptionForTakingDTO convertToAnswerOptionForTakingDTO(AnswerOption answer) {
+        QuestionForTakingDTO.AnswerOptionForTakingDTO dto =
+                new QuestionForTakingDTO.AnswerOptionForTakingDTO();
+        dto.setId(answer.getId());
+        dto.setText(answer.getText() + (answer.getIsCorrect() ? " ✓" : ""));
+        return dto;
+    }
     /**
      * 🔥 НОВОЕ: Получение ВСЕХ тестов для создателя (не только своих)
      */

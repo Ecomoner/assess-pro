@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
 @Table(name = "user_answers",
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Cacheable
 public class UserAnswer {
 
     @Id

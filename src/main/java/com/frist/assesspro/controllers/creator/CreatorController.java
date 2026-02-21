@@ -5,7 +5,11 @@ import com.frist.assesspro.dto.DashboardStatsDTO;
 import com.frist.assesspro.dto.TestDTO;
 import com.frist.assesspro.dto.category.CategoryDTO;
 import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
+import com.frist.assesspro.dto.test.QuestionForTakingDTO;
+import com.frist.assesspro.dto.test.TestTakingDTO;
 import com.frist.assesspro.dto.test.TestUpdateDTO;
+import com.frist.assesspro.entity.AnswerOption;
+import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.UserRepository;
@@ -38,9 +42,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Controller
@@ -149,7 +152,6 @@ public class CreatorController {
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
     @PostMapping("/tests/new")
-    @Transactional
     public String createTest(
             @Valid @ModelAttribute("test") TestDTO testDTO,
             BindingResult bindingResult,
@@ -272,19 +274,13 @@ public class CreatorController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
-    @PostMapping("/tests/publish/{id}")
+    @PostMapping("/tests/{id}/publish")
     public String publishTest(@PathVariable Long id,
                               @RequestParam boolean publish,
                               @AuthenticationPrincipal UserDetails userDetails,
                               RedirectAttributes redirectAttributes){
-
-        if (!testService.isTestOwner(id, userDetails.getUsername())) {
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "У вас нет прав на изменение статуса этого теста");
-            return "redirect:/creator/tests";
-        }
         try {
-            Test test = testService.switchPublishStatus(id,userDetails.getUsername(),publish);
+            Test test = testService.switchPublishStatus(id, userDetails.getUsername(), publish);
             String message = publish ? "опубликован" : "снят с публикации";
             redirectAttributes.addFlashAttribute("successMessage",
                     "Тест '" + test.getTitle() + "' успешно " + message + "!");
@@ -393,10 +389,10 @@ public class CreatorController {
             @AuthenticationPrincipal UserDetails userDetails,
             Model model) {
 
-        return testService.getTestForPreview(id, userDetails.getUsername())
-                .map(testTakingDTO -> {
-                    model.addAttribute("testTakingDTO", testTakingDTO);
-                    model.addAttribute("isPreview", true); // Флаг для шаблона
+        return testService.getTestPreviewDTO(id, userDetails.getUsername())
+                .map(dto -> {
+                    model.addAttribute("testTakingDTO", dto);
+                    model.addAttribute("isPreview", true);
                     return "creator/test-preview";
                 })
                 .orElse("redirect:/creator/tests?error=test_not_found");
@@ -508,6 +504,5 @@ public class CreatorController {
             return "creator/dashboard";
         }
     }
-
 
 }

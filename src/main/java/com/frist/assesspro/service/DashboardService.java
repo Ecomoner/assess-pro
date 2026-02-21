@@ -67,36 +67,27 @@ public class DashboardService {
         return testRepository.countQuestionsByCreatorId(creator.getId());
     }
 
-    private Long countQuestionsByCreator(User creator) {
-        return testRepository.findAllByCreatedBy(creator).stream()
-                .mapToLong(test -> questionRepository.countByTestId(test.getId()))
-                .sum();
-    }
-
     @Cacheable(value = "testerStats", key = "#username", unless = "#result.totalAttempts == 0")
     @Transactional(readOnly = true)
     public DashboardStatsDTO getTesterStats(String username) {
         User tester = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        DashboardStatsDTO stats = new DashboardStatsDTO();
+        DashboardStatsDTO stats = new DashboardStatsDTO(); // Всегда создаем новый объект
 
-        // Используем оптимизированные запросы
+        // Устанавливаем значения (даже если они 0)
         stats.setTotalAttempts(testAttemptRepository.countByUserId(tester.getId()));
         stats.setCompletedTests(testAttemptRepository.countByUserIdAndStatus(
                 tester.getId(), TestAttempt.AttemptStatus.COMPLETED));
         stats.setInProgressTests(testAttemptRepository.countByUserIdAndStatus(
                 tester.getId(), TestAttempt.AttemptStatus.IN_PROGRESS));
 
-        // Средний балл
         Double avgScore = testAttemptRepository.findAverageScoreByUserId(tester.getId());
         stats.setAverageScore(avgScore != null ? avgScore.intValue() : 0);
 
-        // Лучший балл
         Integer bestScore = testAttemptRepository.findBestScoreByUserId(tester.getId());
         stats.setBestScore(bestScore != null ? bestScore : 0);
 
-        // Доступные тесты через DTO проекцию
         List<?> publishedTests = testRepository.findPublishedTestInfoDTOs();
         stats.setAvailableTests((long) publishedTests.size());
 

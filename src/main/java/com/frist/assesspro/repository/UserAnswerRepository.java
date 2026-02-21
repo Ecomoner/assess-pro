@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface UserAnswerRepository extends JpaRepository<UserAnswer,Long> {
@@ -48,4 +49,9 @@ public interface UserAnswerRepository extends JpaRepository<UserAnswer,Long> {
                       @Param("answerOptionId") Long answerOptionId,
                       @Param("isCorrect") Boolean isCorrect,
                       @Param("points") Integer points);
+
+    @Query("SELECT ua.attempt.id, COUNT(ua) FROM UserAnswer ua " +
+            "WHERE ua.attempt.id IN :attemptIds " +
+            "GROUP BY ua.attempt.id")
+    List<Object[]> countByAttemptIds(@Param("attemptIds") List<Long> attemptIds);
 }

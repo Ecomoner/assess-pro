@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -33,6 +34,7 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Cacheable
 public class Question {
 
     @Id

@@ -1,6 +1,7 @@
 package com.frist.assesspro.controllers.tester;
 
 import com.frist.assesspro.dto.*;
+import com.frist.assesspro.dto.category.CategoryDTO;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
@@ -393,41 +394,56 @@ public class TesterController {
     @PreAuthorize("hasRole('TESTER')")
     public String testerDashboard(Model model, @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            DashboardStatsDTO stats = dashboardService.getTesterStats(userDetails.getUsername());
-            User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
-            String firstName = user != null ? user.getFirstName() : userDetails.getUsername();
+            String username = userDetails.getUsername();
 
-            List<TestInfoDTO> availableTests = testPassingService.getAllAvailableTestsDTO();
+            // Получаем статистику
+            DashboardStatsDTO stats = dashboardService.getTesterStats(username);
 
-            List<TestInfoDTO> recommendedTests = availableTests.stream()
+            // Получаем последние попытки (без пагинации для дашборда)
+            List<TestHistoryDTO> recentAttempts = testPassingService.getUserTestHistory(username);
+
+            // Получаем доступные категории
+            List<CategoryDTO> categories = testPassingService.getAvailableCategories();
+
+            // Получаем несколько случайных тестов для рекомендаций
+            List<TestInfoDTO> recommendedTests = testPassingService.getAllAvailableTestsDTO()
+                    .stream()
                     .limit(3)
                     .collect(Collectors.toList());
 
-            List<TestHistoryDTO> history = testPassingService.getUserTestHistory(userDetails.getUsername());
-
-            List<TestHistoryDTO> inProgressAttempts = history.stream()
-                    .filter(attempt -> "IN_PROGRESS".equals(attempt.getStatusString()))
+            // Фильтруем попытки по статусу
+            List<TestHistoryDTO> inProgressAttempts = recentAttempts.stream()
+                    .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS)
                     .collect(Collectors.toList());
 
-            List<TestHistoryDTO> recentCompleted = history.stream()
-                    .filter(attempt -> "COMPLETED".equals(attempt.getStatusString()))
-                    .limit(5)
+            List<TestHistoryDTO> recentCompleted = recentAttempts.stream()
+                    .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.COMPLETED)
                     .collect(Collectors.toList());
 
-            model.addAttribute("inProgressAttempts", inProgressAttempts);
-            model.addAttribute("recentCompleted", recentCompleted);
+            // Добавляем в модель - ИСПОЛЬЗУЕМ ИМЕНА, КОТОРЫЕ ОЖИДАЕТ ШАБЛОН
             model.addAttribute("stats", stats);
-            model.addAttribute("firstName", firstName);
+            model.addAttribute("recentAttempts", recentAttempts);
+            model.addAttribute("inProgressAttempts", inProgressAttempts);
+            model.addAttribute("recentCompleted", recentCompleted); // ← ВАЖНО: именно recentCompleted
+            model.addAttribute("categories", categories);
             model.addAttribute("recommendedTests", recommendedTests);
-            model.addAttribute("username", userDetails.getUsername());
-            model.addAttribute("totalAvailableTests", availableTests.size());
-            model.addAttribute("message", "Добро пожаловать в панель тестировщика!");
+            model.addAttribute("username", username);
 
+            log.debug("Загружен дашборд тестировщика: {}", username);
             return "tester/dashboard";
 
         } catch (Exception e) {
             log.error("Ошибка при загрузке панели тестировщика", e);
             model.addAttribute("errorMessage", "Ошибка при загрузке данных: " + e.getMessage());
+
+            // Добавляем пустые объекты с правильными именами
+            model.addAttribute("stats", new DashboardStatsDTO());
+            model.addAttribute("recentAttempts", List.of());
+            model.addAttribute("inProgressAttempts", List.of());
+            model.addAttribute("recentCompleted", List.of()); // ← ВАЖНО
+            model.addAttribute("categories", List.of());
+            model.addAttribute("recommendedTests", List.of());
+
             return "tester/dashboard";
         }
     }

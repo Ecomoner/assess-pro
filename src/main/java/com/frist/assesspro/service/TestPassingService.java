@@ -77,7 +77,7 @@ public class TestPassingService {
             throw new RuntimeException("Для прохождения тестов необходимо заполнить профиль (ФИО)");
         }
 
-        Test test = testRepository.findByIdAndIsPublishedTrue(testId)
+        Test test = testRepository.findByIdAndIsPublishedTrueWithAllData(testId)
                 .orElse(null);
 
         if (test == null) {
@@ -449,29 +449,37 @@ public class TestPassingService {
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
-
-        // Получаем DTO из репозитория
         Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
 
-        // Для каждой записи вычисляем прогресс
+        // Получаем все ID попыток
+        List<Long> attemptIds = historyPage.getContent().stream()
+                .map(TestHistoryDTO::getAttemptId)
+                .collect(Collectors.toList());
+
+        // ИСПРАВЛЕНО: получаем List и преобразуем в Map
+        Map<Long, Long> answeredCounts = new HashMap<>();
+        if (!attemptIds.isEmpty()) {
+            List<Object[]> results = userAnswerRepository.countByAttemptIds(attemptIds);
+            for (Object[] result : results) {
+                if (result.length >= 2) {
+                    Long attemptId = ((Number) result[0]).longValue();
+                    Long count = ((Number) result[1]).longValue();
+                    answeredCounts.put(attemptId, count);
+                }
+            }
+        }
+
+        // Вычисляем прогресс
         for (TestHistoryDTO dto : historyPage.getContent()) {
             if (dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
-                // Получаем попытку для подсчета отвеченных вопросов
-                TestAttempt attempt = testAttemptRepository.findById(dto.getAttemptId()).orElse(null);
-                if (attempt != null) {
-                    int totalQuestions = attempt.getTest().getQuestions().size();
-                    long answeredQuestions = userAnswerRepository.countByAttemptId(attempt.getId());
-
-                    if (totalQuestions > 0) {
-                        dto.setProgressPercentage((int)(answeredQuestions * 100) / totalQuestions);
-                    } else {
-                        dto.setProgressPercentage(0);
-                    }
+                Long answered = answeredCounts.getOrDefault(dto.getAttemptId(), 0L);
+                Long total = dto.getMaxPossibleScore();
+                if (total != null && total > 0) {
+                    dto.setProgressPercentage((int) (answered * 100 / total));
                 } else {
                     dto.setProgressPercentage(0);
                 }
             } else {
-                // Для завершенных тестов прогресс 100%
                 dto.setProgressPercentage(100);
             }
         }
@@ -491,18 +499,28 @@ public class TestPassingService {
         Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
 
         // Вычисляем прогресс для каждой записи
+        List<Long> attemptIds = historyPage.getContent().stream()
+                .map(TestHistoryDTO::getAttemptId)
+                .collect(Collectors.toList());
+
+        Map<Long, Long> answeredCounts = new HashMap<>();
+        if (!attemptIds.isEmpty()) {
+            List<Object[]> results = userAnswerRepository.countByAttemptIds(attemptIds);
+            for (Object[] result : results) {
+                if (result.length >= 2) {
+                    Long attemptId = ((Number) result[0]).longValue();
+                    Long count = ((Number) result[1]).longValue();
+                    answeredCounts.put(attemptId, count);
+                }
+            }
+        }
+        // Вычисляем прогресс
         for (TestHistoryDTO dto : historyPage.getContent()) {
             if (dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
-                TestAttempt attempt = testAttemptRepository.findById(dto.getAttemptId()).orElse(null);
-                if (attempt != null) {
-                    int totalQuestions = attempt.getTest().getQuestions().size();
-                    long answeredQuestions = userAnswerRepository.countByAttemptId(attempt.getId());
-
-                    if (totalQuestions > 0) {
-                        dto.setProgressPercentage((int)(answeredQuestions * 100) / totalQuestions);
-                    } else {
-                        dto.setProgressPercentage(0);
-                    }
+                Long answered = answeredCounts.getOrDefault(dto.getAttemptId(), 0L);
+                Long total = dto.getMaxPossibleScore();
+                if (total != null && total > 0) {
+                    dto.setProgressPercentage((int) (answered * 100 / total));
                 } else {
                     dto.setProgressPercentage(0);
                 }

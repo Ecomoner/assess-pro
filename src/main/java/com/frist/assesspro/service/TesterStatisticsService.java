@@ -42,7 +42,7 @@ public class TesterStatisticsService {
                                                    Pageable pageable) {
         validateTestExists(testId,creatorUsername);
 
-        Page<TestAttempt> attemptsPage = testAttemptRepository.findAttemptsByTestId(testId, pageable);
+        Page<TestAttempt> attemptsPage = testAttemptRepository.findAttemptsByTestIdWithAllData(testId, pageable);
 
         List<TesterAttemptDTO> dtos = attemptsPage.getContent().stream()
                 .map(this::convertToTesterAttemptDTO)
@@ -112,21 +112,6 @@ public class TesterStatisticsService {
         validateTestExists(attempt.getTest().getId(),creatorUsername);
 
         return buildTesterDetailedAnswersDTO(attempt);
-    }
-
-    /**
-     * 3. Поиск тестировщиков по имени
-     */
-    @Transactional(readOnly = true)
-    public List<TesterAttemptDTO> searchTestersByTestAndName(
-            Long testId,String creatorUsername, String testerName) {
-        validateTestExists(testId,creatorUsername);
-
-        List<TestAttempt> attempts = testAttemptRepository.searchAttemptsByTestAndUsername(testId, testerName);
-
-        return attempts.stream()
-                .map(this::convertToTesterAttemptDTO)
-                .collect(Collectors.toList());
     }
 
     /**

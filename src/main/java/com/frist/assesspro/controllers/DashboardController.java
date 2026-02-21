@@ -73,4 +73,3 @@ public class DashboardController {
         return "redirect:/home";
     }
 }
-

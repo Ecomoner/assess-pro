@@ -13,9 +13,15 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -55,12 +61,19 @@ public class SecurityConfig {
                                 "/register/**",
                                 "/login/**"
                         ).permitAll()
+                        // Prometheus метрики только с Basic Auth
+                        .requestMatchers("/actuator/prometheus").permitAll()
+                        .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         // Защищенные пути по ролям
                         .requestMatchers("/creator/**").hasAnyRole("CREATOR", "ADMIN")
                         .requestMatchers("/tester/**").hasAnyRole("TESTER", "ADMIN")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/api-docs/**",
+                                "/v3/api-docs/**").hasRole("ADMIN")
                         .requestMatchers("/profile/**").authenticated()
-                        // Все остальные пути требуют аутентификации
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -90,4 +103,5 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider());
         return http.build();
     }
+
 }

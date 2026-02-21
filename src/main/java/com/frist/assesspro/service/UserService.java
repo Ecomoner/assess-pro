@@ -75,17 +75,6 @@ public class UserService {
         return userRepository.findByRole(User.Roles.CREATOR);
     }
 
-    /**
-     * Поиск пользователей по имени/фамилии
-     */
-    @Transactional(readOnly = true)
-    public List<User> searchUsers(String searchTerm) {
-        if (searchTerm == null || searchTerm.trim().isEmpty()) {
-            return List.of();
-        }
-        return userRepository.findByUsernameContainingIgnoreCase(searchTerm.trim());
-    }
-
     @Transactional(readOnly = true)
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);

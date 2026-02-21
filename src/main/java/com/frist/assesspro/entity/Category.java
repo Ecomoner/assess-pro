@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ import java.util.List;
                 @NamedAttributeNode("tests")
         }
 )
+@Cacheable
 public class Category {
 
     @Id
