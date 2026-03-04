@@ -29,19 +29,9 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
     List<Test> findByCreatedBy(User createdBy);
 
     @EntityGraph(value = "Test.withCreator", type = EntityGraph.EntityGraphType.LOAD)
-    Page<Test> findByCreatedBy(User createdBy, Pageable pageable);
-
-    @EntityGraph(value = "Test.withCreator", type = EntityGraph.EntityGraphType.LOAD)
     @Query("SELECT t FROM Test t WHERE t.id = :id AND t.createdBy = :creator")
     Optional<Test> findByIdAndCreatedBy(@Param("id") Long id, @Param("creator") User createdBy);
 
-    @EntityGraph(value = "Test.withQuestions", type = EntityGraph.EntityGraphType.LOAD)
-    List<Test> findByIsPublishedTrue();
-
-    @EntityGraph(value = "Test.withQuestions", type = EntityGraph.EntityGraphType.LOAD)
-    Optional<Test> findByIdAndIsPublishedTrue(Long id);
-
-    // DTO проекция для опубликованных тестов (используем LEFT JOIN)
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
             "t.id, t.title, t.description, " +
             "COUNT(q.id), t.timeLimitMinutes, t.createdAt, " +
@@ -54,16 +44,11 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "ORDER BY t.createdAt DESC")
     List<TestInfoDTO> findPublishedTestInfoDTOs();
 
-    // Оптимизированные счетчики
     @Query("SELECT COUNT(t) FROM Test t")
     long countByTests(@Param("creator") User creator);
 
     @Query("SELECT COUNT(t) FROM Test t WHERE t.createdBy = :creator AND t.isPublished = true")
     long countPublishedByCreator(@Param("creator") User creator);
-
-    // Для DashboardService
-    @Query("SELECT t FROM Test t WHERE t.createdBy = :creator")
-    List<Test> findAllByCreatedBy(@Param("creator") User creator);
 
     @Query(value = "SELECT COUNT(q.id) FROM assess_pro_db.questions q " +
             "JOIN assess_pro_db.tests t ON q.test_id = t.id " +
@@ -108,26 +93,6 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "ORDER BY a.id")
     List<AnswerPreviewDTO> findAnswerPreviewDTOs(@Param("questionId") Long questionId);
 
-    // ============= СТАРЫЕ МЕТОДЫ (ИСПРАВЛЕНЫ) =============
-
-    /**
-     * 🔧 ИСПРАВЛЕНО: Добавлены creatorId и creatorUsername в конструктор
-     */
-    @Query("SELECT new com.frist.assesspro.dto.TestDTO(" +
-            "t.id, t.title, t.description, t.isPublished, " +
-            "COUNT(q.id), t.createdAt, t.timeLimitMinutes, " +
-            "t.retryCooldownHours, t.retryCooldownDays, " +
-            "t.category.id, t.category.name, " +
-            "t.createdBy.id, t.createdBy.username) " +
-            "FROM Test t " +
-            "LEFT JOIN t.questions q " +
-            "WHERE t.createdBy = :creator " +
-            "GROUP BY t.id, t.title, t.description, t.isPublished, t.createdAt, " +
-            "t.timeLimitMinutes, t.retryCooldownHours, t.retryCooldownDays, " +
-            "t.category.id, t.category.name, t.createdBy.id, t.createdBy.username " +
-            "ORDER BY t.createdAt DESC")
-    Page<TestDTO> findTestDTOsByCreator(@Param("creator") User creator, Pageable pageable);
-
     /**
      * 🔧 ИСПРАВЛЕНО: Добавлены creatorId и creatorUsername в конструктор
      */
@@ -165,28 +130,6 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
                                        @Param("searchTerm") String searchTerm,
                                        Pageable pageable);
 
-    /**
-     * 🔧 ИСПРАВЛЕНО: Добавлены creatorId и creatorUsername в конструктор
-     */
-    @Query("SELECT new com.frist.assesspro.dto.TestDTO(" +
-            "t.id, t.title, t.description, t.isPublished, " +
-            "COUNT(q.id), t.createdAt, t.timeLimitMinutes, " +
-            "t.retryCooldownHours, t.retryCooldownDays, " +
-            "t.category.id, t.category.name, " +
-            "t.createdBy.id, t.createdBy.username) " +
-            "FROM Test t " +
-            "LEFT JOIN t.questions q " +
-            "GROUP BY t.id, t.title, t.description, t.isPublished, t.createdAt, " +
-            "t.timeLimitMinutes, t.retryCooldownHours, t.retryCooldownDays, " +
-            "t.category.id, t.category.name, t.createdBy.id, t.createdBy.username " +
-            "ORDER BY t.createdAt DESC")
-    Page<TestDTO> findAllTestDTOs(Pageable pageable);
-
-    // ============= НОВЫЙ МЕТОД =============
-
-    /**
-     * 🔥 НОВОЕ: Получение ВСЕХ тестов с фильтрацией (для создателя)
-     */
     @Query("SELECT new com.frist.assesspro.dto.TestDTO(" +
             "t.id, t.title, t.description, t.isPublished, " +
             "COUNT(q.id), t.createdAt, t.timeLimitMinutes, " +
@@ -211,7 +154,6 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
                                           @Param("search") String search,
                                           Pageable pageable);
 
-    // ============= ОСТАЛЬНЫЕ МЕТОДЫ =============
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
             "t.id, t.title, t.description, " +
@@ -246,19 +188,6 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "WHERE t.isPublished = true " +
             "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name " +
-            "ORDER BY t.createdAt DESC")
-    List<TestInfoDTO> searchPublishedTests(@Param("searchTerm") String searchTerm);
-
-    @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
-            "t.id, t.title, t.description, " +
-            "COUNT(q.id), t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name) " +
-            "FROM Test t " +
-            "LEFT JOIN t.questions q " +
-            "WHERE t.isPublished = true " +
-            "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-            "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
             "t.category.id, t.category.name")
     Page<TestInfoDTO> searchPublishedTests(@Param("searchTerm") String searchTerm, Pageable pageable);
 
@@ -276,22 +205,12 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "WHERE t.id = :id")
     Optional<Test> findByIdWithCategory(@Param("id") Long id);
 
-    @Query("SELECT q FROM Question q " +
-            "LEFT JOIN FETCH q.answerOptions " +
-            "WHERE q.test.id = :testId " +
-            "ORDER BY q.orderIndex")
-    List<Question> findQuestionsWithAnswersByTestId(@Param("testId") Long testId);
 
     @Query("SELECT t FROM Test t " +
             "LEFT JOIN FETCH t.questions q " +
-            "LEFT JOIN FETCH q.answerOptions " +
             "WHERE t.id = :id AND t.isPublished = true")
-    Optional<Test> findByIdAndIsPublishedTrueWithAllData(@Param("id") Long id);
+    Optional<Test> findByIdAndIsPublishedTrueWithQuestions(@Param("id") Long id);
 
-    @Query("SELECT t.createdBy.id, COUNT(t) FROM Test t " +
-            "WHERE t.createdBy.role = 'ROLE_CREATOR' " +
-            "GROUP BY t.createdBy.id")
-    Map<Long, Long> countTestsByCreators();
 
     @Query("SELECT t.category.name, COUNT(t) FROM Test t " +
             "WHERE t.category IS NOT NULL " +

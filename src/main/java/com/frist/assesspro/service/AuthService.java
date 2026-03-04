@@ -52,8 +52,12 @@ public class AuthService {
             throw new IllegalArgumentException("Некорректная роль");
         }
 
+        if (User.Roles.ADMIN.equals(registrationDTO.getRole())) {
+            throw new IllegalArgumentException("Регистрация с ролью ADMIN запрещена");
+        }
+
         User user = new User();
-        user.setUsername(registrationDTO.getUsername());
+        user.setUsername(registrationDTO.getUsername().trim());
         user.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
         user.setRole(registrationDTO.getRole());
         user.setCreatedAt(LocalDateTime.now());

@@ -38,23 +38,19 @@ import java.util.stream.Collectors;
 public class StatisticsExportService {
 
     private final TesterStatisticsService testerStatisticsService;
-    private final TestService testService;
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     private static final DateTimeFormatter DATE_ONLY_FORMATTER =
             DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-    // Путь к шрифту в ресурсах
+
     private static final String FONT_PATH = "/fonts/arial.ttf";
 
-    // Запасной шрифт (встроенный в PDF)
-    private static final String FALLBACK_FONT = "Helvetica";
 
-    // Максимальное количество записей для экспорта
     private static final int MAX_EXPORT_SIZE = 1000;
 
-    // Размер страницы для пагинации
+
     private static final int PAGE_SIZE = 100;
 
     /**
@@ -297,106 +293,6 @@ public class StatisticsExportService {
         } catch (Exception e) {
             log.error("Ошибка при добавлении детальных ответов", e);
             document.add(new Paragraph("Ошибка загрузки детальных ответов").setFont(font));
-        }
-    }
-
-    /**
-     * Добавление статистики всех тестировщиков с фильтрацией по категории
-     */
-    private void addAllTestersStatistics(Document document, Long testId,
-                                         String creatorUsername, PdfFont font,
-                                         Long categoryId) {
-
-        try {
-            // Загружаем все попытки с пагинацией
-            List<TesterAttemptDTO> allTesters = new ArrayList<>();
-            int page = 0;
-            Page<TesterAttemptDTO> testersPage;
-
-            do {
-                testersPage = testerStatisticsService.getTestersByTest(
-                        testId, creatorUsername, PageRequest.of(page++, PAGE_SIZE));
-                allTesters.addAll(testersPage.getContent());
-            } while (testersPage.hasNext() && allTesters.size() < MAX_EXPORT_SIZE);
-
-            if (allTesters.isEmpty()) {
-                document.add(new Paragraph("Нет данных о прохождениях теста").setFont(font));
-                return;
-            }
-
-            document.add(new Paragraph("Список тестировщиков:")
-                    .setFontSize(16)
-                    .setBold()
-                    .setFont(font));
-            document.add(new Paragraph(""));
-
-            Table testersTable = new Table(UnitValue.createPercentArray(new float[]{25, 20, 20, 20, 15}))
-                    .setWidth(UnitValue.createPercentValue(100));
-
-            testersTable.addHeaderCell(createCell("Тестировщик", true, font));
-            testersTable.addHeaderCell(createCell("Дата", true, font));
-            testersTable.addHeaderCell(createCell("Результат", true, font));
-            testersTable.addHeaderCell(createCell("Длительность", true, font));
-            testersTable.addHeaderCell(createCell("Статус", true, font));
-
-            for (TesterAttemptDTO tester : allTesters) {
-                testersTable.addCell(createCell(tester.getTesterUsername(), false, font));
-
-                String startTimeStr = tester.getStartTime() != null ?
-                        tester.getStartTime().format(DATE_FORMATTER) : "-";
-                testersTable.addCell(createCell(startTimeStr, false, font));
-
-                testersTable.addCell(createCell(String.format("%d/%d (%.1f%%)",
-                        tester.getScore(), tester.getMaxScore(),
-                        tester.getPercentage() != null ? tester.getPercentage() : 0.0), false, font));
-
-                testersTable.addCell(createCell(tester.getFormattedDuration(), false, font));
-                testersTable.addCell(createCell(tester.getStatus(), false, font));
-            }
-
-            document.add(testersTable);
-
-            // Общая статистика
-            long totalAttempts = allTesters.size();
-            long completed = allTesters.stream().filter(t -> t.getEndTime() != null).count();
-            double avgScore = allTesters.stream()
-                    .filter(t -> t.getPercentage() != null)
-                    .mapToDouble(TesterAttemptDTO::getPercentage)
-                    .average()
-                    .orElse(0.0);
-
-            document.add(new Paragraph(""));
-            document.add(new Paragraph("Общая статистика:")
-                    .setFontSize(14)
-                    .setBold()
-                    .setFont(font));
-
-            Table statsTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
-                    .setWidth(UnitValue.createPercentValue(50));
-
-            statsTable.addCell(createCell("Всего попыток:", true, font));
-            statsTable.addCell(createCell(String.valueOf(totalAttempts), false, font));
-
-            statsTable.addCell(createCell("Завершено:", true, font));
-            statsTable.addCell(createCell(String.valueOf(completed), false, font));
-
-            statsTable.addCell(createCell("Средний балл:", true, font));
-            statsTable.addCell(createCell(String.format("%.1f%%", avgScore), false, font));
-
-            document.add(statsTable);
-
-            if (totalAttempts >= MAX_EXPORT_SIZE) {
-                document.add(new Paragraph(""));
-                document.add(new Paragraph("Примечание: показано только " + MAX_EXPORT_SIZE +
-                        " записей из-за ограничения размера отчета")
-                        .setFontSize(8)
-                        .setFontColor(com.itextpdf.kernel.colors.ColorConstants.RED)
-                        .setFont(font));
-            }
-
-        } catch (Exception e) {
-            log.error("Ошибка при добавлении списка тестировщиков", e);
-            document.add(new Paragraph("Ошибка загрузки списка тестировщиков").setFont(font));
         }
     }
 

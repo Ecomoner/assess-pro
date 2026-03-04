@@ -46,16 +46,6 @@ public class UserService {
     }
 
     /**
-     * Получение полного имени пользователя
-     */
-    @Transactional(readOnly = true)
-    public String getUserFullName(String username) {
-        return userRepository.findByUsername(username)
-                .map(User::getFullName)
-                .orElse(username);
-    }
-
-    /**
      * Получение всех тестировщиков (для админки)
      */
     @Transactional(readOnly = true)
@@ -65,14 +55,6 @@ public class UserService {
         } else {
             return userRepository.findByRole("ROLE_TESTER", pageable);
         }
-    }
-
-    /**
-     * Получение всех создателей (для админки)
-     */
-    @Transactional(readOnly = true)
-    public List<User> getAllCreators() {
-        return userRepository.findByRole(User.Roles.CREATOR);
     }
 
     @Transactional(readOnly = true)

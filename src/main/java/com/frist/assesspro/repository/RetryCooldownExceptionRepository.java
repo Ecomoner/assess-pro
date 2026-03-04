@@ -18,15 +18,6 @@ import java.util.Set;
 
 public interface RetryCooldownExceptionRepository extends JpaRepository<RetryCooldownException, Long> {
 
-    @EntityGraph(attributePaths = {"test", "user", "createdBy"})
-    Optional<RetryCooldownException> findByTestAndUser(Test test, User user);
-
-    @EntityGraph(attributePaths = {"test", "user", "createdBy"})
-    List<RetryCooldownException> findByTest(Test test);
-
-    @EntityGraph(attributePaths = {"test", "user", "createdBy"})
-    List<RetryCooldownException> findByUser(User user);
-
     @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END " +
             "FROM RetryCooldownException r " +
             "WHERE r.test = :test AND r.user = :user " +

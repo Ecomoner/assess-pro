@@ -77,7 +77,7 @@ public class TestPassingService {
             throw new RuntimeException("Для прохождения тестов необходимо заполнить профиль (ФИО)");
         }
 
-        Test test = testRepository.findByIdAndIsPublishedTrueWithAllData(testId)
+        Test test = testRepository.findByIdAndIsPublishedTrueWithQuestions(testId)
                 .orElse(null);
 
         if (test == null) {

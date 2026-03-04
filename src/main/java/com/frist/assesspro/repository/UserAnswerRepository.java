@@ -13,16 +13,11 @@ import java.util.Optional;
 
 public interface UserAnswerRepository extends JpaRepository<UserAnswer,Long> {
 
-    Optional<UserAnswer> findByAttemptIdAndQuestionId(Long attemptId, Long questionId);
-
     List<UserAnswer> findByAttemptId(Long attemptId);
 
     @Query("SELECT SUM(ua.pointsEarned) FROM UserAnswer ua WHERE ua.attempt.id = :attemptId")
     Integer sumPointsEarnedByAttemptId(@Param("attemptId") Long attemptId);
 
-    /**
-     * Загружаем ответы пользователя с вопросами и вариантами ответов
-     */
     @EntityGraph(attributePaths = {
             "question",
             "question.answerOptions",

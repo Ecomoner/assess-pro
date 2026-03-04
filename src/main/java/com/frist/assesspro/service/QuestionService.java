@@ -255,11 +255,6 @@ public class QuestionService {
         return dto;
     }
 
-    @Transactional(readOnly = true)
-    public List<QuestionDTO> getQuestionDTOsByTestId(Long testId, String username) {
-        Test test = getTestWithAuthCheck(testId, username);
-        return questionRepository.findQuestionDTOsByTestId(testId);
-    }
 
 
 }

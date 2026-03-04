@@ -8,6 +8,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Component
@@ -17,6 +18,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
 
     @Override
     public void run(String... args) {
@@ -50,7 +52,7 @@ public class DataInitializer implements CommandLineRunner {
             tester.setUsername("tester");
             tester.setPassword(passwordEncoder.encode("tester123"));
             tester.setRole(User.Roles.TESTER);
-            tester.setCreatedAt(LocalDateTime.now());
+            tester.setCreatedAt(LocalDateTime.now(clock));
             tester.setIsActive(true);
 
             userRepository.save(tester);

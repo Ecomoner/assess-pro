@@ -44,13 +44,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import static com.mysql.cj.util.TimeUtil.DATE_FORMATTER;
 
 @Controller
 @RequestMapping("/creator/tests/{testId}/statistics")
@@ -61,8 +55,9 @@ public class TesterStatisticsController {
 
     private final TesterStatisticsService testerStatisticsService;
     private final TestService testService;
-    private final CooldownService cooldownService;
     private final UserService userService;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+
 
     @Operation(summary = "Список тестировщиков для статистики")
     @ApiResponses(value = {

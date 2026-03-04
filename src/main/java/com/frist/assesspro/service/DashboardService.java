@@ -23,7 +23,6 @@ public class DashboardService {
     private final TestRepository testRepository;
     private final TestAttemptRepository testAttemptRepository;
     private final UserRepository userRepository;
-    private final QuestionRepository questionRepository;
     private final CategoryRepository categoryRepository;
 
     @Cacheable(value = "creatorStats", key = "#username", unless = "#result.totalTests == 0")
@@ -94,55 +93,4 @@ public class DashboardService {
         return stats;
     }
 
-    private void calculateAttemptStats(DashboardStatsDTO stats, List<TestAttempt> attempts) {
-        if (attempts == null || attempts.isEmpty()) {
-            stats.setTotalAttempts(0L);
-            stats.setCompletedTests(0L);
-            stats.setInProgressTests(0L);
-            stats.setTotalMinutes(0L);
-            stats.setBestScore(0);
-            return;
-        }
-
-        long totalAttempts = attempts.size();
-        long completedTests = 0L;
-        long inProgressTests = 0L;
-        long totalMinutes = 0L;
-        int bestScore = 0;
-        double totalScore = 0.0;
-        int completedCount = 0;
-
-        for (TestAttempt attempt : attempts) {
-            if (TestAttempt.AttemptStatus.COMPLETED.equals(attempt.getStatus())) {
-                completedTests++;
-                completedCount++;
-
-                if (attempt.getTotalScore() != null) {
-                    totalScore += attempt.getTotalScore();
-                    bestScore = Math.max(bestScore, attempt.getTotalScore());
-                }
-
-                if (attempt.getStartTime() != null && attempt.getEndTime() != null) {
-                    totalMinutes += java.time.Duration.between(
-                            attempt.getStartTime(), attempt.getEndTime()
-                    ).toMinutes();
-                }
-
-            } else if (TestAttempt.AttemptStatus.IN_PROGRESS.equals(attempt.getStatus())) {
-                inProgressTests++;
-            }
-        }
-
-        stats.setTotalAttempts(totalAttempts);
-        stats.setCompletedTests(completedTests);
-        stats.setInProgressTests(inProgressTests);
-        stats.setTotalMinutes(totalMinutes);
-        stats.setBestScore(bestScore);
-        stats.setAverageScore(completedCount > 0 ? (int)(totalScore / completedCount) : 0);
-    }
-
-    @CacheEvict(value = {"creatorStats", "testerStats"}, key = "#username")
-    public void clearStatsCache(String username) {
-        log.debug("Кэш статистики для пользователя {} очищен", username);
-    }
 }

@@ -22,22 +22,9 @@ public interface QuestionRepository extends JpaRepository<Question,Long> {
     @EntityGraph(value = "Question.withTestAndAnswers", type = EntityGraph.EntityGraphType.LOAD)
     Optional<Question> findById(Long id);
 
-    @Query("SELECT COUNT(q) FROM Question q WHERE q.test.id = :testId")
-    int countByTestId(@Param("testId") Long testId);
-
     @Query("SELECT q FROM Question q " +
             "LEFT JOIN FETCH q.answerOptions " +
             "WHERE q.test.id = :testId " +
             "ORDER BY q.orderIndex")
     List<Question> findQuestionsWithAnswersByTestId(@Param("testId") Long testId);
-
-    @Query("SELECT new com.frist.assesspro.dto.QuestionDTO(" +
-            "q.id, q.text, q.orderIndex, " +
-            "new com.frist.assesspro.dto.AnswerOptionDTO(a.id, a.text, a.isCorrect)) " +
-            "FROM Question q " +
-            "LEFT JOIN q.answerOptions a " +
-            "WHERE q.test.id = :testId " +
-            "ORDER BY q.orderIndex")
-    List<QuestionDTO> findQuestionDTOsByTestId(@Param("testId") Long testId);
-
 }

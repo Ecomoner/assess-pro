@@ -133,10 +133,8 @@ public class TesterStatisticsService {
     @Transactional(readOnly = true)
     public TestSummaryDTO getTestSummary(Long testId, String creatorUsername) {
         validateTestExists(testId, creatorUsername);
-
         Test test = testRepository.findById(testId)
                 .orElseThrow(() -> new RuntimeException("Тест не найден"));
-
         List<TestAttempt> attempts = testAttemptRepository.findByTestId(testId);
 
         long totalAttempts = attempts.size();
@@ -167,7 +165,7 @@ public class TesterStatisticsService {
 
         summary.setTotalAttempts(totalAttempts);
         summary.setUniqueTesters(uniqueTesters);
-        summary.setAverageScore(averagePercentage);
+        summary.setAverageScore(averagePercentage); // здесь устанавливается процент
         summary.setBestScore(bestPercentage);
 
         return summary;

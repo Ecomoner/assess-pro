@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -22,19 +23,21 @@ public class CooldownService {
 
     private final TestAttemptRepository testAttemptRepository;
     private final RetryCooldownExceptionRepository exceptionRepository;
+    private final Clock clock;
 
     /**
      * Проверка, может ли пользователь пройти тест сейчас
      */
     @Transactional(readOnly = true)
     public boolean canUserTakeTest(Test test, User user) {
+        LocalDateTime now = LocalDateTime.now(clock);
         // 1. Если нет ограничений - можно
         if (!test.hasRetryCooldown()) {
             return true;
         }
 
         // 2. Проверяем активные исключения
-        if (exceptionRepository.hasActiveException(test, user, LocalDateTime.now())) {
+        if (exceptionRepository.hasActiveException(test, user, now)) {
             log.debug("Пользователь {} имеет исключение для теста {}", user.getUsername(), test.getId());
             return true;
         }
@@ -59,7 +62,7 @@ public class CooldownService {
 
         // 🔥 ВАЖНО: Используем effectiveCooldownHours из Test
         LocalDateTime nextAllowedTime = lastAttemptTime.plusHours(test.getEffectiveCooldownHours());
-        boolean canTake = LocalDateTime.now().isAfter(nextAllowedTime);
+        boolean canTake = now.isAfter(nextAllowedTime);
 
         if (!canTake) {
             log.debug("Пользователь {} не может пройти тест {} до {}",
@@ -86,7 +89,7 @@ public class CooldownService {
         exception.setReason(reason);
 
         if (!permanent && hours != null && hours > 0) {
-            exception.setExpiresAt(LocalDateTime.now().plusHours(hours));
+            exception.setExpiresAt(LocalDateTime.now(clock).plusHours(hours));
         }
 
         RetryCooldownException saved = exceptionRepository.save(exception);
@@ -112,12 +115,13 @@ public class CooldownService {
      */
     @Transactional(readOnly = true)
     public LocalDateTime getNextAvailableTime(Test test, User user) {
+        LocalDateTime now = LocalDateTime.now(clock);
         if (!test.hasRetryCooldown()) {
-            return LocalDateTime.now();
+            return now;
         }
 
-        if (exceptionRepository.hasActiveException(test, user, LocalDateTime.now())) {
-            return LocalDateTime.now();
+        if (exceptionRepository.hasActiveException(test, user, now)) {
+            return now;
         }
 
         Optional<TestAttempt> lastAttempt = testAttemptRepository
@@ -127,7 +131,7 @@ public class CooldownService {
                         TestAttempt.AttemptStatus.COMPLETED);
 
         if (lastAttempt.isEmpty()) {
-            return LocalDateTime.now();
+            return now;
         }
 
         LocalDateTime lastAttemptTime = lastAttempt.get().getEndTime();
@@ -143,11 +147,12 @@ public class CooldownService {
      */
     @Transactional(readOnly = true)
     public String getCooldownStatus(Test test, User user) {
+        LocalDateTime now = LocalDateTime.now(clock);
         if (!test.hasRetryCooldown()) {
             return "Доступно";
         }
 
-        if (exceptionRepository.hasActiveException(test, user, LocalDateTime.now())) {
+        if (exceptionRepository.hasActiveException(test, user, now)) {
             return "Доступно (исключение)";
         }
 
@@ -162,19 +167,19 @@ public class CooldownService {
         }
 
         LocalDateTime nextAllowed = getNextAvailableTime(test, user);
-        if (LocalDateTime.now().isAfter(nextAllowed)) {
+        if (now.isAfter(nextAllowed)) {
             return "Доступно";
         }
 
         // Форматируем оставшееся время
-        long hoursRemaining = java.time.Duration.between(LocalDateTime.now(), nextAllowed).toHours();
+        long hoursRemaining = java.time.Duration.between(now, nextAllowed).toHours();
         if (hoursRemaining > 24) {
             long daysRemaining = hoursRemaining / 24;
             return "Недоступно еще " + daysRemaining + " " + getDaysWord((int) daysRemaining);
         } else if (hoursRemaining > 0) {
             return "Недоступно еще " + hoursRemaining + " " + getHoursWord((int) hoursRemaining);
         } else {
-            long minutesRemaining = java.time.Duration.between(LocalDateTime.now(), nextAllowed).toMinutes();
+            long minutesRemaining = java.time.Duration.between(now, nextAllowed).toMinutes();
             return "Недоступно еще " + minutesRemaining + " мин";
         }
     }
