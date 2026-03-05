@@ -45,7 +45,6 @@ public class TesterController {
     private final TestPassingService testPassingService;
     private final DashboardService dashboardService;
     private final TestAttemptRepository testAttemptRepository;
-    private final UserService userService;
     private final MetricsService metricsService;
 
     @ModelAttribute("currentUri")
@@ -167,7 +166,7 @@ public class TesterController {
             // Проверка наличия вопросов
             if (testTakingDTO.getQuestions() == null || testTakingDTO.getQuestions().isEmpty()) {
                 model.addAttribute("errorMessage", "В тесте нет вопросов");
-                return "error/test-no-questions";
+                return "error/general";
             }
 
             model.addAttribute("testTakingDTO", testTakingDTO);
@@ -257,7 +256,7 @@ public class TesterController {
 
             if (results == null) {
                 model.addAttribute("errorMessage", "Результаты не найдены");
-                return "error/test-results-not-found";
+                return "error/general";
             }
 
             // Убедитесь, что все поля инициализированы

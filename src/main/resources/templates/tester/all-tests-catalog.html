@@ -81,7 +81,7 @@
                  class="text-center text-muted small mt-2">
                 <i class="bi bi-file-text me-1"></i>
                 Показано <span th:text="${currentPage * pageSize + 1}">1</span>
-                - <span th:text="${#numbers.min((currentPage + 1) * pageSize, totalItems)}">10</span>
+                <span th:text="${#numbers.min((currentPage + 1) * pageSize, totalItems.longValue())}">10</span>
                 из <span th:text="${totalItems}">100</span> тестов
             </div>
         </div>

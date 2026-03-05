@@ -77,6 +77,7 @@ public class TesterCatalogController {
         model.addAttribute("currentPage", testsPage.getNumber());
         model.addAttribute("totalPages", testsPage.getTotalPages());
         model.addAttribute("totalItems", testsPage.getTotalElements());
+        model.addAttribute("pageSize",size);
 
         return "tester/test-catalog";
     }
@@ -103,6 +104,7 @@ public class TesterCatalogController {
         model.addAttribute("currentPage", testsPage.getNumber());
         model.addAttribute("totalPages", testsPage.getTotalPages());
         model.addAttribute("totalItems", testsPage.getTotalElements());
+        model.addAttribute("pageSize", size);
         model.addAttribute("showAll", true);
 
         return "tester/all-tests-catalog";
