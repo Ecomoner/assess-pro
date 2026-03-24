@@ -87,7 +87,7 @@
                                                 </label>
                                             </div>
                                             <div class="ms-4 mb-2">
-                                                <input type="number" class="form-control form-control-sm" style="width: 100%; max-width: 120px;"
+                                                <input type="number" class="form-control form-control-sm w-100 mw-120"
                                                        th:field="*{retryCooldownHours}" min="1" max="336"
                                                        placeholder="Часы" th:disabled="${test.retryCooldownHours == null or test.retryCooldownHours == 0}">
                                             </div>
@@ -103,7 +103,7 @@
                                                 </label>
                                             </div>
                                             <div class="ms-4">
-                                                <input type="number" class="form-control form-control-sm" style="width: 100%; max-width: 120px;"
+                                                <input type="number" class="form-control form-control-sm w-100 mw-120"
                                                        th:field="*{retryCooldownDays}" min="1" max="14"
                                                        placeholder="Дни" th:disabled="${test.retryCooldownDays == null or test.retryCooldownDays == 0}">
                                             </div>

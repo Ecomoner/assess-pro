@@ -317,3 +317,20 @@ html {
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+.text-xs {
+    font-size: 0.7rem; }
+.mw-120 {
+    max-width: 120px; }
+.h-6px {
+    height: 6px; }
+.h-15px {
+    height: 15px; }
+
+@media (min-width: 768px) {
+    .sticky-md-top {
+        position: sticky;
+        top: 20px;
+        z-index: 1020;
+    }
+}

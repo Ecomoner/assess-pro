@@ -4,7 +4,7 @@
 <body>
 <div th:replace="~{fragments/navigation}"></div>
 
-<div class="container-fluid py-3 py-md-4" style="background-color: #f8f9fa;">
+<div class="container-fluid py-3 py-md-4 bg-light">
     <div class="container px-2 px-md-3">
         <!-- Заголовок -->
         <h1 class="h3 h2-md mb-3">
@@ -101,7 +101,7 @@
                             </td>
                             <td class="d-none d-md-table-cell small" th:text="${attempt.durationMinutes != null ? attempt.durationMinutes + ' мин' : '-'}">15</td>
                             <td class="d-none d-lg-table-cell">
-                                <span class="badge small" style="font-size: 0.7rem;"
+                                <span class="badge small text-xs"
                                       th:classappend="${attempt.statusString == 'COMPLETED'} ? 'bg-success' :
                                                        (${attempt.statusString == 'IN_PROGRESS'} ? 'bg-warning' : 'bg-secondary')"
                                       th:text="${attempt.statusString == 'COMPLETED'} ? 'Завершен' :

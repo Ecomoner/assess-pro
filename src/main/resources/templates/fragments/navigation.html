@@ -1,9 +1,9 @@
 <nav th:fragment="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" th:href="@{/home}">
-            <i class="bi bi-check-circle-fill me-1 me-md-2"></i>
-            <span class="d-none d-sm-inline">Assess Pro</span>
-            <span class="d-inline d-sm-none">AP</span>
+            <img th:src="@{/images/logo.png}" height="40" class="d-inline-block align-text-top me-1 me-md-2">
+            <span class="d-none d-sm-inline">Esterk Lux Parfum</span>
+            <span class="d-inline d-sm-none">ELP</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -33,6 +33,12 @@
                         <span class="d-inline">Статистика</span>
                     </a>
                 </li>
+                <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
+                    <a class="nav-link" th:href="@{/regulations}">
+                        <i class="bi bi-file-text me-1"></i>
+                        <span class="d-inline">Регламент</span>
+                    </a>
+                </li>
 
                 <!-- CREATOR MENU -->
                 <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
@@ -53,6 +59,12 @@
                         <span class="d-inline">Категории</span>
                     </a>
                 </li>
+                <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
+                    <a class="nav-link" th:href="@{/regulations}">
+                        <i class="bi bi-file-text me-1"></i>
+                        <span class="d-inline">Регламент</span>
+                    </a>
+                </li>
 
                 <!-- TESTER MENU -->
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
@@ -68,15 +80,15 @@
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
-                    <a class="nav-link" th:href="@{/tester/tests}">
-                        <i class="bi bi-collection me-1"></i>
-                        <span class="d-inline">Все тесты</span>
-                    </a>
-                </li>
-                <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
                     <a class="nav-link" th:href="@{/tester/history}">
                         <i class="bi bi-clock-history me-1"></i>
                         <span class="d-inline">История</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
+                    <a class="nav-link" th:href="@{/regulations}">
+                        <i class="bi bi-file-text me-1"></i>
+                        <span class="d-inline">Регламент</span>
                     </a>
                 </li>
             </ul>

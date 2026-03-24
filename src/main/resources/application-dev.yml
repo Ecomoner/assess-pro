@@ -1,0 +1,39 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/dev_postgres?currentSchema=assess_pro_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        hbm2ddl:
+          create_namespaces: true
+        format_sql: true
+        use_sql_comments: true
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/001-initial-schema.yaml
+
+  thymeleaf:
+    cache: false
+  devtools:
+    restart:
+      enabled: true
+
+logging:
+  level:
+    com.frist.assesspro: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: TRACE
+    org.springframework.security: DEBUG
+
+springdoc:
+  enabled: true

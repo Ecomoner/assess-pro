@@ -4,7 +4,7 @@
 <body>
 <div th:replace="~{fragments/navigation}"></div>
 
-<div class="container-fluid py-3 py-md-4" style="background-color: #f8f9fa;">
+<div class="container-fluid py-3 py-md-4 bg-light">
     <div class="container px-2 px-md-3">
         <!-- Хлебные крошки -->
         <div class="mb-3 mb-md-4">
@@ -40,7 +40,7 @@
                     <div class="card-body p-2 p-md-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <span class="text-muted text-uppercase small fw-semibold d-block" style="font-size: 0.7rem;">Всего прохождений</span>
+                                <span class="text-muted text-uppercase small fw-semibold d-block text-xs">Всего прохождений</span>
                                 <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md" th:text="${testSummary.totalAttempts}">0</h3>
                             </div>
                             <div class="bg-primary bg-opacity-25 p-2 p-md-3 rounded-circle">
@@ -55,11 +55,11 @@
                     <div class="card-body p-2 p-md-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <span class="text-muted text-uppercase small fw-semibold d-block" style="font-size: 0.7rem;">Тестировщиков</span>
+                                <span class="text-muted text-uppercase small fw-semibold d-block text-xs">Тестировщиков</span>
                                 <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md" th:text="${testSummary.uniqueTesters}">0</h3>
                             </div>
                             <div class="bg-success bg-opacity-25 p-2 p-md-3 rounded-circle">
-                                <i class="bi bi-people text-success fs-5 fs-md-3"></i>
+                                <i class="bi bi-people text-dark fs-5 fs-md-3"></i>
                             </div>
                         </div>
                     </div>
@@ -70,7 +70,7 @@
                     <div class="card-body p-2 p-md-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <span class="text-muted text-uppercase small fw-semibold d-block" style="font-size: 0.7rem;">Средний балл</span>
+                                <span class="text-muted text-uppercase small fw-semibold d-block text-xs">Средний балл</span>
                                 <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md" th:text="${#numbers.formatDecimal(testSummary.averageScore, 1, 1)} + '%'">0%</h3>
                             </div>
                             <div class="bg-info bg-opacity-25 p-2 p-md-3 rounded-circle">
@@ -85,7 +85,7 @@
                     <div class="card-body p-2 p-md-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <span class="text-muted text-uppercase small fw-semibold d-block" style="font-size: 0.7rem;">Лучший результат</span>
+                                <span class="text-muted text-uppercase small fw-semibold d-block text-xs">Лучший результат</span>
                                 <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md" th:text="${#numbers.formatDecimal(testSummary.bestScore, 1, 1)} + '%'">0%</h3>
                             </div>
                             <div class="bg-warning bg-opacity-25 p-2 p-md-3 rounded-circle">
@@ -180,7 +180,7 @@
                             </td>
                             <td class="d-none d-md-table-cell small" th:text="${tester.formattedDuration}">15 мин</td>
                             <td class="d-none d-lg-table-cell">
-                                <span class="badge" style="font-size: 0.7rem;"
+                                <span class="badge text-xs"
                                       th:classappend="${tester.cooldownStatus == 'Доступен'} ? 'bg-success' : 'bg-warning'"
                                       th:text="${tester.cooldownStatus}">Доступен</span>
                             </td>
