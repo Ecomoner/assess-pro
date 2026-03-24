@@ -4,15 +4,18 @@ import com.frist.assesspro.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 
 class UserRepositoryTest extends BaseRepositoryTest {
 
@@ -25,7 +28,7 @@ class UserRepositoryTest extends BaseRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        userRepository.deleteAll();
+        userRepository.deleteAllInBatch();
 
         admin = new User();
         admin.setUsername("admin");

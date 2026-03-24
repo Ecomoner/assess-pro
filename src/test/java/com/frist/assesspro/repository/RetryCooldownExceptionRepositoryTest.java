@@ -5,11 +5,14 @@ import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 
 class RetryCooldownExceptionRepositoryTest extends BaseRepositoryTest {
 
