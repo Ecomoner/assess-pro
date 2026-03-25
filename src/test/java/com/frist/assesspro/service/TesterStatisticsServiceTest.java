@@ -298,7 +298,7 @@ class TesterStatisticsServiceTest {
     @Test
     @DisplayName("getTotalTesters: общее количество тестировщиков")
     void getTotalTesters_Success() {
-        when(userRepository.countAllUsers()).thenReturn(100L);
+        when(userRepository.countAllTesters()).thenReturn(100L);
 
         long result = testerStatisticsService.getTotalTesters();
 

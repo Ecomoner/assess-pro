@@ -26,7 +26,6 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                         <tr>
-                            <th class="d-none d-sm-table-cell">ID</th>
                             <th>Название</th>
                             <th class="d-none d-md-table-cell">Описание</th>
                             <th class="d-none d-lg-table-cell">Тестов</th>
@@ -36,7 +35,6 @@
                         </thead>
                         <tbody>
                         <tr th:each="category : ${categories}">
-                            <td class="d-none d-sm-table-cell" th:text="${category.id}">1</td>
                             <td>
                                 <strong th:text="${category.name}">Математика</strong>
                                 <span class="d-block d-sm-none text-muted small" th:text="${category.description} ?: '-'">Описание</span>
