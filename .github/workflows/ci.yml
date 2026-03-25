@@ -35,14 +35,6 @@ jobs:
       - name: Build Docker image
         run: docker build -t assesspro:latest .
 
-      - name: Check Docker username
-        run: |
-          if [ -z "${{ secrets.DOCKER_USERNAME }}" ]; then
-            echo "DOCKER_USERNAME is empty"
-            exit 1
-          fi
-          echo "DOCKER_USERNAME is set"
-
       - name: Log in to Docker Hub
         if: github.ref == 'refs/heads/master'
         uses: docker/login-action@v3
@@ -53,8 +45,9 @@ jobs:
       - name: Push to Docker Hub
         if: github.ref == 'refs/heads/master'
         run: |
-          docker tag assesspro:latest ${{ secrets.DOCKER_USERNAME }}/assesspro:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/assesspro:latestspro:latest
+          USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr -d '[:space:]')
+          docker tag assesspro:latest ${USERNAME}/assesspro:latest
+          docker push ${USERNAME}/assesspro:latest
 
       - name: Deploy to server
         if: github.ref == 'refs/heads/master'
