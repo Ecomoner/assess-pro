@@ -39,7 +39,7 @@ public class TestService {
      */
     @Transactional
     public Test createTest(TestDTO testDTO, String username) {
-        // Валидация
+
         if (testDTO.getTitle() == null || testDTO.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Название теста обязательно");
         }
@@ -52,26 +52,22 @@ public class TestService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        // Проверка уникальности названия для этого создателя
         boolean titleExists = testRepository.findByCreatedBy(user).stream()
                 .anyMatch(t -> t.getTitle().equalsIgnoreCase(title));
         if (titleExists) {
             throw new IllegalArgumentException("Тест с таким названием уже существует");
         }
 
-        // Создание теста
         Test test = new Test();
         test.setTitle(title);
         test.setDescription(testDTO.getDescription());
         test.setCreatedBy(user);
         test.setIsPublished(false);
 
-        // Таймер
         test.setTimeLimitMinutes(testDTO.getTimeLimitMinutes() != null ?
                 Math.min(testDTO.getTimeLimitMinutes(), 300) : 0);
 
-        // 🔥 ВАЖНО: Устанавливаем cooldown поля
-        // Приоритет у дней, если указаны дни - часы игнорируем
+
         if (testDTO.getRetryCooldownDays() != null && testDTO.getRetryCooldownDays() > 0) {
             test.setRetryCooldownDays(Math.min(testDTO.getRetryCooldownDays(), 14));
             test.setRetryCooldownHours(testDTO.getRetryCooldownDays() * 24);
@@ -83,7 +79,6 @@ public class TestService {
             test.setRetryCooldownDays(0);
         }
 
-        // Категория
         if (testDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(testDTO.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Категория не найдена"));
@@ -110,14 +105,12 @@ public class TestService {
         User creator = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        // Строим спецификацию
         Specification<Test> spec = Specification
                 .where(TestSpecifications.byCreator(creator))
                 .and(TestSpecifications.byPublishedStatus(published))
                 .and(TestSpecifications.byTitleContaining(search))
                 .and(TestSpecifications.byCategoryId(categoryId));
 
-        // Получаем ID тестов, удовлетворяющих условиям
         List<Long> testIds = testRepository.findAll(spec)
                 .stream()
                 .map(Test::getId)
@@ -127,7 +120,6 @@ public class TestService {
             return Page.empty(pageable);
         }
 
-        // Получаем DTO проекцию для найденных ID с пагинацией
         return testRepository.findTestDTOsByIds(testIds, pageable);
     }
 
@@ -160,7 +152,6 @@ public class TestService {
             throw new RuntimeException("Нет прав для редактирования теста");
         }
 
-        // Обновляем поля
         existingTest.setTitle(updateDTO.getTitle().trim());
         existingTest.setDescription(updateDTO.getDescription());
         existingTest.setTimeLimitMinutes(
@@ -180,7 +171,6 @@ public class TestService {
             existingTest.setRetryCooldownDays(0);
         }
 
-        // Обновляем категорию
         if (updateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(updateDTO.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Категория не найдена"));
@@ -211,7 +201,6 @@ public class TestService {
         }
 
         if (publish) {
-            // ЗАМЕНИТЬ на один запрос вместо нескольких
             List<Question> questions = questionRepository.findQuestionsWithAnswersByTestId(testId);
 
             if (questions.isEmpty()) {
@@ -440,7 +429,7 @@ public class TestService {
         return dto;
     }
     /**
-     * 🔥 НОВОЕ: Получение ВСЕХ тестов для создателя (не только своих)
+     * Получение ВСЕХ тестов для создателя (не только своих)
      */
     @Transactional(readOnly = true)
     public Page<TestDTO> getAllTestsForCreator(String username,
@@ -457,7 +446,7 @@ public class TestService {
     }
 
     /**
-     * 🔥 НОВОЕ: Проверка, является ли пользователь владельцем теста
+     * Проверка, является ли пользователь владельцем теста
      */
     @Transactional(readOnly = true)
     public boolean isTestOwner(Long testId, String username) {
@@ -467,7 +456,7 @@ public class TestService {
     }
 
     /**
-     * 🔥 НОВОЕ: Получение теста без проверки владельца (для статистики и ограничений)
+     * Получение теста без проверки владельца (для статистики и ограничений)
      */
     @Transactional(readOnly = true)
     public Test getTestByIdWithoutOwnershipCheck(Long testId) {

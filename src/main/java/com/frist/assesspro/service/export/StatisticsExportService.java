@@ -57,13 +57,11 @@ public class StatisticsExportService {
      * Загрузка шрифта с поддержкой кириллицы
      */
     private PdfFont loadFont() {
-        // Пробуем загрузить шрифт из ресурсов
         try (InputStream fontStream = getClass().getResourceAsStream(FONT_PATH)) {
             if (fontStream != null) {
                 log.info("Загружен шрифт из ресурсов: {}", FONT_PATH);
                 byte[] fontBytes = fontStream.readAllBytes();
                 FontProgram fontProgram = FontProgramFactory.createFont(fontBytes);
-                // Для шрифтов из ресурсов используем IDENTITY_H (Unicode)
                 return PdfFontFactory.createFont(fontProgram, PdfEncodings.IDENTITY_H);
             } else {
                 log.warn("Шрифт не найден в ресурсах: {}", FONT_PATH);
@@ -72,10 +70,8 @@ public class StatisticsExportService {
             log.warn("Не удалось загрузить шрифт из ресурсов: {}", e.getMessage());
         }
 
-        // Запасной вариант - использовать встроенный шрифт с поддержкой Unicode
         try {
             log.info("Используем встроенный шрифт Helvetica");
-            // Создаем шрифт без указания кодировки - будет использовать стандартную
             return PdfFontFactory.createFont();
         } catch (Exception e) {
             log.error("Не удалось загрузить даже стандартный шрифт", e);
@@ -170,7 +166,7 @@ public class StatisticsExportService {
      */
     private void addTesterStatistics(Document document, Long testId,
                                      String testerUsername,
-                                     PdfFont font, Long categoryId) {  // ← убрали creatorUsername
+                                     PdfFont font, Long categoryId) {
 
         try {
             // Получаем все попытки тестировщика с пагинацией
@@ -179,7 +175,6 @@ public class StatisticsExportService {
             Page<TesterAttemptDTO> attemptsPage;
 
             do {
-                // 🔥 ИСПРАВЛЕНО: Передаем null вместо creatorUsername
                 attemptsPage = testerStatisticsService.getTestersByTest(
                         testId, null, PageRequest.of(page++, PAGE_SIZE));
                 allAttempts.addAll(attemptsPage.getContent());
@@ -230,7 +225,6 @@ public class StatisticsExportService {
 
             // Получаем детальные ответы
             if (!attempts.isEmpty()) {
-                // 🔥 ИСПРАВЛЕНО: Передаем null вместо creatorUsername
                 addDetailedAnswers(document, testId, lastAttempt.getAttemptId(), null, font);
             }
 

@@ -32,16 +32,13 @@ public class QuestionService {
         validateQuestionDTO(questionDTO);
         Test test = getTestWithAuthCheck(testId, username);
 
-        // Проверка дубликатов
         checkDuplicateQuestion(testId, questionDTO.getText().trim());
 
-        // Создаем вопрос
         Question question = new Question();
         question.setText(questionDTO.getText().trim());
         question.setOrderIndex(questionDTO.getOrderIndex());
         question.setTest(test);
 
-        // 🔥 ПРАВИЛЬНО: Добавляем ответы через helper метод
         List<AnswerOptionDTO> validAnswers = filterAndValidateAnswers(questionDTO.getAnswerOptions());
 
         for (AnswerOptionDTO answerDTO : validAnswers) {
@@ -52,7 +49,6 @@ public class QuestionService {
             question.addAnswerOption(answerOption);
         }
 
-        // Сохраняем - каскадно сохранятся все ответы
         Question savedQuestion = questionRepository.save(question);
 
         log.info("Создан вопрос ID: {} с {} вариантами ответов",
@@ -71,20 +67,17 @@ public class QuestionService {
 
         validateQuestionOwnership(existingQuestion, username);
 
-        // Обновляем поля вопроса
         existingQuestion.setText(questionDTO.getText().trim());
         existingQuestion.setOrderIndex(questionDTO.getOrderIndex());
 
-        // Получаем существующие варианты ответов
         List<AnswerOption> existingAnswers = existingQuestion.getAnswerOptions();
 
-        // Проверяем, что количество вариантов совпадает
         if (existingAnswers.size() != questionDTO.getAnswerOptions().size()) {
             log.warn("Количество вариантов не совпадает: БД={}, DTO={}",
                     existingAnswers.size(), questionDTO.getAnswerOptions().size());
         }
 
-        // Обновляем каждый существующий вариант
+
         for (int i = 0; i < existingAnswers.size() && i < questionDTO.getAnswerOptions().size(); i++) {
             AnswerOption existingAnswer = existingAnswers.get(i);
             AnswerOptionDTO answerDTO = questionDTO.getAnswerOptions().get(i);
@@ -121,11 +114,8 @@ public class QuestionService {
     public List<Question> getQuestionsByTestId(Long testId, String username) {
         Test test = getTestWithAuthCheck(testId, username);
 
-        // Загружаем вопросы с вариантами ответов (один запрос)
         List<Question> questions = questionRepository.findByTestIdOrderByOrderIndex(testId);
 
-        // Hibernate автоматически использует batch fetching для загрузки answerOptions
-        // благодаря настройке default_batch_fetch_size
         return questions;
     }
 
@@ -201,7 +191,6 @@ public class QuestionService {
             throw new IllegalArgumentException("Добавьте хотя бы один вариант ответа");
         }
 
-        // Фильтруем пустые варианты
         List<AnswerOptionDTO> validAnswers = answerOptions.stream()
                 .filter(answer -> answer.getText() != null && !answer.getText().trim().isEmpty())
                 .collect(Collectors.toList());
@@ -210,7 +199,6 @@ public class QuestionService {
             throw new IllegalArgumentException("Добавьте как минимум 2 варианта ответа");
         }
 
-        // Проверяем, что есть хотя бы один правильный ответ
         boolean hasCorrectAnswer = validAnswers.stream()
                 .anyMatch(AnswerOptionDTO::getIsCorrect);
 

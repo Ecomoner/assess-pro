@@ -35,7 +35,6 @@
                 </div>
             </div>
         </div>
-        <!-- Информация о попытке -->
         <div class="card border-0 shadow-sm mb-3 mb-md-4">
             <div class="card-header bg-white py-2">
                 <h5 class="mb-0 h6 h5-md">Информация о попытке</h5>
@@ -61,7 +60,6 @@
                 </div>
             </div>
         </div>
-        <!-- Детальные ответы -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-2">
                 <h5 class="mb-0 h6 h5-md">Ответы на вопросы</h5>
@@ -76,7 +74,6 @@
                             <p class="fw-bold mb-1 small" th:text="${stat.count} + '. ' + ${answer.questionText}">
                                 1. Текст вопроса
                             </p>
-
                             <div class="row g-1">
                                 <div class="col-12 col-md-6">
                                     <p class="mb-0"><small class="text-muted">Ответ:</small></p>
@@ -90,7 +87,6 @@
                                         <i>Не выбран</i>
                                     </p>
                                 </div>
-
                                 <div class="col-12 col-md-6" th:if="${!answer.isCorrect and answer.correctAnswer != null}">
                                     <p class="mb-0"><small class="text-muted">Правильный:</small></p>
                                     <p class="text-success small mb-0" th:text="${answer.correctAnswer.answerText}">

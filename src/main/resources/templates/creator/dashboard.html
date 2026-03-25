@@ -1,15 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
-
 <head th:replace="~{fragments/header :: header('Дашборд создателя')}",>
     <meta charset="UTF-8">
 <body>
 <div th:replace="~{fragments/navigation}"></div>
-
 <div class="container-fluid py-3 py-md-4 bg-light">
     <div class="container px-2 px-md-3">
-        <!-- Заголовок -->
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 mb-md-4 gap-2">
             <div>
                 <h1 class="h3 h2-md mb-1">
@@ -19,7 +15,6 @@
                 <p class="text-muted small mb-0">Добро пожаловать, <strong th:text="${firstName}">Создатель</strong>!</p>
             </div>
         </div>
-        <!-- Карточка создания теста -->
         <div class="row g-2 g-md-4 mb-3 mb-md-4">
             <div class="col-12">
                 <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
@@ -44,8 +39,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Карточка управления тестировщиками -->
         <div class="row g-2 g-md-4 mb-3 mb-md-4">
             <div class="col-12">
                 <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
@@ -70,7 +63,6 @@
                 </div>
             </div>
         </div>
-        <!-- Последние попытки тестировщиков -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-2 py-md-3">
                 <h5 class="mb-0 h6 h5-md">Последние попытки тестировщиков</h5>
@@ -123,9 +115,7 @@
         </div>
     </div>
 </div>
-
 <div th:replace="~{fragments/footer}"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

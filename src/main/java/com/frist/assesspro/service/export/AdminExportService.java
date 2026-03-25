@@ -35,15 +35,11 @@ public class AdminExportService {
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     private static final DateTimeFormatter DATE_ONLY_FORMATTER =
             DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
-    // Путь к шрифту в ресурсах
     private static final String FONT_PATH = "/fonts/arial.ttf";
-
-    // Запасной шрифт (встроенный в PDF)
     private static final String FALLBACK_FONT = "Helvetica";
 
     /**
-     * 🔥 ИСПРАВЛЕНО: Загрузка шрифта с поддержкой кириллицы
+     * Загрузка шрифта с поддержкой кириллицы
      */
     private PdfFont loadFont() {
         // Пробуем загрузить шрифт из ресурсов
@@ -60,7 +56,6 @@ public class AdminExportService {
             log.warn("Не удалось загрузить шрифт из ресурсов: {}", e.getMessage());
         }
 
-        // Если не удалось, пробуем стандартный шрифт с CP1251 (кириллица)
         try {
             log.info("Используем стандартный шрифт с поддержкой CP1251");
             return PdfFontFactory.createFont(
@@ -75,7 +70,7 @@ public class AdminExportService {
     }
 
     /**
-     * 🔥 ИСПРАВЛЕНО: Генерация PDF отчета со статистикой приложения
+     * Генерация PDF отчета со статистикой приложения
      */
     public byte[] generateAppStatisticsPDF() {
         log.info("Генерация PDF отчета со статистикой приложения");
@@ -138,7 +133,7 @@ public class AdminExportService {
     }
 
     /**
-     * 🔥 НОВОЕ: Генерация списка пользователей в PDF
+     * Генерация списка пользователей в PDF
      */
     public byte[] generateUsersListPDF(String role, Boolean active) {
         log.info("Генерация PDF списка пользователей, роль: {}, активные: {}", role, active);
@@ -220,7 +215,6 @@ public class AdminExportService {
                 }
 
                 document.add(table);
-
                 // Итог
                 document.add(new Paragraph(""));
                 document.add(new Paragraph("Всего пользователей: " + usersPage.getTotalElements())

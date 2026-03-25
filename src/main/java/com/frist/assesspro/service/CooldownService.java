@@ -31,18 +31,16 @@ public class CooldownService {
     @Transactional(readOnly = true)
     public boolean canUserTakeTest(Test test, User user) {
         LocalDateTime now = LocalDateTime.now(clock);
-        // 1. Если нет ограничений - можно
+
         if (!test.hasRetryCooldown()) {
             return true;
         }
 
-        // 2. Проверяем активные исключения
         if (exceptionRepository.hasActiveException(test, user, now)) {
             log.debug("Пользователь {} имеет исключение для теста {}", user.getUsername(), test.getId());
             return true;
         }
 
-        // 3. Получаем последнюю завершенную попытку
         Optional<TestAttempt> lastAttempt = testAttemptRepository
                 .findByTestIdAndUserIdAndStatus(
                         test.getId(),
@@ -50,17 +48,14 @@ public class CooldownService {
                         TestAttempt.AttemptStatus.COMPLETED);
 
         if (lastAttempt.isEmpty()) {
-            // Ни разу не проходил - можно
             return true;
         }
 
-        // 4. Проверяем время с последней попытки
         LocalDateTime lastAttemptTime = lastAttempt.get().getEndTime();
         if (lastAttemptTime == null) {
             lastAttemptTime = lastAttempt.get().getStartTime();
         }
 
-        // 🔥 ВАЖНО: Используем effectiveCooldownHours из Test
         LocalDateTime nextAllowedTime = lastAttemptTime.plusHours(test.getEffectiveCooldownHours());
         boolean canTake = now.isAfter(nextAllowedTime);
 
@@ -78,7 +73,6 @@ public class CooldownService {
     @Transactional
     public RetryCooldownException createException(Test test, User user, User creator,
                                                   Integer hours, boolean permanent, String reason) {
-        // Удаляем старые исключения
         exceptionRepository.deleteByTestAndUser(test, user);
 
         RetryCooldownException exception = new RetryCooldownException();

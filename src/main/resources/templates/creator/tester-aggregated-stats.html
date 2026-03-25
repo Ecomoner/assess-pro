@@ -9,8 +9,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb flex-wrap">
                     <li class="breadcrumb-item"><a th:href="@{/creator/tests}" class="text-decoration-none">Мои тесты</a></li>
-                    <li class="breadcrumb-item"><a th:href="@{/creator/tests/{testId}/statistics/aggregated/testers(testId=${test.id})}"
-                                                   class="text-decoration-none">Агрегированная статистика</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/creator/tests/{testId}/statistics/aggregated/testers(testId=${test.id})}" class="text-decoration-none">Агрегированная статистика</a></li>
                     <li class="breadcrumb-item active">Детально</li>
                 </ol>
             </nav>
@@ -26,7 +25,6 @@
                 </a>
             </div>
         </div>
-        <!-- Карточки статистики -->
         <div class="row g-2 g-md-4 mb-3 mb-md-4">
             <div class="col-6 col-md-3">
                 <div class="card border-0 shadow-sm stats-card">
@@ -61,7 +59,6 @@
                 </div>
             </div>
         </div>
-        <!-- История попыток -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-2">
                 <h5 class="mb-0 h6 h5-md">История попыток</h5>

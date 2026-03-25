@@ -65,7 +65,7 @@ public class TesterStatisticsService {
 
         if (attempt.getTest() != null) {
             dto.setTestId(attempt.getTest().getId());
-            dto.setTestTitle(attempt.getTest().getTitle());  // ← ДОБАВЛЕНО
+            dto.setTestTitle(attempt.getTest().getTitle());
         }
 
         int questionCount = 0;
@@ -165,7 +165,7 @@ public class TesterStatisticsService {
 
         summary.setTotalAttempts(totalAttempts);
         summary.setUniqueTesters(uniqueTesters);
-        summary.setAverageScore(averagePercentage); // здесь устанавливается процент
+        summary.setAverageScore(averagePercentage);
         summary.setBestScore(bestPercentage);
 
         return summary;
@@ -184,19 +184,15 @@ public class TesterStatisticsService {
 
         validateTestExists(testId, creatorUsername);
 
-        // Получаем все попытки по тесту с фильтрацией по дате
         List<TestAttempt> allAttempts = getFilteredAttempts(testId, dateFrom, dateTo);
 
-        // Группируем по тестировщикам
         Map<User, List<TestAttempt>> attemptsByTester = allAttempts.stream()
                 .collect(Collectors.groupingBy(TestAttempt::getUser));
 
-        // Конвертируем в агрегированные DTO
         List<TesterAggregatedStatsDTO> aggregatedList = attemptsByTester.entrySet().stream()
                 .map(entry -> buildTesterAggregatedStats(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
 
-        // Применяем пагинацию
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), aggregatedList.size());
 
@@ -262,13 +258,11 @@ public class TesterStatisticsService {
             );
         }
 
-        // Вычисляем агрегированные метрики
         long totalAttempts = attempts.size();
         long completedAttempts = attempts.stream()
                 .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.COMPLETED)
                 .count();
 
-        // Вычисляем проценты для завершенных попыток
         List<Double> percentages = attempts.stream()
                 .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.COMPLETED)
                 .map(attempt -> {
@@ -298,13 +292,11 @@ public class TesterStatisticsService {
                 .min()
                 .orElse(0.0);
 
-        // Вычисляем общую длительность
         Long totalDurationMinutes = attempts.stream()
                 .filter(a -> a.getStartTime() != null && a.getEndTime() != null)
                 .mapToLong(a -> Duration.between(a.getStartTime(), a.getEndTime()).toMinutes())
                 .sum();
 
-        // Даты первой и последней попытки
         LocalDateTime firstAttemptDate = attempts.stream()
                 .map(TestAttempt::getStartTime)
                 .filter(Objects::nonNull)
@@ -317,12 +309,10 @@ public class TesterStatisticsService {
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
 
-        // ID всех попыток
         List<Long> attemptIds = attempts.stream()
                 .map(TestAttempt::getId)
                 .collect(Collectors.toList());
 
-        // Последние 3 попытки (для быстрого просмотра)
         List<TesterAttemptDTO> recentAttempts = attempts.stream()
                 .sorted((a1, a2) -> a2.getStartTime().compareTo(a1.getStartTime()))
                 .limit(3)
@@ -382,7 +372,6 @@ public class TesterStatisticsService {
                                                           Pageable pageable) {
         validateTestExists(testId, creatorUsername);
 
-        // 1. Получаем попытки с пользователями
         Page<TestAttempt> attemptsPage;
         if (search != null && !search.trim().isEmpty()) {
             attemptsPage = testAttemptRepository.searchByTestIdWithUser(testId, search.trim(), pageable);
@@ -394,10 +383,8 @@ public class TesterStatisticsService {
             return Page.empty(pageable);
         }
 
-        // 2. Получаем все исключения для этих пользователей одним запросом
         Set<Long> userIdsWithExceptions = exceptionRepository.findUserIdsWithExceptions(testId);
 
-        // 3. Преобразуем в DTO
         List<TesterStatisticsDTO> dtos = attemptsPage.getContent().stream()
                 .map(attempt -> convertToTesterStatisticsDTO(attempt, userIdsWithExceptions))
                 .collect(Collectors.toList());
@@ -408,7 +395,6 @@ public class TesterStatisticsService {
     private TesterStatisticsDTO convertToTesterStatisticsDTO(TestAttempt attempt, Set<Long> userIdsWithExceptions) {
         TesterStatisticsDTO dto = new TesterStatisticsDTO();
 
-        // Основные данные
         dto.setAttemptId(attempt.getId());
         dto.setTestId(attempt.getTest().getId());
         dto.setTestTitle(attempt.getTest().getTitle());
@@ -416,32 +402,27 @@ public class TesterStatisticsService {
         dto.setEndTime(attempt.getEndTime());
         dto.setScore(attempt.getTotalScore() != null ? attempt.getTotalScore() : 0);
 
-        // Данные пользователя
         User user = attempt.getUser();
         dto.setTesterUsername(user.getUsername());
         dto.setTesterFullName(user.getFullName());
         dto.setProfileComplete(user.isProfileComplete());
 
-        // Максимальный балл (количество вопросов)
         int maxScore = attempt.getTest().getQuestions() != null ?
                 attempt.getTest().getQuestions().size() : 0;
         dto.setMaxScore(maxScore);
 
-        // Процент
         if (maxScore > 0) {
             dto.setPercentage((double) dto.getScore() / maxScore * 100);
         } else {
             dto.setPercentage(0.0);
         }
 
-        // Длительность
         if (attempt.getStartTime() != null && attempt.getEndTime() != null) {
             dto.setDurationMinutes(Duration.between(attempt.getStartTime(), attempt.getEndTime()).toMinutes());
         } else {
             dto.setDurationMinutes(0L);
         }
 
-        // Статус ограничений
         dto.setCooldownStatus(determineCooldownStatus(attempt, userIdsWithExceptions));
 
         return dto;
@@ -450,15 +431,12 @@ public class TesterStatisticsService {
     private String determineCooldownStatus(TestAttempt attempt, Set<Long> userIdsWithExceptions) {
         Long userId = attempt.getUser().getId();
 
-        // Проверяем исключение
         if (userIdsWithExceptions.contains(userId)) {
             return "Исключение";
         }
 
-        // Проверяем ограничения
         Test test = attempt.getTest();
         if (test.hasRetryCooldown()) {
-            // Проверяем, есть ли завершенные попытки
             long completedAttempts = testAttemptRepository.countByTestIdAndUserIdAndStatus(
                     test.getId(),
                     userId,
@@ -501,7 +479,6 @@ public class TesterStatisticsService {
         dto.setQuestionText(userAnswer.getQuestion().getText());
         dto.setQuestionOrder(userAnswer.getQuestion().getOrderIndex());
 
-        // Выбранный ответ
         if (userAnswer.getChosenAnswerOption() != null) {
             AnswerDetailDTO chosenAnswer = new AnswerDetailDTO();
             chosenAnswer.setAnswerId(userAnswer.getChosenAnswerOption().getId());
@@ -510,7 +487,6 @@ public class TesterStatisticsService {
             dto.setChosenAnswer(chosenAnswer);
         }
 
-        // Находим правильный ответ
         AnswerOption correctAnswer = findCorrectAnswer(userAnswer.getQuestion());
         if (correctAnswer != null) {
             AnswerDetailDTO correctAnswerDTO = new AnswerDetailDTO();

@@ -33,15 +33,14 @@ public class DashboardService {
 
         DashboardStatsDTO stats = new DashboardStatsDTO();
 
-        // 1. Используем оптимизированные запросы
+
         stats.setTotalTests(testRepository.countByTests(creator));
         stats.setPublishedTests(testRepository.countPublishedByCreator(creator));
 
-        // 2. Используем нативный запрос для подсчета вопросов
+
         stats.setTotalQuestions(countTotalQuestionsByCreator(creator));
         stats.setTotalCategories(categoryRepository.countByCreatedBy(creator));
 
-        // 3. Получаем статистику попыток через оптимизированный запрос
         List<Object[]> attemptsStats = testAttemptRepository.findAggregatedStatsByCreator(creator.getId());
 
         if (!attemptsStats.isEmpty()) {
@@ -72,9 +71,8 @@ public class DashboardService {
         User tester = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        DashboardStatsDTO stats = new DashboardStatsDTO(); // Всегда создаем новый объект
+        DashboardStatsDTO stats = new DashboardStatsDTO();
 
-        // Устанавливаем значения (даже если они 0)
         stats.setTotalAttempts(testAttemptRepository.countByUserId(tester.getId()));
         stats.setCompletedTests(testAttemptRepository.countByUserIdAndStatus(
                 tester.getId(), TestAttempt.AttemptStatus.COMPLETED));

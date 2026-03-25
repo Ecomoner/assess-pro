@@ -32,7 +32,7 @@ public interface UserAnswerRepository extends JpaRepository<UserAnswer,Long> {
     long countByAttemptId(@Param("attemptId") Long attemptId);
 
     @Modifying
-    @Query(value = "INSERT INTO assess_pro_db.user_answers (attempt_id, question_id, chosen_answer_option_id, is_correct, points_earned) " +
+    @Query(value = "INSERT INTO user_answers (attempt_id, question_id, chosen_answer_option_id, is_correct, points_earned) " +
             "VALUES (:attemptId, :questionId, :answerOptionId, :isCorrect, :points) " +
             "ON CONFLICT (attempt_id, question_id) DO UPDATE SET " +
             "chosen_answer_option_id = EXCLUDED.chosen_answer_option_id, " +

@@ -36,7 +36,7 @@ public class TestPassingService {
     private final CooldownService cooldownService;
 
     /**
-     * 🔥 НОВОЕ: Получение ВСЕХ доступных тестов С ПАГИНАЦИЕЙ (для каталога)
+     * Получение ВСЕХ доступных тестов С ПАГИНАЦИЕЙ (для каталога)
      * Кэширование с учетом страницы и размера
      */
     @Cacheable(value = "publishedTests",
@@ -96,7 +96,6 @@ public class TestPassingService {
             throw new RuntimeException(message);
         }
 
-        // Проверяем существующую попытку
         Optional<TestAttempt> existingAttempt = testAttemptRepository
                 .findByTestIdAndUserIdAndStatus(testId, user.getId(), TestAttempt.AttemptStatus.IN_PROGRESS);
 
@@ -121,42 +120,34 @@ public class TestPassingService {
             log.info("Создана новая попытка теста ID: {}", testId);
         }
 
-        // Получаем все вопросы теста
         List<Question> allQuestions = test.getQuestions();
 
-        // Получаем ID вопросов, на которые уже есть ответы в этой попытке
         Set<Long> answeredQuestionIds = userAnswerRepository.findByAttemptId(attemptId).stream()
                 .map(userAnswer -> userAnswer.getQuestion().getId())
                 .collect(Collectors.toSet());
 
         log.info("Вопросов всего: {}, отвечено: {}", allQuestions.size(), answeredQuestionIds.size());
 
-        // Фильтруем только неотвеченные вопросы
         List<Question> unansweredQuestions = allQuestions.stream()
                 .filter(q -> !answeredQuestionIds.contains(q.getId()))
                 .collect(Collectors.toList());
 
-        // Если все вопросы отвечены, тест должен быть завершен
         if (unansweredQuestions.isEmpty()) {
             log.info("Все вопросы отвечены, завершаем тест");
             attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
             attempt.setEndTime(LocalDateTime.now());
             testAttemptRepository.save(attempt);
 
-            // Возвращаем пустой результат, контроллер должен перенаправить на страницу результатов
             return Optional.empty();
         }
 
-        // Перемешиваем только неотвеченные вопросы
         List<Question> shuffledUnanswered = new ArrayList<>(unansweredQuestions);
         Collections.shuffle(shuffledUnanswered);
 
-        // Конвертируем в DTO
         List<QuestionForTakingDTO> questionDTOs = shuffledUnanswered.stream()
                 .map(this::convertToQuestionForTakingDTO)
                 .collect(Collectors.toList());
 
-        // Проверяем, что у вопросов есть варианты ответов
         questionDTOs = questionDTOs.stream()
                 .peek(question -> {
                     if (question.getAnswerOptions() == null) {
@@ -206,7 +197,6 @@ public class TestPassingService {
         dto.setText(question.getText());
         dto.setOrderIndex(question.getOrderIndex());
 
-        // Безопасное преобразование ответов
         if (question.getAnswerOptions() != null && !question.getAnswerOptions().isEmpty()) {
             List<QuestionForTakingDTO.AnswerOptionForTakingDTO> answerDTOs = question.getAnswerOptions().stream()
                     .map(this::convertToAnswerOptionForTakingDTO)
@@ -236,7 +226,6 @@ public class TestPassingService {
             throw new RuntimeException("Нет прав доступа к этой попытке!");
         }
 
-        // Проверяем статус попытки
         if (attempt.getStatus() != TestAttempt.AttemptStatus.IN_PROGRESS) {
             log.info("Попытка ID: {} уже завершена, пропускаем сохранение ответа", attempt.getId());
             return;
@@ -260,7 +249,6 @@ public class TestPassingService {
             points = isCorrect ? 1 : 0;
         }
 
-        // Используем UPSERT для атомарной операции
         try {
             userAnswerRepository.upsertAnswer(
                     attempt.getId(),
@@ -276,15 +264,12 @@ public class TestPassingService {
             throw new RuntimeException("Не удалось сохранить ответ", e);
         }
 
-        // Обновляем общий счет
         updateAttemptTotalScore(attempt.getId());
 
-        // Проверяем, все ли вопросы отвечены
         long answeredCount = userAnswerRepository.countByAttemptId(attempt.getId());
         long totalQuestions = attempt.getTest().getQuestions().size();
 
         if (answeredCount >= totalQuestions) {
-            // Все вопросы отвечены, автоматически завершаем тест
             finishTestAndGetResults(attempt.getId(), username);
             log.info("Тест автоматически завершен после ответа на последний вопрос");
         }
@@ -302,7 +287,7 @@ public class TestPassingService {
         return testRepository.findPublishedTestInfoDTOs();
     }
     /**
-     * 🔥 НОВОЕ: Получение тестов ПО КАТЕГОРИИ (без пагинации)
+     * Получение тестов ПО КАТЕГОРИИ (без пагинации)
      * Кэширование по ID категории
      */
     @Cacheable(value = "publishedTests",
@@ -318,9 +303,6 @@ public class TestPassingService {
 
         return testRepository.findPublishedTestInfoDTOsByCategoryId(categoryId);
     }
-
-
-
     /**
      * Завершение теста и получение результатов как DTO
      */
@@ -333,13 +315,11 @@ public class TestPassingService {
             throw new RuntimeException("Нет доступа к этой попытке");
         }
 
-        // Если тест уже завершен, просто возвращаем результаты
         if (attempt.getStatus() == TestAttempt.AttemptStatus.COMPLETED) {
             log.info("Попытка ID: {} уже завершена, возвращаем результаты", attemptId);
             return getTestResults(attemptId, username);
         }
 
-        // Завершаем тест
         attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
         attempt.setEndTime(LocalDateTime.now());
         testAttemptRepository.save(attempt);
@@ -356,32 +336,28 @@ public class TestPassingService {
         TestAttempt attempt = testAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new RuntimeException("Попытка не найдена"));
 
-
         if (!attempt.getUser().getUsername().equals(username)) {
             throw new RuntimeException("Нет доступа к этой попытке");
         }
 
         Test test = attempt.getTest();
 
-
         List<UserAnswer> userAnswers = userAnswerRepository.findByAttemptId(attemptId);
-
 
         List<QuestionResultDTO> questionResults = userAnswers.stream()
                 .map(this::convertToQuestionResultDTO)
                 .collect(Collectors.toList());
-
 
         int totalQuestions = test.getQuestions().size();
         int answeredQuestions = userAnswers.size();
         int correctAnswers = (int) userAnswers.stream()
                 .filter(answer -> Boolean.TRUE.equals(answer.getIsCorrect()))
                 .count();
-        int maxPossibleScore = totalQuestions; // По 1 баллу за каждый правильный ответ
+        int maxPossibleScore = totalQuestions;
 
         TestResultsDTO dto = new TestResultsDTO();
         dto.setAttemptId(attempt.getId());
-        dto.setTestId(test.getId());  // ← УСТАНАВЛИВАЕМ testId!
+        dto.setTestId(test.getId());
         dto.setTestTitle(test.getTitle());
         dto.setStartTime(attempt.getStartTime());
         dto.setEndTime(attempt.getEndTime());
@@ -398,7 +374,6 @@ public class TestPassingService {
     private QuestionResultDTO convertToQuestionResultDTO(UserAnswer userAnswer) {
         QuestionResultDTO dto = new QuestionResultDTO();
 
-
         if (userAnswer.getQuestion() == null) {
             dto.setQuestionId(null);
             dto.setQuestionText("Вопрос не найден");
@@ -406,7 +381,6 @@ public class TestPassingService {
             dto.setQuestionId(userAnswer.getQuestion().getId());
             dto.setQuestionText(userAnswer.getQuestion().getText());
         }
-
 
         if (userAnswer.getChosenAnswerOption() != null) {
             dto.setChosenAnswerId(userAnswer.getChosenAnswerOption().getId());
@@ -416,7 +390,6 @@ public class TestPassingService {
             dto.setChosenAnswerText("Ответ не предоставлен");
         }
 
-        // Правильный ответ
         if (userAnswer.getQuestion() != null && userAnswer.getQuestion().getAnswerOptions() != null) {
             Optional<AnswerOption> correctAnswer = userAnswer.getQuestion().getAnswerOptions().stream()
                     .filter(AnswerOption::getIsCorrect)
@@ -451,12 +424,10 @@ public class TestPassingService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
         Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
 
-        // Получаем все ID попыток
         List<Long> attemptIds = historyPage.getContent().stream()
                 .map(TestHistoryDTO::getAttemptId)
                 .collect(Collectors.toList());
 
-        // ИСПРАВЛЕНО: получаем List и преобразуем в Map
         Map<Long, Long> answeredCounts = new HashMap<>();
         if (!attemptIds.isEmpty()) {
             List<Object[]> results = userAnswerRepository.countByAttemptIds(attemptIds);
@@ -469,7 +440,6 @@ public class TestPassingService {
             }
         }
 
-        // Вычисляем прогресс
         for (TestHistoryDTO dto : historyPage.getContent()) {
             if (dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
                 Long answered = answeredCounts.getOrDefault(dto.getAttemptId(), 0L);
@@ -498,7 +468,6 @@ public class TestPassingService {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").descending());
         Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
 
-        // Вычисляем прогресс для каждой записи
         List<Long> attemptIds = historyPage.getContent().stream()
                 .map(TestHistoryDTO::getAttemptId)
                 .collect(Collectors.toList());
@@ -514,7 +483,7 @@ public class TestPassingService {
                 }
             }
         }
-        // Вычисляем прогресс
+
         for (TestHistoryDTO dto : historyPage.getContent()) {
             if (dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
                 Long answered = answeredCounts.getOrDefault(dto.getAttemptId(), 0L);
@@ -572,7 +541,7 @@ public class TestPassingService {
     }
 
     /**
-     * 🔥 НОВОЕ: Поиск тестов по названию (для тестера)
+     * Поиск тестов по названию (для тестера)
      */
     @Transactional(readOnly = true)
     public Page<TestInfoDTO> searchTests(String searchTerm, int page, int size) {
@@ -587,7 +556,7 @@ public class TestPassingService {
     }
 
     /**
-     * 🔥 НОВОЕ: Быстрый поиск для автодополнения (AJAX)
+     * Быстрый поиск для автодополнения (AJAX)
      */
     @Transactional(readOnly = true)
     public List<TestInfoDTO> quickSearchTests(String searchTerm, int limit) {

@@ -22,7 +22,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role")
     long countByRole(@Param("role") String role);
 
-
     @Query("SELECT u FROM User u WHERE u.role = :role")
     List<User> findByRole(@Param("role") String role);
 
@@ -33,7 +32,6 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     @Query("SELECT u FROM User u WHERE u.createdAt >= :date")
     List<User> findByCreatedAtAfter(@Param("date") LocalDateTime date);
-
 
     @Query("SELECT COUNT(u) FROM User u")
     long countAllUsers();

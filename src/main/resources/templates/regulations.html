@@ -3,10 +3,8 @@
 <head th:replace="~{fragments/header :: header('Регламент')}">
 <body>
 <div th:replace="~{fragments/navigation}"></div>
-
 <main class="container py-4">
     <div class="row g-4">
-        <!-- Оглавление (на мобильных сверху, на десктопе слева) -->
         <div class="col-12 col-md-4 order-1">
             <div class="card shadow-sm sticky-md-top" style="top: 20px;">
                 <div class="card-header bg-white">
@@ -26,8 +24,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Основной контент (на мобильных снизу) -->
         <div class="col-12 col-md-8 order-2 order-md-1">
             <h1 class="mb-3">Регламент использования платформы AssessPro</h1>
             <p class="text-muted small" th:text="'Последнее обновление: ' + ${#temporals.format(lastUpdated, 'dd.MM.yyyy')}">

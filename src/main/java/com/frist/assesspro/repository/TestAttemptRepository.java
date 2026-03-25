@@ -23,7 +23,6 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
 
     List<TestAttempt> findByUserId(Long userId);
 
-    // DTO проекция для истории тестов
     @Query("SELECT new com.frist.assesspro.dto.test.TestHistoryDTO(" +
             "ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore, " +
             "COUNT(q.id)) " +
@@ -56,9 +55,6 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             "WHERE ta.user.id = :userId AND ta.status = 'COMPLETED'")
     Integer findBestScoreByUserId(@Param("userId") Long userId);
 
-    /**
-     * Получение последних попыток по тестам создателя
-     */
     @EntityGraph(attributePaths = {"user", "test", "test.questions"})
     @Query("SELECT ta FROM TestAttempt ta " +
             "WHERE ta.test.createdBy.username = :creatorUsername " +

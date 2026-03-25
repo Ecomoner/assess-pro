@@ -8,13 +8,9 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="navbarNav"
              th:with="role=${#authentication != null and #authentication.isAuthenticated() ? #authentication.authorities.iterator().next().authority : 'ROLE_ANONYMOUS'}">
-
-            <!-- Левая часть навигации (только для авторизованных) -->
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <!-- ADMIN MENU -->
                 <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
                     <a class="nav-link" th:href="@{/admin/dashboard}">
                         <i class="bi bi-speedometer2 me-1"></i>
@@ -39,8 +35,6 @@
                         <span class="d-inline">Регламент</span>
                     </a>
                 </li>
-
-                <!-- CREATOR MENU -->
                 <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
                     <a class="nav-link" th:href="@{/creator/dashboard}">
                         <i class="bi bi-speedometer2 me-1"></i>
@@ -65,8 +59,6 @@
                         <span class="d-inline">Регламент</span>
                     </a>
                 </li>
-
-                <!-- TESTER MENU -->
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
                     <a class="nav-link" th:href="@{/tester/dashboard}">
                         <i class="bi bi-speedometer2 me-1"></i>
@@ -92,8 +84,6 @@
                     </a>
                 </li>
             </ul>
-
-            <!-- Правая часть навигации -->
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item dropdown" th:if="${#authentication != null and #authentication.isAuthenticated()}">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">

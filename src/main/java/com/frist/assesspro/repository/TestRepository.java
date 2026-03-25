@@ -93,9 +93,6 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "ORDER BY a.id")
     List<AnswerPreviewDTO> findAnswerPreviewDTOs(@Param("questionId") Long questionId);
 
-    /**
-     * 🔧 ИСПРАВЛЕНО: Добавлены creatorId и creatorUsername в конструктор
-     */
     @Query("SELECT new com.frist.assesspro.dto.TestDTO(" +
             "t.id, t.title, t.description, t.isPublished, " +
             "COUNT(q.id), t.createdAt, t.timeLimitMinutes, " +
@@ -109,9 +106,6 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "ORDER BY t.createdAt DESC")
     Page<TestDTO> findTestDTOsByIds(@Param("testIds") List<Long> testIds, Pageable pageable);
 
-    /**
-     * 🔧 ИСПРАВЛЕНО: Добавлены creatorId и creatorUsername в конструктор
-     */
     @Query("SELECT new com.frist.assesspro.dto.TestDTO(" +
             "t.id, t.title, t.description, t.isPublished, " +
             "COUNT(q.id), t.createdAt, t.timeLimitMinutes, " +

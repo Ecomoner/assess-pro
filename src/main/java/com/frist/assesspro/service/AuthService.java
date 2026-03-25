@@ -25,7 +25,6 @@ public class AuthService {
     public User registerUser(RegistrationDTO registrationDTO) {
         log.info("Начало регистрации пользователя: {}", registrationDTO.getUsername());
 
-        // Дополнительная валидация
         if (registrationDTO.getUsername().trim().length() < 3) {
             throw new IllegalArgumentException("Имя пользователя слишком короткое");
         }
@@ -42,7 +41,6 @@ public class AuthService {
             throw new IllegalArgumentException("Пароли не совпадают");
         }
 
-        // Проверка сложности пароля
         if (!isPasswordStrong(registrationDTO.getPassword())) {
             throw new IllegalArgumentException(
                     "Пароль недостаточно надежен. Используйте буквы, цифры и специальные символы");
@@ -72,7 +70,6 @@ public class AuthService {
     }
 
     private boolean isPasswordStrong(String password) {
-        // Минимум 6 символов, хотя бы одна цифра и одна буква
         return password.length() >= 6 &&
                 password.matches(".*\\d.*") &&
                 password.matches(".*[a-zA-Z].*");

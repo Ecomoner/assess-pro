@@ -40,7 +40,7 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Page<UserManagementDTO> getAllUsers(String role, String search, Boolean active, Pageable pageable) {
 
-        // 🔥 ПОДРОБНОЕ ЛОГИРОВАНИЕ
+
         log.info("========== ПОИСК ПОЛЬЗОВАТЕЛЕЙ ==========");
         log.info("role: '{}'", role);
         log.info("search: '{}'", search);
@@ -67,7 +67,6 @@ public class AdminService {
         return userRepository.findById(id)
                 .map(this::convertToUserManagementDTO);
     }
-
 
     /**
      * Создание пользователя (только ADMIN)
@@ -347,7 +346,6 @@ public class AdminService {
 
         // Дополнительная статистика в зависимости от роли
         if (User.Roles.CREATOR.equals(user.getRole())) {
-            // 🔥 ИСПРАВЛЕНО: используем правильный метод
             dto.setTestsCreated(testRepository.countByCreatedBy(user));
         } else if (User.Roles.TESTER.equals(user.getRole())) {
             dto.setTestsPassed(testAttemptRepository.countByUserIdAndStatus(

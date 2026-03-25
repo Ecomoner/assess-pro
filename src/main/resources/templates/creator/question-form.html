@@ -41,7 +41,6 @@
                             <label for="text" class="form-label fw-semibold small">Текст вопроса *</label>
                             <textarea class="form-control" id="text" th:field="*{text}" rows="3" required></textarea>
                         </div>
-                        <!-- Варианты ответов -->
                         <label class="form-label fw-semibold small">Варианты ответов</label>
                         <div id="answersContainer">
                             <div th:each="answer, stat : ${questionDTO.answerOptions}" class="answer-row mb-2">

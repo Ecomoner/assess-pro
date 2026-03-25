@@ -79,12 +79,8 @@
                 </form>
             </div>
         </div>
-
-        <!-- Сообщения -->
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show py-2">...</div>
         <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">...</div>
-
-        <!-- Таблица тестов -->
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -148,8 +144,6 @@
                                           title="Вопросы (доступны только автору)">
                                         <i class="bi bi-question-circle"></i>
                                     </span>
-
-                                    <!-- Редактировать - только для своих тестов -->
                                     <a th:if="${ownershipMap[test.id]}"
                                        th:href="@{/creator/tests/edit/{id}(id=${test.id})}"
                                        class="btn btn-outline-primary"
@@ -162,22 +156,16 @@
                                           title="Редактировать (доступно только автору)">
                                         <i class="bi bi-pencil"></i>
                                     </span>
-
-                                    <!-- Предпросмотр - доступен всем (используем правильный URL) -->
                                     <a th:href="@{/creator/tests/{id}/preview(id=${test.id})}"
                                        class="btn btn-outline-info"
                                        title="Предпросмотр">
                                         <i class="bi bi-eye"></i>
                                     </a>
-
-                                    <!-- Статистика - доступна всем -->
                                     <a th:href="@{/creator/tests/{testId}/statistics/testers(testId=${test.id})}"
                                        class="btn btn-outline-dark"
                                        title="Статистика">
                                         <i class="bi bi-bar-chart"></i>
                                     </a>
-
-                                    <!-- 🔥 ИСПРАВЛЕНО: Публикация - используем правильный URL /publish/{id} -->
                                     <button th:if="${ownershipMap[test.id]}"
                                             type="button"
                                             class="btn btn-outline-warning publish-test-btn"
@@ -193,8 +181,6 @@
                                           title="Публикация (доступна только автору)">
                                         <i th:class="${test.published} ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                                     </span>
-
-                                    <!-- 🔥 ИСПРАВЛЕНО: Удаление - используем правильный URL /delete/{id} -->
                                     <button th:if="${ownershipMap[test.id]}"
                                             type="button"
                                             class="btn btn-outline-danger delete-test-btn"
@@ -210,15 +196,12 @@
                                         <i class="bi bi-trash"></i>
                                     </span>
                                 </div>
-
-                                <!-- 🔥 ИСПРАВЛЕНО: Скрытые формы с правильными URL -->
                                 <form th:id="'publishForm' + ${test.id}"
                                       th:action="@{/creator/tests/{id}/publish(id=${test.id})}"
                                       method="post"
                                       style="display: none;">
                                     <input type="hidden" name="publish" th:value="${!test.published}">
                                 </form>
-
                                 <form th:id="'deleteForm' + ${test.id}"
                                       th:action="@{/creator/tests/delete/{id}(id=${test.id})}"
                                       method="post"
@@ -226,7 +209,6 @@
                                 </form>
                             </td>
                         </tr>
-
                         <tr th:if="${tests.isEmpty()}">
                             <td colspan="9" class="text-center py-4 text-muted">
                                 <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
@@ -237,8 +219,6 @@
                     </table>
                 </div>
             </div>
-
-            <!-- Пагинация -->
             <div class="card-footer bg-white border-0 py-3">
                 <div th:replace="~{fragments/pagination :: pagination(
         currentPage=${currentPage},
@@ -250,8 +230,6 @@
         </div>
     </div>
 </div>
-
-<!-- Модальные окна -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -270,7 +248,6 @@
         </div>
     </div>
 </div>
-
 <div class="modal fade" id="publishModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -288,9 +265,7 @@
         </div>
     </div>
 </div>
-
 <div th:replace="~{fragments/footer}"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
