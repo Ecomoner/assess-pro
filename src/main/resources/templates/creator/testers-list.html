@@ -63,8 +63,6 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                         <tr>
-                            <th class="d-none d-sm-table-cell">ID</th>
-                            <th>Логин</th>
                             <th class="d-none d-md-table-cell">ФИО</th>
                             <th class="d-none d-lg-table-cell">Профиль</th>
                             <th class="d-none d-sm-table-cell">Дата рег.</th>
@@ -74,11 +72,6 @@
                         </thead>
                         <tbody>
                         <tr th:each="tester : ${testers}">
-                            <td class="d-none d-sm-table-cell" th:text="${tester.id}">1</td>
-                            <td>
-                                <span class="fw-semibold" th:text="${tester.username}">tester</span>
-                                <span class="d-block d-md-none small text-muted" th:text="${tester.fullName} ?: '-'">Иванов И.И.</span>
-                            </td>
                             <td class="d-none d-md-table-cell" th:text="${tester.fullName} ?: '-'">Иванов И.И.</td>
                             <td class="d-none d-lg-table-cell">
                                 <span class="badge" th:classappend="${tester.profileComplete} ? 'bg-success' : 'bg-warning'"

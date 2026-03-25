@@ -604,6 +604,6 @@ public class TesterStatisticsService {
      */
     @Transactional(readOnly = true)
     public long getTotalTesters() {
-        return userRepository.countAllUsers();
+        return userRepository.countAllTesters();
     }
 }
