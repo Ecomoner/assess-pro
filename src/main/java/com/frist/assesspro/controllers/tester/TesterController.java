@@ -46,6 +46,7 @@ public class TesterController {
     private final DashboardService dashboardService;
     private final TestAttemptRepository testAttemptRepository;
     private final MetricsService metricsService;
+    private final UserService userService;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -419,6 +420,9 @@ public class TesterController {
                     .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.COMPLETED)
                     .collect(Collectors.toList());
 
+            User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            String firstName = user != null ? user.getFirstName() : userDetails.getUsername();
+
             // Добавляем в модель - ИСПОЛЬЗУЕМ ИМЕНА, КОТОРЫЕ ОЖИДАЕТ ШАБЛОН
             model.addAttribute("stats", stats);
             model.addAttribute("recentAttempts", recentAttempts);
@@ -427,6 +431,7 @@ public class TesterController {
             model.addAttribute("categories", categories);
             model.addAttribute("recommendedTests", recommendedTests);
             model.addAttribute("username", username);
+            model.addAttribute("firstName", firstName);
 
             log.debug("Загружен дашборд тестировщика: {}", username);
             return "tester/dashboard";

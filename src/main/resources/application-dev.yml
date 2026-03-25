@@ -19,7 +19,7 @@ spring:
         format_sql: true
         use_sql_comments: true
   liquibase:
-    enabled: true
+    enabled: false
     change-log: classpath:db/changelog/001-initial-schema.yaml
 
   thymeleaf:
