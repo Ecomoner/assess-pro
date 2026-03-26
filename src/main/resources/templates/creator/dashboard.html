@@ -63,56 +63,56 @@
                 </div>
             </div>
         </div>
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-2 py-md-3">
-                <h5 class="mb-0 h6 h5-md">Последние попытки тестировщиков</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Тестировщик</th>
-                            <th class="d-none d-sm-table-cell">Тест</th>
-                            <th class="d-none d-md-table-cell">Дата</th>
-                            <th>Результат</th>
-                            <th class="d-none d-lg-table-cell">Статус</th>
-                            <th class="text-end"></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="attempt : ${recentAttempts}">
-                            <td>
-                                <span class="fw-semibold" th:text="${attempt.testerUsername} ?: 'Не указан'">Иванов И.И.</span>
-                            </td>
-                            <td class="d-none d-sm-table-cell" th:text="${attempt.testTitle}">Тест по математике</td>
-                            <td class="d-none d-md-table-cell" th:text="${#temporals.format(attempt.startTime, 'dd.MM.yy HH:mm')}">01.01.24 15:30</td>
-                            <td>
-                                <span th:text="${attempt.score} + '/' + ${attempt.maxScore}">5/10</span>
-                                <span class="d-inline d-sm-none small" th:text="' (' + ${#numbers.formatDecimal(attempt.percentage, 1, 1)} + '%)'">50%</span>
-                            </td>
-                            <td class="d-none d-lg-table-cell">
-                                <span class="badge" th:classappend="${attempt.completed} ? 'bg-success' : 'bg-warning'"
-                                      th:text="${attempt.status}">Завершен</span>
-                            </td>
-                            <td class="text-end">
-                                <a th:href="@{/creator/tests/{testId}/statistics/tester/{attemptId}(testId=${attempt.testId}, attemptId=${attempt.attemptId})}"
-                                   class="btn btn-sm btn-outline-dark">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(recentAttempts)}">
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
-                                Нет последних попыток
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<!--        <div class="card border-0 shadow-sm">-->
+<!--            <div class="card-header bg-white py-2 py-md-3">-->
+<!--                <h5 class="mb-0 h6 h5-md">Последние попытки тестировщиков</h5>-->
+<!--            </div>-->
+<!--            <div class="card-body p-0">-->
+<!--                <div class="table-responsive">-->
+<!--                    <table class="table table-hover align-middle mb-0">-->
+<!--                        <thead class="table-light">-->
+<!--                        <tr>-->
+<!--                            <th>Тестировщик</th>-->
+<!--                            <th class="d-none d-sm-table-cell">Тест</th>-->
+<!--                            <th class="d-none d-md-table-cell">Дата</th>-->
+<!--                            <th>Результат</th>-->
+<!--                            <th class="d-none d-lg-table-cell">Статус</th>-->
+<!--                            <th class="text-end"></th>-->
+<!--                        </tr>-->
+<!--                        </thead>-->
+<!--                        <tbody>-->
+<!--                        <tr th:each="attempt : ${recentAttempts}">-->
+<!--                            <td>-->
+<!--                                <span class="fw-semibold" th:text="${attempt.testerUsername} ?: 'Не указан'">Иванов И.И.</span>-->
+<!--                            </td>-->
+<!--                            <td class="d-none d-sm-table-cell" th:text="${attempt.testTitle}">Тест по математике</td>-->
+<!--                            <td class="d-none d-md-table-cell" th:text="${#temporals.format(attempt.startTime, 'dd.MM.yy HH:mm')}">01.01.24 15:30</td>-->
+<!--                            <td>-->
+<!--                                <span th:text="${attempt.score} + '/' + ${attempt.maxScore}">5/10</span>-->
+<!--                                <span class="d-inline d-sm-none small" th:text="' (' + ${#numbers.formatDecimal(attempt.percentage, 1, 1)} + '%)'">50%</span>-->
+<!--                            </td>-->
+<!--                            <td class="d-none d-lg-table-cell">-->
+<!--                                <span class="badge" th:classappend="${attempt.completed} ? 'bg-success' : 'bg-warning'"-->
+<!--                                      th:text="${attempt.status}">Завершен</span>-->
+<!--                            </td>-->
+<!--                            <td class="text-end">-->
+<!--                                <a th:href="@{/creator/tests/{testId}/statistics/tester/{attemptId}(testId=${attempt.testId}, attemptId=${attempt.attemptId})}"-->
+<!--                                   class="btn btn-sm btn-outline-dark">-->
+<!--                                    <i class="bi bi-eye"></i>-->
+<!--                                </a>-->
+<!--                            </td>-->
+<!--                        </tr>-->
+<!--                        <tr th:if="${#lists.isEmpty(recentAttempts)}">-->
+<!--                            <td colspan="6" class="text-center py-4 text-muted">-->
+<!--                                <i class="bi bi-info-circle fs-4 d-block mb-2"></i>-->
+<!--                                Нет последних попыток-->
+<!--                            </td>-->
+<!--                        </tr>-->
+<!--                        </tbody>-->
+<!--                    </table>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
     </div>
 </div>
 <div th:replace="~{fragments/footer}"></div>
