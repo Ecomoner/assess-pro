@@ -20,6 +20,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+
     @CacheEvict(value = {"creatorStats", "testerStats"}, allEntries = true)
     @Transactional
     public User registerUser(RegistrationDTO registrationDTO) {

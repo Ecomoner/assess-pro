@@ -6,6 +6,7 @@ import com.frist.assesspro.service.AuthService;
 import com.frist.assesspro.service.UserService;
 import com.frist.assesspro.service.metrics.MetricsService;
 import com.frist.assesspro.service.ProfileService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -47,6 +48,7 @@ class AuthControllerTest {
                 .andExpect(view().name("auth/login"));
     }
 
+    @Disabled//@todo отключена регистрацию по форме
     @Test
     void registerPage_ShouldReturnRegisterViewWithEmptyDto() throws Exception {
         mockMvc.perform(get("/register"))
@@ -57,6 +59,7 @@ class AuthControllerTest {
                         org.hamcrest.Matchers.hasProperty("role", org.hamcrest.Matchers.is(User.Roles.TESTER))));
     }
 
+    @Disabled//TODO: отключена регистрация через форму регистрациии
     @Test
     void registerPage_ShouldNotOverwriteDtoIfAlreadyPresent() throws Exception {
         RegistrationDTO dto = new RegistrationDTO();

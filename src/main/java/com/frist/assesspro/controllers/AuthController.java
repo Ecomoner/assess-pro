@@ -45,6 +45,8 @@ public class AuthController {
         return "auth/login";
     }
 
+
+
     @Operation(summary = "Страница регистации")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Успешно"),

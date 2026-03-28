@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: header('AssessPro - Платформа для тестирования')}">
 <body>
-<div th:replace="~{fragments/navigation}"></div>
+<div th:replace="~{fragments/panel-navigation}"></div>
 <main>
     <!-- Hero секция -->
     <section class="hero-section py-4 py-md-5 bg-light">
@@ -12,9 +12,6 @@
                     <h1 class="display-5 display-md-4 fw-bold mb-3">Проходите тесты и улучшайте свои знания с <span class="text-dark">Assess Pro</span></h1>
                     <p class="lead lead-sm mb-4">Платформа для оценки знаний. Проходите онлайн-тестирование и анализируйте результаты в реальном времени.</p>
                     <div class="d-flex flex-column flex-sm-row gap-2 gap-sm-3" th:if="${!isAuthenticated}">
-                        <a th:href="@{/register}" class="btn btn-dark btn-lg px-4 py-2 w-100 w-sm-auto">
-                            <i class="bi bi-person-plus me-2"></i>Зарегистрироваться
-                        </a>
                         <a th:href="@{/login}" class="btn btn-outline-dark btn-lg px-4 py-2 w-100 w-sm-auto">
                             <i class="bi bi-box-arrow-in-right me-2"></i>Войти
                         </a>
@@ -31,31 +28,24 @@
     <section class="how-it-works py-4 py-md-5 bg-light">
         <div class="container">
             <h2 class="text-center mb-4 mb-md-5 h3 h2-md">Как это работает</h2>
-            <div class="row g-3 g-md-4">
+            <div class="row justify-content-center g-3 g-md-4">
                 <div class="col-6 col-lg-3 mb-2 mb-md-4">
                     <div class="text-center">
                         <div class="step-number bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 mb-md-3" style="width: 50px; height: 50px; width-md: 60px; height-md: 60px;">1</div>
-                        <h5 class="h6 h5-md">Регистрация</h5>
-                        <p class="text-muted small d-none d-md-block">Создайте аккаунт</p>
-                    </div>
-                </div>
-                <div class="col-6 col-lg-3 mb-2 mb-md-4">
-                    <div class="text-center">
-                        <div class="step-number bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 mb-md-3" style="width: 50px; height: 50px; width-md: 60px; height-md: 60px;">2</div>
                         <h5 class="h6 h5-md">Создание или поиск</h5>
                         <p class="text-muted small d-none d-md-block">Выберите категорию и нужный вам тест</p>
                     </div>
                 </div>
                 <div class="col-6 col-lg-3 mb-2 mb-md-4">
                     <div class="text-center">
-                        <div class="step-number bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 mb-md-3" style="width: 50px; height: 50px; width-md: 60px; height-md: 60px;">3</div>
+                        <div class="step-number bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 mb-md-3" style="width: 50px; height: 50px; width-md: 60px; height-md: 60px;">2</div>
                         <h5 class="h6 h5-md">Прохождение</h5>
                         <p class="text-muted small d-none d-md-block">Отвечайте на вопросы с учетом ограничений</p>
                     </div>
                 </div>
                 <div class="col-6 col-lg-3 mb-2 mb-md-4">
                     <div class="text-center">
-                        <div class="step-number bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 mb-md-3" style="width: 50px; height: 50px; width-md: 60px; height-md: 60px;">4</div>
+                        <div class="step-number bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 mb-md-3" style="width: 50px; height: 50px; width-md: 60px; height-md: 60px;">3</div>
                         <h5 class="h6 h5-md">Анализ</h5>
                         <p class="text-muted small d-none d-md-block">Получайте детальную статистику и результаты</p>
                     </div>

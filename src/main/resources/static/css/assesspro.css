@@ -333,4 +333,12 @@ html {
         top: 20px;
         z-index: 1020;
     }
+
+    /* ========== Скрытие секций ========== */
+    .section {
+        display: none;
+    }
+    .section.active {
+        display: block;
+    }
 }
