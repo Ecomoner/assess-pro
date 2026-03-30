@@ -8,6 +8,7 @@ import com.frist.assesspro.entity.*;
 import com.frist.assesspro.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,7 @@ public class TestPassingService {
     private final CategoryService categoryService;
     private final ProfileService profileService;
     private final CooldownService cooldownService;
+
 
     /**
      * Получение ВСЕХ доступных тестов С ПАГИНАЦИЕЙ (для каталога)

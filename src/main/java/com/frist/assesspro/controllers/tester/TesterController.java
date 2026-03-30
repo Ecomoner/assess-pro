@@ -2,14 +2,12 @@ package com.frist.assesspro.controllers.tester;
 
 import com.frist.assesspro.dto.*;
 import com.frist.assesspro.dto.category.CategoryDTO;
+import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.TestAttemptRepository;
-import com.frist.assesspro.service.DashboardService;
-import com.frist.assesspro.service.EventService;
-import com.frist.assesspro.service.TestPassingService;
-import com.frist.assesspro.service.UserService;
+import com.frist.assesspro.service.*;
 import com.frist.assesspro.service.metrics.MetricsService;
 import com.frist.assesspro.util.TestConstants;
 import io.micrometer.core.instrument.Timer;
@@ -50,6 +48,7 @@ public class TesterController {
     private final MetricsService metricsService;
     private final UserService userService;
     private final EventService eventService;
+    private final TesterStatisticsService testerStatisticsService;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -407,6 +406,8 @@ public class TesterController {
             // Получаем статистику
             DashboardStatsDTO stats = dashboardService.getTesterStats(username);
 
+            List<TesterAttemptDTO> allAttempts = testerStatisticsService.getAllAttemptsByTester(username);
+
             // Получаем последние попытки (без пагинации для дашборда)
             List<TestHistoryDTO> recentAttempts = testPassingService.getUserTestHistory(username);
 
@@ -431,6 +432,11 @@ public class TesterController {
             User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
             String firstName = user != null ? user.getFirstName() : userDetails.getUsername();
 
+            double overallAverage = allAttempts.stream()
+                    .mapToDouble(TesterAttemptDTO::getPercentage)
+                    .average()
+                    .orElse(0.0);
+
             List<EventDTO> lastEvents = eventService.getLastEvents(5);
 
             // Добавляем в модель - ИСПОЛЬЗУЕМ ИМЕНА, КОТОРЫЕ ОЖИДАЕТ ШАБЛОН
@@ -443,6 +449,7 @@ public class TesterController {
             model.addAttribute("username", username);
             model.addAttribute("firstName", firstName);
             model.addAttribute("lastEvents", lastEvents);
+            model.addAttribute("overallAverage", overallAverage);
 
             log.debug("Загружен дашборд тестировщика: {}", username);
             return "tester/dashboard";

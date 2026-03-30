@@ -2,14 +2,14 @@ package com.frist.assesspro.controllers.tester;
 
 import com.frist.assesspro.dto.*;
 import com.frist.assesspro.dto.category.CategoryDTO;
+import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.repository.TestAttemptRepository;
-import com.frist.assesspro.service.DashboardService;
-import com.frist.assesspro.service.TestPassingService;
-import com.frist.assesspro.service.UserService;
+import com.frist.assesspro.service.*;
 import com.frist.assesspro.service.metrics.MetricsService;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +54,9 @@ class TesterControllerTest {
     private DashboardService dashboardService;
 
     @MockitoBean
+    private TesterStatisticsService testerStatisticsService;
+
+    @MockitoBean
     private TestAttemptRepository testAttemptRepository;
 
     @MockitoBean
@@ -62,9 +65,22 @@ class TesterControllerTest {
     @MockitoBean
     private MetricsService metricsService;
 
+    @MockitoBean
+    private EventService eventService;
+
+    private com.frist.assesspro.entity.User tester;
+
     private final String TEST_USERNAME = "user";
     private final Long TEST_ATTEMPT_ID = 1L;
     private final Long TEST_TEST_ID = 100L;
+
+    @BeforeEach
+    void setUp() {
+        tester = new com.frist.assesspro.entity.User();
+        tester.setUsername(TEST_USERNAME);
+        tester.setFirstName("John");
+        tester.setLastName("Doe");
+    }
 
     // ---------- GET /tester/tests ----------
 
@@ -416,6 +432,12 @@ class TesterControllerTest {
         stats.setBestScore(100);
         stats.setAvailableTests(20L);
 
+        // Данные для TesterAttemptDTO (для overallAverage)
+        TesterAttemptDTO attemptDTO = new TesterAttemptDTO();
+        attemptDTO.setPercentage(80.0);
+        List<TesterAttemptDTO> allAttempts = List.of(attemptDTO);
+
+        // История попыток (TestHistoryDTO)
         TestHistoryDTO inProgress = new TestHistoryDTO();
         inProgress.setAttemptId(1L);
         inProgress.setStatus(TestAttempt.AttemptStatus.IN_PROGRESS);
@@ -426,28 +448,38 @@ class TesterControllerTest {
         completed.setStatus(TestAttempt.AttemptStatus.COMPLETED);
         completed.setTestTitle("Test 2");
 
-        List<TestHistoryDTO> allAttempts = List.of(inProgress, completed);
+        List<TestHistoryDTO> allAttemptsHistory = List.of(inProgress, completed);
         List<TestHistoryDTO> inProgressAttempts = List.of(inProgress);
         List<TestHistoryDTO> recentCompleted = List.of(completed);
 
         List<CategoryDTO> categories = List.of(createCategoryDTO(1L, "Math"));
         List<TestInfoDTO> recommendedTests = List.of(createTestInfo());
+        List<EventDTO> lastEvents = List.of(new EventDTO());
 
+        double overallAverage = 80.0; // из allAttempts
+
+        // Моки
         when(dashboardService.getTesterStats(eq(TEST_USERNAME))).thenReturn(stats);
-        when(testPassingService.getUserTestHistory(eq(TEST_USERNAME))).thenReturn(allAttempts);
+        when(testerStatisticsService.getAllAttemptsByTester(eq(TEST_USERNAME))).thenReturn(allAttempts);
+        when(testPassingService.getUserTestHistory(eq(TEST_USERNAME))).thenReturn(allAttemptsHistory);
         when(testPassingService.getAvailableCategories()).thenReturn(categories);
         when(testPassingService.getAllAvailableTestsDTO()).thenReturn(recommendedTests);
+        when(userService.findByUsername(eq(TEST_USERNAME))).thenReturn(Optional.of(tester));
+        when(eventService.getLastEvents(5)).thenReturn(lastEvents);
 
         mockMvc.perform(get("/tester/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("tester/dashboard"))
                 .andExpect(model().attribute("stats", stats))
-                .andExpect(model().attribute("recentAttempts", allAttempts))
+                .andExpect(model().attribute("recentAttempts", allAttemptsHistory))
+                .andExpect(model().attribute("overallAverage", overallAverage))
                 .andExpect(model().attribute("inProgressAttempts", inProgressAttempts))
                 .andExpect(model().attribute("recentCompleted", recentCompleted))
                 .andExpect(model().attribute("categories", categories))
                 .andExpect(model().attribute("recommendedTests", recommendedTests))
-                .andExpect(model().attribute("username", TEST_USERNAME));
+                .andExpect(model().attribute("username", TEST_USERNAME))
+                .andExpect(model().attribute("firstName", "John")) // из объекта tester
+                .andExpect(model().attribute("lastEvents", lastEvents));
     }
 
     @Test
