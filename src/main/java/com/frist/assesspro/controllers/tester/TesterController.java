@@ -34,6 +34,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -148,7 +149,7 @@ public class TesterController {
             Model model) {
 
         try {
-            // 🔥 ОДИН ЗАПРОС: проверяем статус попытки
+
             TestAttempt attempt = testAttemptRepository.findById(attemptId)
                     .orElseThrow(() -> new RuntimeException("Попытка не найдена"));
 
@@ -162,9 +163,14 @@ public class TesterController {
             }
 
             // Получаем данные для прохождения
-            TestTakingDTO testTakingDTO = testPassingService.getTestForTaking(
-                            attempt.getTest().getId(), userDetails.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Тест не найден"));
+            Optional<TestTakingDTO> optionalDTO = testPassingService.getTestForTaking(
+                    attempt.getTest().getId(), userDetails.getUsername());
+
+            if (optionalDTO.isEmpty()) {
+                // Все вопросы уже отвечены – перенаправляем на страницу результатов
+                return "redirect:/tester/attempt/" + attemptId + "/results";
+            }
+            TestTakingDTO testTakingDTO = optionalDTO.get();
 
             // Проверка наличия вопросов
             if (testTakingDTO.getQuestions() == null || testTakingDTO.getQuestions().isEmpty()) {
@@ -232,7 +238,7 @@ public class TesterController {
             metricsService.decrementActiveUsers();
             redirectAttributes.addFlashAttribute("successMessage",
                     "Тест успешно завершен!");
-            return "redirect:/tester/attempt/" + attemptId + "/results";
+            return "redirect:/tester/attempt/" + attemptId + "results";
 
         } catch (Exception e) {
             log.error("Ошибка при завершении теста", e);

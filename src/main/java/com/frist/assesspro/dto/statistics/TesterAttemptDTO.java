@@ -21,6 +21,7 @@ public class TesterAttemptDTO {
     private Long durationMinutes;
     private Long testId;
     private String testerFullName;
+    private Integer totalQuestions;
 
     /**
      * Получает форматированную строку длительности

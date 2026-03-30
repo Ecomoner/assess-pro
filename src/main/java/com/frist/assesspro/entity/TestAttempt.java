@@ -58,6 +58,9 @@ public class TestAttempt {
     @Column(name = "total_score")
     private Integer totalScore = 0;
 
+    @Column(name="total_questions",nullable=false)
+    private Integer totalQuestions;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AttemptStatus status = AttemptStatus.IN_PROGRESS;

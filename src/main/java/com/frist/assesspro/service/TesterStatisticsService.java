@@ -63,16 +63,17 @@ public class TesterStatisticsService {
         dto.setEndTime(attempt.getEndTime());
         dto.setScore(attempt.getTotalScore() != null ? attempt.getTotalScore() : 0);
 
+
         if (attempt.getTest() != null) {
             dto.setTestId(attempt.getTest().getId());
             dto.setTestTitle(attempt.getTest().getTitle());
         }
 
-        int questionCount = 0;
-        if (attempt.getTest() != null && attempt.getTest().getQuestions() != null) {
-            questionCount = attempt.getTest().getQuestions().size();
-            log.debug("convertToTesterAttemptDTO: attemptId={}, testId={}, questionCount={}",
-                    attempt.getId(), attempt.getTest().getId(), questionCount);
+        Integer questionCount = attempt.getTotalQuestions();
+        if (questionCount == null) {
+            // fallback на случай, если поле не заполнено для старых записей
+            questionCount = attempt.getTest() != null && attempt.getTest().getQuestions() != null ?
+                    attempt.getTest().getQuestions().size() : 0;
         }
         dto.setMaxScore(questionCount);
 

@@ -113,6 +113,8 @@ public class TestPassingService {
             attempt.setStartTime(LocalDateTime.now());
             attempt.setStatus(TestAttempt.AttemptStatus.IN_PROGRESS);
             attempt.setTotalScore(0);
+            int questionCount = test.getQuestions() != null ? test.getQuestions().size() : 0;
+            attempt.setTotalQuestions(questionCount);
 
             TestAttempt savedAttempt = testAttemptRepository.save(attempt);
             attemptId = savedAttempt.getId();
@@ -133,11 +135,7 @@ public class TestPassingService {
                 .collect(Collectors.toList());
 
         if (unansweredQuestions.isEmpty()) {
-            log.info("Все вопросы отвечены, завершаем тест");
-            attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
-            attempt.setEndTime(LocalDateTime.now());
-            testAttemptRepository.save(attempt);
-
+            log.info("Все вопросы уже отвечены, тест следует завершить через кнопку");
             return Optional.empty();
         }
 
@@ -273,6 +271,7 @@ public class TestPassingService {
             finishTestAndGetResults(attempt.getId(), username);
             log.info("Тест автоматически завершен после ответа на последний вопрос");
         }
+
     }
     /**
      * Получение ВСЕХ доступных тестов (без пагинации, для дашборда)
@@ -320,10 +319,15 @@ public class TestPassingService {
             return getTestResults(attemptId, username);
         }
 
+        // Пересчитываем totalScore из ответов
+        int recalculatedTotalScore = userAnswerRepository.sumPointsEarnedByAttemptId(attemptId);
+        if (recalculatedTotalScore < 0) recalculatedTotalScore = 0;
+        attempt.setTotalScore(recalculatedTotalScore);
+
         attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
         attempt.setEndTime(LocalDateTime.now());
         testAttemptRepository.save(attempt);
-        log.info("Завершена попытка теста ID: {}", attempt.getTest().getId());
+        log.info("Завершена попытка теста ID: {}, итоговый балл: {}", attempt.getTest().getId(), recalculatedTotalScore);
 
         return getTestResults(attemptId, username);
     }
@@ -355,13 +359,17 @@ public class TestPassingService {
                 .count();
         int maxPossibleScore = totalQuestions;
 
+        // Пересчитываем totalScore из ответов (сумма баллов)
+        int recalculatedTotalScore = userAnswerRepository.sumPointsEarnedByAttemptId(attemptId);
+        if (recalculatedTotalScore < 0) recalculatedTotalScore = 0;
+
         TestResultsDTO dto = new TestResultsDTO();
         dto.setAttemptId(attempt.getId());
         dto.setTestId(test.getId());
         dto.setTestTitle(test.getTitle());
         dto.setStartTime(attempt.getStartTime());
         dto.setEndTime(attempt.getEndTime());
-        dto.setTotalScore(attempt.getTotalScore() != null ? attempt.getTotalScore() : 0);
+        dto.setTotalScore(recalculatedTotalScore);  // ← используем пересчитанное значение
         dto.setMaxPossibleScore(maxPossibleScore);
         dto.setTotalQuestions(totalQuestions);
         dto.setAnsweredQuestions(answeredQuestions);

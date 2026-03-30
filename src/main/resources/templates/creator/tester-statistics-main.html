@@ -148,36 +148,33 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="tester : ${testers}" class="border-bottom">
+                        <tr th:each="attempt : ${testers}" class="border-bottom">
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="me-2">
                                         <i class="bi bi-person-circle text-secondary"></i>
                                     </div>
                                     <div>
-                                        <span class="fw-semibold small" th:text="${tester.testerFullName}">Иванов И.И.</span>
+                                        <span class="fw-semibold small" th:text="${attempt.testerFullName} ?: ${attempt.testerUsername}">Иванов И.И.</span>
                                         <br>
-                                        <small class="text-muted" th:text="${tester.testerUsername}">username</small>
-                                        <span th:if="!${tester.profileComplete}"
-                                              class="badge bg-warning ms-1" style="font-size: 0.6rem;">!</span>
+                                        <small class="text-muted" th:text="${attempt.testerUsername}">username</small>
                                     </div>
                                 </div>
                             </td>
-                            <td class="d-none d-sm-table-cell small" th:text="${#temporals.format(tester.startTime, 'dd.MM.yy')}">01.01.24</td>
+                            <td class="d-none d-sm-table-cell small" th:text="${#temporals.format(attempt.startTime, 'dd.MM.yy HH:mm')}">01.01.24 15:30</td>
                             <td>
-                                <span class="fw-semibold small" th:text="${tester.score} + '/' + ${tester.maxScore}">5/10</span>
+                                <span class="fw-semibold small" th:text="${attempt.score} + '/' + ${attempt.maxScore}">5/10</span>
                                 <span class="badge d-inline d-sm-none ms-1" style="font-size: 0.6rem;"
-                                      th:classappend="${tester.percentage >= 70} ? 'bg-success' : 'bg-danger'"
-                                      th:text="${#numbers.formatDecimal(tester.percentage, 0, 0)} + '%'">50%</span>
+                                      th:classappend="${attempt.percentage >= 70} ? 'bg-success' : 'bg-danger'"
+                                      th:text="${#numbers.formatDecimal(attempt.percentage, 0, 0)} + '%'">50%</span>
                             </td>
-                            <td class="d-none d-md-table-cell small" th:text="${tester.formattedDuration}">15 мин</td>
+                            <td class="d-none d-md-table-cell small" th:text="${attempt.durationMinutes} + ' мин'">15 мин</td>
                             <td class="d-none d-lg-table-cell">
-                                <span class="badge text-xs"
-                                      th:classappend="${tester.cooldownStatus == 'Доступен'} ? 'bg-success' : 'bg-warning'"
-                                      th:text="${tester.cooldownStatus}">Доступен</span>
+        <span class="badge text-xs" th:classappend="${attempt.completed} ? 'bg-success' : 'bg-warning'"
+              th:text="${attempt.completed} ? 'Завершен' : 'В процессе'">Завершен</span>
                             </td>
                             <td class="text-end">
-                                <a th:href="@{/creator/tests/{testId}/statistics/tester/{attemptId}(testId=${test.id}, attemptId=${tester.attemptId})}"
+                                <a th:href="@{/creator/tests/{testId}/statistics/tester/{attemptId}(testId=${test.id}, attemptId=${attempt.attemptId})}"
                                    class="btn btn-sm btn-outline-dark">
                                     <i class="bi bi-eye"></i>
                                 </a>

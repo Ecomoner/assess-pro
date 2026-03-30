@@ -80,14 +80,14 @@ public class TesterStatisticsController {
             TestSummaryDTO testSummary = testerStatisticsService.getTestSummary(testId, userDetails.getUsername());
 
             Pageable pageable = PageRequest.of(page, size);
-            Page<TesterStatisticsDTO> testersPage = testerStatisticsService.getTestersStatistics(
-                    testId, userDetails.getUsername(), search, pageable);
+            Page<TesterAttemptDTO> attemptsPage = testerStatisticsService.getTestersByTest(
+                    testId, userDetails.getUsername(), pageable);
 
             model.addAttribute("test", test);
-            model.addAttribute("testers", testersPage.getContent());
-            model.addAttribute("currentPage", testersPage.getNumber());
-            model.addAttribute("totalPages", testersPage.getTotalPages());
-            model.addAttribute("totalItems", testersPage.getTotalElements());
+            model.addAttribute("testers", attemptsPage.getContent());
+            model.addAttribute("currentPage", attemptsPage.getNumber());
+            model.addAttribute("totalPages", attemptsPage.getTotalPages());
+            model.addAttribute("totalItems", attemptsPage.getTotalElements());
             model.addAttribute("search", search);
             model.addAttribute("testSummary", testSummary);
 
