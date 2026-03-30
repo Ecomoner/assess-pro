@@ -2,7 +2,7 @@
 <nav th:fragment="navigation" class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" th:href="@{/home}">
-            <img th:src="@{/images/logo.png}" height="40" class="d-inline-block align-text-top me-1 me-md-2">
+            <img th:src="@{/images/logo.png}" height="32" class="d-inline-block align-text-top me-2">
             <span class="d-none d-sm-inline">AssessPro</span>
             <span class="d-inline d-sm-none">AP</span>
         </a>
@@ -98,7 +98,7 @@
                 </li>
             </ul>
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item dropdown" th:if="${#authentication != null and #authentication.isAuthenticated()}">
+                <li class="nav-item dropdown" th:if="${#authentication != null and #authentication.isAuthenticated() and #authentication.name != 'anonymousUser'}">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle me-1"></i>
                         <span class="d-none d-sm-inline" th:text="${#authentication.name}">User</span>

@@ -11,7 +11,7 @@ spring:
   jpa:
     show-sql: false
     hibernate:
-      ddl-auto: validate   # Не менять схему автоматически
+      ddl-auto: update   # Не менять схему автоматически
     properties:
       hibernate:
         format_sql: false

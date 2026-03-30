@@ -59,7 +59,11 @@ public class SecurityConfig {
                                 "/",
                                 "/home",
                                 "/register/**",
-                                "/login/**"
+                                "/login/**",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/webjars/**"
                         ).permitAll()
                         // Prometheus метрики только с Basic Auth
                         .requestMatchers("/actuator/prometheus").permitAll()
