@@ -88,6 +88,7 @@ class UserAnswerRepositoryTest extends BaseRepositoryTest {
         attempt.setUser(tester);
         attempt.setStartTime(java.time.LocalDateTime.now());
         attempt.setStatus(TestAttempt.AttemptStatus.IN_PROGRESS);
+        attempt.setTotalQuestions(1);
         testAttemptRepository.save(attempt);
 
         userAnswer = new UserAnswer();

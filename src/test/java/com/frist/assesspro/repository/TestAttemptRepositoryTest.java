@@ -87,6 +87,7 @@ class TestAttemptRepositoryTest extends BaseRepositoryTest {
         attempt.setStartTime(LocalDateTime.now().minusHours(2));
         attempt.setEndTime(LocalDateTime.now().minusHours(1));
         attempt.setTotalScore(1);
+        attempt.setTotalQuestions(1); // так как добавляется один вопрос
         attempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
         testAttemptRepository.save(attempt);
     }

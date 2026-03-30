@@ -265,14 +265,11 @@ class TestPassingServiceTest {
         answer.setQuestion(question);
         when(userAnswerRepository.findByAttemptId(1L)).thenReturn(List.of(answer));
 
-        // Мокаем завершение теста (при завершении сохраняется попытка)
-        when(testAttemptRepository.save(any(TestAttempt.class))).thenAnswer(inv -> inv.getArgument(0));
-
         Optional<TestTakingDTO> result = testPassingService.getTestForTaking(1L, "tester");
 
         assertThat(result).isEmpty();
-        verify(testAttemptRepository).save(argThat(ta -> ta.getStatus() == TestAttempt.AttemptStatus.COMPLETED));
-        verify(testAttemptRepository, times(1)).save(any()); // только один save при завершении
+        // Проверяем, что попытка не была сохранена
+        verify(testAttemptRepository, never()).save(any());
     }
 
     @Test
@@ -378,6 +375,7 @@ class TestPassingServiceTest {
 
         when(testAttemptRepository.findById(1L)).thenReturn(Optional.of(attempt));
         when(userAnswerRepository.findByAttemptId(1L)).thenReturn(List.of(ua));
+        when(userAnswerRepository.sumPointsEarnedByAttemptId(1L)).thenReturn(1);
 
         TestResultsDTO result = testPassingService.getTestResults(1L, "tester");
 

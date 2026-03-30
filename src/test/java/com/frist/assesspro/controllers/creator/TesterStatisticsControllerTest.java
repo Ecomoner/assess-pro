@@ -1,9 +1,6 @@
 package com.frist.assesspro.controllers.creator;
 
-import com.frist.assesspro.dto.statistics.QuestionAnswerDetailDTO;
-import com.frist.assesspro.dto.statistics.TesterDetailedAnswersDTO;
-import com.frist.assesspro.dto.statistics.TesterStatisticsDTO;
-import com.frist.assesspro.dto.statistics.TestSummaryDTO;
+import com.frist.assesspro.dto.statistics.*;
 import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.service.TestService;
@@ -12,8 +9,8 @@ import com.frist.assesspro.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -77,12 +74,12 @@ class TesterStatisticsControllerTest {
     @DisplayName("GET /creator/tests/{testId}/statistics/testers: должен вернуть view со списком тестировщиков")
     void getTestersList_Success_ShouldReturnView() throws Exception {
         int page = 0, size = 20;
-        Page<TesterStatisticsDTO> pageResult = createTesterStatisticsPage(page, size);
+        Page<TesterAttemptDTO> pageResult = createTesterAttemptPage(page, size);
         TestSummaryDTO summary = new TestSummaryDTO();
 
         when(testService.getTestByIdWithoutOwnershipCheck(TEST_ID)).thenReturn(test);
         when(testerStatisticsService.getTestSummary(eq(TEST_ID), anyString())).thenReturn(summary);
-        when(testerStatisticsService.getTestersStatistics(eq(TEST_ID), anyString(), isNull(), any(PageRequest.class)))
+        when(testerStatisticsService.getTestersByTest(eq(TEST_ID), anyString(), any(PageRequest.class)))
                 .thenReturn(pageResult);
 
         mockMvc.perform(get("/creator/tests/{testId}/statistics/testers", TEST_ID)
@@ -103,12 +100,12 @@ class TesterStatisticsControllerTest {
     void getTestersList_WithSearch_ShouldReturnView() throws Exception {
         int page = 0, size = 20;
         String search = "john";
-        Page<TesterStatisticsDTO> pageResult = createTesterStatisticsPage(page, size);
+        Page<TesterAttemptDTO> pageResult = createTesterAttemptPage(page, size);
         TestSummaryDTO summary = new TestSummaryDTO();
 
         when(testService.getTestByIdWithoutOwnershipCheck(TEST_ID)).thenReturn(test);
         when(testerStatisticsService.getTestSummary(eq(TEST_ID), anyString())).thenReturn(summary);
-        when(testerStatisticsService.getTestersStatistics(eq(TEST_ID), anyString(), eq(search), any(PageRequest.class)))
+        when(testerStatisticsService.getTestersByTest(eq(TEST_ID), anyString(), any(PageRequest.class)))
                 .thenReturn(pageResult);
 
         mockMvc.perform(get("/creator/tests/{testId}/statistics/testers", TEST_ID)
@@ -119,6 +116,7 @@ class TesterStatisticsControllerTest {
                 .andExpect(view().name("creator/tester-statistics-main"))
                 .andExpect(model().attribute("search", search));
     }
+
 
     // ---------- GET /creator/tests/{testId}/statistics/tester/{attemptId} ----------
 
@@ -140,8 +138,8 @@ class TesterStatisticsControllerTest {
     }
 
     @org.junit.jupiter.api.Test
-    @DisplayName("GET /creator/tests/{testId}/statistics/tester/{attemptId}: при ошибке должен редиректить с сообщением")
-    void getTesterDetailedAnswers_Error_ShouldRedirectWithMessage() throws Exception {
+    @DisplayName("GET /creator/tests/{testId}/statistics/tester/{attemptId}: при ошибке должен редиректить на список тестировщиков")
+    void getTesterDetailedAnswers_Error_ShouldRedirect() throws Exception {
         when(testerStatisticsService.getTesterDetailedAnswers(eq(ATTEMPT_ID), anyString()))
                 .thenThrow(new RuntimeException("Attempt not found"));
 
@@ -195,6 +193,19 @@ class TesterStatisticsControllerTest {
     }
 
     // ---------- Вспомогательные методы ----------
+
+    private Page<TesterAttemptDTO> createTesterAttemptPage(int page, int size) {
+        TesterAttemptDTO dto = new TesterAttemptDTO();
+        dto.setAttemptId(ATTEMPT_ID);
+        dto.setTesterUsername(TESTER_USERNAME);
+        dto.setTestId(TEST_ID);
+        dto.setScore(7);
+        dto.setMaxScore(10);
+        dto.setPercentage(70.0);
+        dto.setStartTime(LocalDateTime.now());
+        dto.setEndTime(LocalDateTime.now());
+        return new PageImpl<>(List.of(dto), PageRequest.of(page, size), 1);
+    }
 
     private Page<TesterStatisticsDTO> createTesterStatisticsPage(int page, int size) {
         TesterStatisticsDTO dto = new TesterStatisticsDTO();

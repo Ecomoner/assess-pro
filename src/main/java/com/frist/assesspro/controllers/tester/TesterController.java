@@ -238,7 +238,7 @@ public class TesterController {
             metricsService.decrementActiveUsers();
             redirectAttributes.addFlashAttribute("successMessage",
                     "Тест успешно завершен!");
-            return "redirect:/tester/attempt/" + attemptId + "results";
+            return "redirect:/tester/attempt/" + attemptId + "/results";
 
         } catch (Exception e) {
             log.error("Ошибка при завершении теста", e);
