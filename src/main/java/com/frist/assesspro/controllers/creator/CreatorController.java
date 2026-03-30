@@ -5,6 +5,7 @@ import com.frist.assesspro.dto.DashboardStatsDTO;
 import com.frist.assesspro.dto.TestDTO;
 import com.frist.assesspro.dto.category.CategoryDTO;
 import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
+import com.frist.assesspro.dto.statistics.TesterDetailedAnswersDTO;
 import com.frist.assesspro.dto.test.QuestionForTakingDTO;
 import com.frist.assesspro.dto.test.TestTakingDTO;
 import com.frist.assesspro.dto.test.TestUpdateDTO;
@@ -12,6 +13,7 @@ import com.frist.assesspro.entity.AnswerOption;
 import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.User;
+import com.frist.assesspro.repository.EventRepository;
 import com.frist.assesspro.repository.UserRepository;
 import com.frist.assesspro.service.*;
 import com.frist.assesspro.service.export.StatisticsExportService;
@@ -60,6 +62,7 @@ public class CreatorController {
     private final DashboardService dashboardService;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final EventRepository eventRepository;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -473,7 +476,8 @@ public class CreatorController {
     })
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('CREATOR')")
-    public String creatorDashboard(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+    public String creatorDashboard(Model model,
+                                   @AuthenticationPrincipal UserDetails userDetails) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
@@ -486,8 +490,10 @@ public class CreatorController {
             List<TesterAttemptDTO> recentAttempts = testerStatisticsService
                     .getRecentTestAttemptsForCreator(username, 5);
 
+
             // Получаем общее количество уникальных тестировщиков
             long totalTesters = testerStatisticsService.getTotalTesters();
+            long totalEvents= eventRepository.getTotalEvent();
 
             model.addAttribute("username", username);
             model.addAttribute("role", auth.getAuthorities().iterator().next().getAuthority());
@@ -496,6 +502,7 @@ public class CreatorController {
             model.addAttribute("firstName", firstName);
             model.addAttribute("recentAttempts", recentAttempts);
             model.addAttribute("totalTesters", totalTesters);
+            model.addAttribute("totalEvents", totalEvents);
 
             return "creator/dashboard";
         } catch (Exception e) {

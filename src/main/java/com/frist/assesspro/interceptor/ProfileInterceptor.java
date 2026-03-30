@@ -55,7 +55,7 @@ public class ProfileInterceptor implements HandlerInterceptor {
             username = auth.getPrincipal().toString();
         }
 
-        // 🔥 ИСПРАВЛЕНО: Проверяем существование пользователя
+
         if (!userService.existsByUsername(username)) {
             log.warn("Пользователь {} не найден в БД", username);
             return true;

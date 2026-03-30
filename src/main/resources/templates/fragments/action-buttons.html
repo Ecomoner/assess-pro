@@ -1,3 +1,4 @@
+<html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="actionButtons(buttons)" class="action-buttons">
     <a th:each="btn : ${buttons}"
        th:if="${btn.condition != null ? btn.condition : true}"

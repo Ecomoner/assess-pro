@@ -7,6 +7,7 @@ import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.TestAttemptRepository;
 import com.frist.assesspro.service.DashboardService;
+import com.frist.assesspro.service.EventService;
 import com.frist.assesspro.service.TestPassingService;
 import com.frist.assesspro.service.UserService;
 import com.frist.assesspro.service.metrics.MetricsService;
@@ -47,6 +48,7 @@ public class TesterController {
     private final TestAttemptRepository testAttemptRepository;
     private final MetricsService metricsService;
     private final UserService userService;
+    private final EventService eventService;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -423,15 +425,18 @@ public class TesterController {
             User user = userService.findByUsername(userDetails.getUsername()).orElse(null);
             String firstName = user != null ? user.getFirstName() : userDetails.getUsername();
 
+            List<EventDTO> lastEvents = eventService.getLastEvents(5);
+
             // Добавляем в модель - ИСПОЛЬЗУЕМ ИМЕНА, КОТОРЫЕ ОЖИДАЕТ ШАБЛОН
             model.addAttribute("stats", stats);
             model.addAttribute("recentAttempts", recentAttempts);
             model.addAttribute("inProgressAttempts", inProgressAttempts);
-            model.addAttribute("recentCompleted", recentCompleted); // ← ВАЖНО: именно recentCompleted
+            model.addAttribute("recentCompleted", recentCompleted);
             model.addAttribute("categories", categories);
             model.addAttribute("recommendedTests", recommendedTests);
             model.addAttribute("username", username);
             model.addAttribute("firstName", firstName);
+            model.addAttribute("lastEvents", lastEvents);
 
             log.debug("Загружен дашборд тестировщика: {}", username);
             return "tester/dashboard";
@@ -444,9 +449,10 @@ public class TesterController {
             model.addAttribute("stats", new DashboardStatsDTO());
             model.addAttribute("recentAttempts", List.of());
             model.addAttribute("inProgressAttempts", List.of());
-            model.addAttribute("recentCompleted", List.of()); // ← ВАЖНО
+            model.addAttribute("recentCompleted", List.of());
             model.addAttribute("categories", List.of());
             model.addAttribute("recommendedTests", List.of());
+            model.addAttribute("lastEvents", List.of());
 
             return "tester/dashboard";
         }

@@ -46,7 +46,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String role;
 
-    // Поля для ФИО
+
     @Size(max = 100, message = "Имя не должно превышать 100 символов")
     @Column(name = "first_name")
     private String firstName;
@@ -76,6 +76,10 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     private List<TestAttempt> testAttempts;
+
+    @OneToMany(mappedBy = "createdByEvent", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<Event> createdEvents;
 
     /**
      * Проверка заполненности профиля

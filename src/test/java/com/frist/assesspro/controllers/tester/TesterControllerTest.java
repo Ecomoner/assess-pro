@@ -459,7 +459,7 @@ class TesterControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("tester/dashboard"))
                 .andExpect(model().attributeExists("stats", "recentAttempts", "inProgressAttempts",
-                        "recentCompleted", "categories", "recommendedTests"))
+                        "recentCompleted", "categories", "recommendedTests","lastEvents"))
                 .andExpect(model().attribute("errorMessage", "Ошибка при загрузке данных: Stats error"));
     }
 

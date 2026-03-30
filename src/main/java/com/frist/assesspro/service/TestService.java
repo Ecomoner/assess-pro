@@ -487,7 +487,7 @@ public class TestService {
     public TestDTO convertToDTO(Test test) {
         TestDTO dto = new TestDTO();
         dto.setId(test.getId());
-        dto.setTitle(test.getTitle());
+        dto.setTitle(test.getTitle())   ;
         dto.setDescription(test.getDescription());
         dto.setPublished(Boolean.TRUE.equals(test.getIsPublished()));
         dto.setQuestionCount((long) test.getQuestionCount());

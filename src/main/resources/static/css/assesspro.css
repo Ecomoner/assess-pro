@@ -327,18 +327,34 @@ html {
 .h-15px {
     height: 15px; }
 
+.sticky-md-top {
+    position: sticky;
+    top: 20px;
+    z-index: 1020;
+}
+
+/* ========== Скрытие секций ========== */
+.section {
+    display: none !important;
+}
+.section.active {
+    display: block !important;
+}
+.section.active {
+    animation: fadeIn 0.3s ease;
+}
+.sticky-top-offset {
+    top: 20px;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 @media (min-width: 768px) {
     .sticky-md-top {
         position: sticky;
-        top: 20px;
+        top: 76px;
         z-index: 1020;
-    }
-
-    /* ========== Скрытие секций ========== */
-    .section {
-        display: none;
-    }
-    .section.active {
-        display: block;
     }
 }
