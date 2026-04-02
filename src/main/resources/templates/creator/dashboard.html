@@ -25,15 +25,14 @@
                                     <i class="bi bi-people text-primary fs-5 fs-md-3"></i>
                                 </div>
                                 <div>
-                                    <h5 class="mb-1 h6 h5-md">Создание теста</h5>
+                                    <h5 class="mb-1 h6 h5-md">Управление тестами</h5>
                                     <p class="text-muted mb-0 small">
                                         Всего тестов: <strong th:text="${stats.totalTests}">0</strong>
                                     </p>
                                 </div>
                             </div>
-                            <a th:href="@{/creator/tests/new}" class="btn btn-dark w-100 w-sm-auto">
-                                <i class="bi bi-arrow-right me-2"></i>Создать тест
-                            </a>
+                            <a th:href="@{/creator/tests}" class="btn btn-dark w-100 w-sm-auto">
+                                <i class="bi bi-arrow-right me-2"></i>Пререйти к списку</a>
                         </div>
                     </div>
                 </div>

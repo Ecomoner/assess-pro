@@ -132,22 +132,24 @@ public class AdminController {
             @Valid @ModelAttribute("user") UserManagementDTO userDTO,
             BindingResult bindingResult,
             @AuthenticationPrincipal UserDetails adminDetails,
+            Model model,
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
+            model.addAttribute("action", "create");
             return "admin/user-form";
         }
 
         try {
             adminService.createUser(userDTO, adminDetails.getUsername());
             metricsService.incrementUsersRegistered();
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Пользователь успешно создан");
+            redirectAttributes.addFlashAttribute("successMessage", "Пользователь успешно создан");
             return "redirect:/admin/users";
         } catch (Exception e) {
             log.error("Ошибка при создании пользователя", e);
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/admin/users/new";
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("action", "create");
+            return "admin/user-form";
         }
     }
 
@@ -177,30 +179,33 @@ public class AdminController {
             @Valid @ModelAttribute("user") UserManagementDTO userDTO,
             BindingResult bindingResult,
             @AuthenticationPrincipal UserDetails adminDetails,
+            Model model,
             RedirectAttributes redirectAttributes) {
 
         if (id == null && userDTO.getId() != null) {
             id = userDTO.getId();
         }
-
         if (id == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "ID пользователя не указан");
             return "redirect:/admin/users";
         }
 
         if (bindingResult.hasErrors()) {
+            model.addAttribute("action", "edit");
+            model.addAttribute("user", userDTO);   // ← важно для сохранения введённых данных
             return "admin/user-form";
         }
 
         try {
             adminService.updateUser(id, userDTO, adminDetails.getUsername());
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Пользователь успешно обновлен");
+            redirectAttributes.addFlashAttribute("successMessage", "Пользователь успешно обновлен");
             return "redirect:/admin/users/" + id;
         } catch (Exception e) {
             log.error("Ошибка при обновлении пользователя", e);
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/admin/users/edit/" + id;
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("action", "edit");
+            model.addAttribute("user", userDTO);
+            return "admin/user-form";
         }
     }
 

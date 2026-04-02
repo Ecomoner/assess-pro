@@ -1,6 +1,7 @@
 package com.frist.assesspro.dto.admin;
 
 import com.frist.assesspro.entity.User;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -25,6 +26,8 @@ public class UserManagementDTO {
     @Size(min = 6, message = "Пароль должен содержать минимум 6 символов (оставьте пустым, если не хотите менять)")
     private String password;
 
+    private String passwordConfirm;
+
     @NotBlank(message = "Имя обязательно")
     @Size(max = 100)
     private String firstName;
@@ -46,6 +49,22 @@ public class UserManagementDTO {
     private Long testsCreated;      // для CREATOR
     private Long testsPassed;        // для TESTER
     private Double averageScore;     // для TESTER
+
+    @AssertTrue(message = "Пароли не совпадают")
+    public boolean isPasswordMatching() {
+        if (id == null) { // создание
+            return password != null && !password.isBlank() &&
+                    passwordConfirm != null && !passwordConfirm.isBlank() &&
+                    password.equals(passwordConfirm);
+        } else { // редактирование
+            if (password != null && !password.isBlank()) {
+                return passwordConfirm != null && !passwordConfirm.isBlank() &&
+                        password.equals(passwordConfirm);
+            }
+            // Если пароль не меняется, проверка не требуется
+            return true;
+        }
+    }
 
     /**
      * Преобразование из Entity

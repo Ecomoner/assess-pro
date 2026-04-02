@@ -83,11 +83,16 @@ public class AdminService {
         User user = new User();
         user.setUsername(dto.getUsername().trim());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        } else {
+            throw new RuntimeException("Пароль обязателен");
+        }
         user.setRole(dto.getRole());
         user.setFirstName(dto.getFirstName().trim());
         user.setLastName(dto.getLastName().trim());
         user.setMiddleName(dto.getMiddleName() != null ? dto.getMiddleName().trim() : null);
-        user.setIsProfileComplete(true); // При создании админом - сразу полный профиль
+        user.setIsProfileComplete(true);
         user.setIsActive(true);
 
         User savedUser = userRepository.save(user);

@@ -43,12 +43,6 @@
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
-                    <a class="nav-link" th:href="@{/creator/tests}">
-                        <i class="bi bi-file-text me-1"></i>
-                        <span class="d-inline">Тесты</span>
-                    </a>
-                </li>
-                <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
                     <a class="nav-link" th:href="@{/creator/categories}">
                         <i class="bi bi-tags me-1"></i>
                         <span class="d-inline">Категории</span>
