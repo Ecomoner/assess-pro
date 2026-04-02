@@ -192,7 +192,7 @@ public class AdminController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("action", "edit");
-            model.addAttribute("user", userDTO);   // ← важно для сохранения введённых данных
+            model.addAttribute("user", userDTO);
             return "admin/user-form";
         }
 
