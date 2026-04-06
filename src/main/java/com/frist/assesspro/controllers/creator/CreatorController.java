@@ -171,6 +171,7 @@ public class CreatorController {
             return "redirect:/creator/tests/new";
         }
 
+
         try {
             Test createdTest = testService.createTest(testDTO, userDetails.getUsername());
             redirectAttributes.addFlashAttribute("successMessage",

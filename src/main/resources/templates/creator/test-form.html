@@ -44,16 +44,17 @@
                         </div>
                         <div class="row g-2">
                             <div class="col-12 col-md-6 mb-2 mb-md-0">
-                                <label for="categoryId" class="form-label fw-semibold small">Категория</label>
-                                <select class="form-select" id="categoryId" th:field="*{categoryId}">
-                                    <option value="">Без категории</option>
+                                <label for="categoryId" class="form-label fw-semibold small">Категория *</label>
+                                <select class="form-select" id="categoryId" th:field="*{categoryId}" required>
+                                    <option value="">-- Выберите категорию --</option>
                                     <option th:each="cat : ${categories}"
                                             th:value="${cat.id}"
-                                            th:text="${cat.name}"
-                                            th:selected="${test.categoryId == cat.id}">
-                                        Категория
+                                            th:text="${cat.name}">
                                     </option>
                                 </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}">
+                                    Выберите категорию
+                                </div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label for="timeLimitMinutes" class="form-label fw-semibold small">Таймер (минуты)</label>
@@ -148,6 +149,19 @@
         if (daysRadio) daysRadio.addEventListener('change', toggleInputs);
         toggleInputs();
     });
+    (function() {
+        'use strict';
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
 </script>
 </body>
 </html>

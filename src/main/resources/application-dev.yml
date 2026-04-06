@@ -11,7 +11,7 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         hbm2ddl:
@@ -19,8 +19,9 @@ spring:
         format_sql: true
         use_sql_comments: true
   liquibase:
-    enabled: false
-    change-log: classpath:db/changelog/001-initial-schema.yaml
+    enabled: true
+    change-log: classpath:db/changelog/master.yaml
+    default-schema: assess_pro_db
 
   thymeleaf:
     cache: false

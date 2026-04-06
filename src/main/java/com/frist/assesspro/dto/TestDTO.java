@@ -1,10 +1,7 @@
 package com.frist.assesspro.dto;
 
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -42,7 +39,9 @@ public class TestDTO {
     @Max(value = 14, message = "Максимальное ограничение - 14 дней")
     private Integer retryCooldownDays = 0;
 
+    @NotNull(message = "Выберите категорию")
     private Long categoryId;
+
     private String categoryName;
     private Long creatorId;
     private String creatorUsername;

@@ -26,7 +26,8 @@ spring:
   devtools:
     restart:
       enabled: false
-
+server:
+  forward-headers-strategy: native
 logging:
   level:
     com.frist.assesspro: INFO

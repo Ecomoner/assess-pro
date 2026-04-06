@@ -20,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -52,31 +53,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Публичные пути
-                        .requestMatchers(
-                                "/",
-                                "/home",
-                                "/register/**",
-                                "/login/**",
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/webjars/**"
-                        ).permitAll()
-                        // Prometheus метрики только с Basic Auth
-                        .requestMatchers("/actuator/prometheus").permitAll()
-                        .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        // Защищенные пути по ролям
+                        .requestMatchers("/", "/home", "/register/**", "/login/**",
+                                "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/creator/**").hasAnyRole("CREATOR", "ADMIN")
                         .requestMatchers("/tester/**").hasAnyRole("TESTER", "ADMIN")
-                        .requestMatchers("/admin/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api-docs/**",
-                                "/v3/api-docs/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**", "/swagger-ui/**", "/swagger-ui.html",
+                                "/api-docs/**", "/v3/api-docs/**").hasRole("ADMIN")
                         .requestMatchers("/profile/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -104,7 +89,14 @@ public class SecurityConfig {
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(false)
                 )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentTypeOptions -> contentTypeOptions.disable())
+                        .xssProtection(xss -> xss.disable())
+                        .cacheControl(cache -> cache.disable())
+                )
                 .authenticationProvider(authenticationProvider());
+
         return http.build();
     }
 
