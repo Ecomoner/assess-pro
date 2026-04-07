@@ -1,0 +1,603 @@
+databaseChangeLog:
+- changeSet:
+    id: 1775155136329-1
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: test_attempts_pkey
+            name: id
+            type: BIGINT
+        - column:
+            name: end_time
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: start_time
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(255)
+        - column:
+            name: total_score
+            type: INTEGER
+        - column:
+            constraints:
+              nullable: false
+            name: test_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            defaultValueNumeric: 0
+            name: total_questions
+            type: INTEGER
+        tableName: test_attempts
+- changeSet:
+    id: 1775155136329-2
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: questions_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: order_index
+            type: INTEGER
+        - column:
+            constraints:
+              nullable: false
+            name: text
+            type: TEXT
+        - column:
+            constraints:
+              nullable: false
+            name: test_id
+            type: BIGINT
+        tableName: questions
+- changeSet:
+    id: 1775155136329-3
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: tests_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: description
+            type: TEXT
+        - column:
+            name: is_published
+            type: BOOLEAN
+        - column:
+            name: retry_cooldown_days
+            type: INTEGER
+        - column:
+            name: retry_cooldown_hours
+            type: INTEGER
+        - column:
+            name: time_limit_minutes
+            type: INTEGER
+        - column:
+            constraints:
+              nullable: false
+            name: title
+            type: VARCHAR(200)
+        - column:
+            name: category_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_by
+            type: BIGINT
+        tableName: tests
+- changeSet:
+    id: 1775155136329-4
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: user_answers_pkey
+            name: id
+            type: BIGINT
+        - column:
+            name: is_correct
+            type: BOOLEAN
+        - column:
+            name: points_earned
+            type: INTEGER
+        - column:
+            constraints:
+              nullable: false
+            name: attempt_id
+            type: BIGINT
+        - column:
+            name: chosen_answer_option_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: question_id
+            type: BIGINT
+        tableName: user_answers
+- changeSet:
+    id: 1775155136329-5
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: retry_cooldown_exceptions_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: expires_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: is_permanent
+            type: BOOLEAN
+        - column:
+            name: reason
+            type: TEXT
+        - column:
+            constraints:
+              nullable: false
+            name: created_by
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: test_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        tableName: retry_cooldown_exceptions
+- changeSet:
+    id: 1775155136329-6
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: events_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: description
+            type: TEXT
+        - column:
+            constraints:
+              nullable: false
+            name: name
+            type: VARCHAR(100)
+        - column:
+            constraints:
+              nullable: false
+            name: created_by_event
+            type: BIGINT
+        tableName: events
+- changeSet:
+    id: 1775155136329-7
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: users_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: first_name
+            type: VARCHAR(100)
+        - column:
+            name: is_active
+            type: BOOLEAN
+        - column:
+            constraints:
+              nullable: false
+            name: is_profile_complete
+            type: BOOLEAN
+        - column:
+            name: last_name
+            type: VARCHAR(100)
+        - column:
+            name: middle_name
+            type: VARCHAR(100)
+        - column:
+            constraints:
+              nullable: false
+            name: password
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: role
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: username
+            type: VARCHAR(50)
+        tableName: users
+- changeSet:
+    id: 1775155136329-8
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: categories_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            name: description
+            type: TEXT
+        - column:
+            name: is_active
+            type: BOOLEAN
+        - column:
+            constraints:
+              nullable: false
+            name: name
+            type: VARCHAR(100)
+        - column:
+            constraints:
+              nullable: false
+            name: created_by
+            type: BIGINT
+        tableName: categories
+- changeSet:
+    id: 1775155136329-9
+    author: Вадим (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: attempt_id, question_id
+        constraintName: uk_user_answer_attempt_question
+        tableName: user_answers
+- changeSet:
+    id: 1775155136329-10
+    author: Вадим (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: test_id, user_id
+        constraintName: uk_cooldown_exception_test_user
+        tableName: retry_cooldown_exceptions
+- changeSet:
+    id: 1775155136329-11
+    author: Вадим (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: name
+        constraintName: ukfn2r8jg0sm5v6vhoa7yqw55vy
+        tableName: events
+- changeSet:
+    id: 1775155136329-12
+    author: Вадим (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: username
+        constraintName: ukr43af9ap4edm43mmtq01oddj6
+        tableName: users
+- changeSet:
+    id: 1775155136329-13
+    author: Вадим (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: name
+        constraintName: ukt8o6pivur7nn124jehx7cygw5
+        tableName: categories
+- changeSet:
+    id: 1775155136329-14
+    author: Вадим (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: answer_options_pkey
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: is_correct
+            type: BOOLEAN
+        - column:
+            constraints:
+              nullable: false
+            name: text
+            type: TEXT
+        - column:
+            constraints:
+              nullable: false
+            name: question_id
+            type: BIGINT
+        tableName: answer_options
+- changeSet:
+    id: 1775155136329-15
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: created_by
+        baseTableName: tests
+        constraintName: fk1oy80cdks1pyyw0sid32mc0o
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775155136329-16
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: test_id
+        baseTableName: retry_cooldown_exceptions
+        constraintName: fk4v3i1qhutv3u2pqfg5yei005u
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: tests
+        validate: true
+- changeSet:
+    id: 1775155136329-17
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: retry_cooldown_exceptions
+        constraintName: fk5kas460735vx6oe36l1k5qjpg
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775155136329-18
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: created_by
+        baseTableName: retry_cooldown_exceptions
+        constraintName: fk5yepan68tfm6bxs9fg2s6lmty
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775155136329-19
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: created_by
+        baseTableName: categories
+        constraintName: fk5yfru0au6kpyqs4tonky5vfne
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775155136329-20
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: question_id
+        baseTableName: user_answers
+        constraintName: fk6b46l4bb7a6wfxvmn6l7ig8vo
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: questions
+        validate: true
+- changeSet:
+    id: 1775155136329-21
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: test_attempts
+        constraintName: fk6q32269iwnavc4q6o46lwyu3u
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775155136329-22
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: created_by_event
+        baseTableName: events
+        constraintName: fk874ihqoum0drd6ulawdlja83s
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775155136329-23
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: test_id
+        baseTableName: test_attempts
+        constraintName: fk8r0op7uedexgh28uyea7i6des
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: tests
+        validate: true
+- changeSet:
+    id: 1775155136329-24
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: attempt_id
+        baseTableName: user_answers
+        constraintName: fka1ll0419y7rtbmblt6u210a39
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: test_attempts
+        validate: true
+- changeSet:
+    id: 1775155136329-25
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: question_id
+        baseTableName: answer_options
+        constraintName: fkfapodm8kfiu9a9a4o2r43rcgp
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: questions
+        validate: true
+- changeSet:
+    id: 1775155136329-26
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: category_id
+        baseTableName: tests
+        constraintName: fkl6ymvr77nkm0fqehrt2ho011o
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: categories
+        validate: true
+- changeSet:
+    id: 1775155136329-27
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: chosen_answer_option_id
+        baseTableName: user_answers
+        constraintName: fkn9tarncidm5alqql3pcyyujl3
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: answer_options
+        validate: true
+- changeSet:
+    id: 1775155136329-28
+    author: Вадим (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: test_id
+        baseTableName: questions
+        constraintName: fkoc6xkgj16nhyyes4ath9dyxxw
+        deferrable: false
+        initiallyDeferred: false
+        onDelete: NO ACTION
+        onUpdate: NO ACTION
+        referencedColumnNames: id
+        referencedTableName: tests
+        validate: true
+
