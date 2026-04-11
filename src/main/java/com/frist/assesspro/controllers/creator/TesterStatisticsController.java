@@ -341,6 +341,11 @@ public class TesterStatisticsController {
         return table;
     }
 
+    @GetMapping
+    public String redirectToTestersList(@PathVariable Long testId){
+        return "redirect:/creator/tests/" + testId + "/statistics/testers";
+    }
+
     /**
      * Загрузка шрифта с поддержкой кириллицы
      */
