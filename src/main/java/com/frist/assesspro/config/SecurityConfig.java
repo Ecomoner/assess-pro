@@ -1,5 +1,6 @@
 package com.frist.assesspro.config;
 
+import com.frist.assesspro.security.CustomAuthenticationSuccessHandler;
 import com.frist.assesspro.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
+    private final CustomAuthenticationSuccessHandler successHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -63,7 +65,7 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/dashboard", true)
+                        .successHandler(successHandler)
                         .failureUrl("/login?error=true")
                         .usernameParameter("username")
                         .passwordParameter("password")

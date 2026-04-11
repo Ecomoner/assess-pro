@@ -16,11 +16,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +44,6 @@ class CooldownServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Фиксируем время на 2025-02-25T10:00:00Z
         fixedClock = Clock.fixed(Instant.parse("2025-02-25T10:00:00Z"), ZoneId.systemDefault());
         now = LocalDateTime.now(fixedClock);
 
@@ -77,7 +76,7 @@ class CooldownServiceTest {
         exception.setIsPermanent(true);
     }
 
-    // ==================== canUserTakeTest тесты ====================
+    // ==================== canUserTakeTest ====================
 
     @org.junit.jupiter.api.Test
     @DisplayName("canUserTakeTest: нет ограничений (cooldown = 0) -> true")
@@ -109,9 +108,9 @@ class CooldownServiceTest {
     void canUserTakeTest_NoCompletedAttempts_ReturnsTrue() {
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.empty());
+                .thenReturn(List.of());
 
         boolean result = cooldownService.canUserTakeTest(test, user);
 
@@ -121,12 +120,12 @@ class CooldownServiceTest {
     @org.junit.jupiter.api.Test
     @DisplayName("canUserTakeTest: есть попытка, но время еще не прошло -> false")
     void canUserTakeTest_AttemptNotExpired_ReturnsFalse() {
-        lastAttempt.setEndTime(now.minusHours(12)); // прошло 12 часов, осталось 12
+        lastAttempt.setEndTime(now.minusHours(12));
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         boolean result = cooldownService.canUserTakeTest(test, user);
 
@@ -136,12 +135,12 @@ class CooldownServiceTest {
     @org.junit.jupiter.api.Test
     @DisplayName("canUserTakeTest: есть попытка и время прошло -> true")
     void canUserTakeTest_AttemptExpired_ReturnsTrue() {
-        lastAttempt.setEndTime(now.minusHours(48)); // прошло 48 часов
+        lastAttempt.setEndTime(now.minusHours(48));
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         boolean result = cooldownService.canUserTakeTest(test, user);
 
@@ -152,20 +151,20 @@ class CooldownServiceTest {
     @DisplayName("canUserTakeTest: используется effectiveCooldownHours (дни)")
     void canUserTakeTest_UseEffectiveCooldownHours() {
         test.setRetryCooldownDays(2);
-        test.setRetryCooldownHours(48); // добавляем явную синхронизацию
+        test.setRetryCooldownHours(48);
         lastAttempt.setEndTime(now.minusHours(30));
 
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         boolean result = cooldownService.canUserTakeTest(test, user);
         assertThat(result).isFalse();
     }
 
-    // ==================== createException тесты ====================
+    // ==================== createException ====================
 
     @org.junit.jupiter.api.Test
     @DisplayName("createException: успешное создание (срок действия)")
@@ -212,7 +211,7 @@ class CooldownServiceTest {
         verify(exceptionRepository).save(any(RetryCooldownException.class));
     }
 
-    // ==================== removeException тесты ====================
+    // ==================== removeException ====================
 
     @org.junit.jupiter.api.Test
     @DisplayName("removeException: успешное удаление")
@@ -221,7 +220,7 @@ class CooldownServiceTest {
         verify(exceptionRepository).deleteByTestAndUser(test, user);
     }
 
-    // ==================== getNextAvailableTime тесты ====================
+    // ==================== getNextAvailableTime ====================
 
     @org.junit.jupiter.api.Test
     @DisplayName("getNextAvailableTime: без ограничений -> сейчас")
@@ -250,9 +249,9 @@ class CooldownServiceTest {
     void getNextAvailableTime_NoAttempts_ReturnsNow() {
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.empty());
+                .thenReturn(List.of());
 
         LocalDateTime next = cooldownService.getNextAvailableTime(test, user);
 
@@ -267,9 +266,9 @@ class CooldownServiceTest {
 
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         LocalDateTime expected = lastAttemptTime.plusHours(test.getEffectiveCooldownHours());
         LocalDateTime next = cooldownService.getNextAvailableTime(test, user);
@@ -277,7 +276,7 @@ class CooldownServiceTest {
         assertThat(next).isEqualTo(expected);
     }
 
-    // ==================== getCooldownStatus тесты ====================
+    // ==================== getCooldownStatus ====================
 
     @org.junit.jupiter.api.Test
     @DisplayName("getCooldownStatus: без ограничений -> 'Доступно'")
@@ -303,9 +302,9 @@ class CooldownServiceTest {
     void getCooldownStatus_NoAttempts_ReturnsAvailable() {
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.empty());
+                .thenReturn(List.of());
 
         String status = cooldownService.getCooldownStatus(test, user);
 
@@ -315,15 +314,15 @@ class CooldownServiceTest {
     @org.junit.jupiter.api.Test
     @DisplayName("getCooldownStatus: время не прошло (осталось > 24 часов)")
     void getCooldownStatus_RemainingDays() {
-        test.setRetryCooldownDays(0);     // отключаем дни
-        test.setRetryCooldownHours(72);   // 3 дня
-        lastAttempt.setEndTime(now.minusHours(10)); // прошло 10 часов → осталось 62 часа
+        test.setRetryCooldownDays(0);
+        test.setRetryCooldownHours(72);
+        lastAttempt.setEndTime(now.minusHours(10));
 
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         String status = cooldownService.getCooldownStatus(test, user);
 
@@ -334,13 +333,13 @@ class CooldownServiceTest {
     @DisplayName("getCooldownStatus: время не прошло (осталось менее 24 часов)")
     void getCooldownStatus_RemainingHours() {
         test.setRetryCooldownHours(24);
-        lastAttempt.setEndTime(now.minusHours(10)); // осталось 14 часов
+        lastAttempt.setEndTime(now.minusHours(10));
 
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         String status = cooldownService.getCooldownStatus(test, user);
 
@@ -351,13 +350,13 @@ class CooldownServiceTest {
     @DisplayName("getCooldownStatus: время не прошло (осталось менее часа)")
     void getCooldownStatus_RemainingMinutes() {
         test.setRetryCooldownHours(24);
-        lastAttempt.setEndTime(now.minusHours(23).minusMinutes(30)); // осталось 30 минут
+        lastAttempt.setEndTime(now.minusHours(23).minusMinutes(30));
 
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         String status = cooldownService.getCooldownStatus(test, user);
 
@@ -371,9 +370,9 @@ class CooldownServiceTest {
 
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         String status = cooldownService.getCooldownStatus(test, user);
 
@@ -388,13 +387,12 @@ class CooldownServiceTest {
 
         when(exceptionRepository.hasActiveException(eq(test), eq(user), any(LocalDateTime.class)))
                 .thenReturn(false);
-        when(testAttemptRepository.findByTestIdAndUserIdAndStatus(
+        when(testAttemptRepository.findLatestByTestIdAndUserIdAndStatus(
                 eq(test.getId()), eq(user.getId()), eq(TestAttempt.AttemptStatus.COMPLETED)))
-                .thenReturn(Optional.of(lastAttempt));
+                .thenReturn(List.of(lastAttempt));
 
         String status = cooldownService.getCooldownStatus(test, user);
 
-        // 30 часов прошло, cooldown 24 → доступно
         assertThat(status).isEqualTo("Доступно");
     }
 }

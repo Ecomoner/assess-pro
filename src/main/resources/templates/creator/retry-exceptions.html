@@ -5,6 +5,7 @@
 <div th:replace="~{fragments/panel-navigation}"></div>
 <div class="container-fluid py-3 py-md-4 bg-light">
     <div class="container px-2 px-md-3">
+        <!-- Хлебные крошки и заголовок -->
         <div class="mb-3 mb-md-4">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb flex-wrap">
@@ -18,6 +19,8 @@
                 Исключения для теста
             </h1>
         </div>
+
+        <!-- Форма создания исключения -->
         <div class="card border-0 shadow-sm mb-3 mb-md-4">
             <div class="card-header bg-white py-2">
                 <h5 class="mb-0 h6 h5-md">Создать исключение</h5>
@@ -60,6 +63,8 @@
                 </form>
             </div>
         </div>
+
+        <!-- Список тестировщиков -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-2">
                 <h5 class="mb-0 h6 h5-md">Тестировщики, проходившие тест</h5>
@@ -91,16 +96,14 @@
                             </td>
                             <td class="d-none d-md-table-cell" th:id="'next-' + ${tester.username}">-</td>
                             <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                        onclick="removeException('${tester.username}')"
-                                        title="Снять ограничения">
-                                    <i class="bi bi-clock-history"></i>
-                                    <span class="d-none d-sm-inline ms-1">Снять</span>
-                                </button>
+                                <form th:action="@{/creator/tests/{testId}/exceptions/remove/{username}(testId=${test.id}, username=${tester.username})}"
+                                      method="post" style="display: inline;" onsubmit="return confirm('Снять ограничения для пользователя ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Снять ограничения">
+                                        <i class="bi bi-clock-history"></i>
+                                        <span class="d-none d-sm-inline ms-1">Снять</span>
+                                    </button>
+                                </form>
                             </td>
-                            <form th:id="'removeForm' + ${tester.username}"
-                                  th:action="@{/creator/tests/{testId}/exceptions/remove/{username}(testId=${test.id}, username=${tester.username})}"
-                                  method="post" style="display: none;"></form>
                         </tr>
                         </tbody>
                     </table>
@@ -110,40 +113,36 @@
     </div>
 </div>
 <div th:replace="~{fragments/footer}"></div>
+
+<!-- Скрипты для загрузки статусов (без JavaScript для удаления) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script th:inline="javascript">
+    /*<![CDATA[*/
+    const testId = /*[[${test.id}]]*/ null;
+    const testerUsernames = /*[[${testers.![username]}]]*/ [];
+
     function loadCooldownStatus(username) {
         $.get(`/creator/tests/${testId}/exceptions/status/` + username, function(data) {
             if (data.success) {
-                // Для десктопа
                 const statusSpan = $('#status-' + username + ' span');
                 const nextTd = $('#next-' + username);
-
-                // Для мобильных
                 const mobileStatusSpan = $('#status-mobile-' + username + ' span');
 
                 if (data.status === 'Ограничение' || (data.hasCooldown && data.nextAvailable)) {
                     const statusText = 'Ограничение';
                     const badgeClass = 'bg-warning';
                     const nextText = data.nextAvailable ? new Date(data.nextAvailable).toLocaleString() : '-';
-
                     statusSpan.removeClass().addClass('badge ' + badgeClass).text(statusText);
-                    if (mobileStatusSpan.length) {
-                        mobileStatusSpan.removeClass().addClass('badge ' + badgeClass).text(statusText);
-                    }
+                    if (mobileStatusSpan.length) mobileStatusSpan.removeClass().addClass('badge ' + badgeClass).text(statusText);
                     nextTd.text(nextText);
                 } else if (data.status === 'Исключение') {
                     statusSpan.removeClass().addClass('badge bg-info').text('Исключение');
-                    if (mobileStatusSpan.length) {
-                        mobileStatusSpan.removeClass().addClass('badge bg-info').text('Исключение');
-                    }
+                    if (mobileStatusSpan.length) mobileStatusSpan.removeClass().addClass('badge bg-info').text('Исключение');
                     nextTd.text('-');
                 } else {
                     statusSpan.removeClass().addClass('badge bg-success').text('Доступно');
-                    if (mobileStatusSpan.length) {
-                        mobileStatusSpan.removeClass().addClass('badge bg-success').text('Доступно');
-                    }
+                    if (mobileStatusSpan.length) mobileStatusSpan.removeClass().addClass('badge bg-success').text('Доступно');
                     nextTd.text('-');
                 }
             } else {
@@ -156,28 +155,13 @@
         });
     }
 
-    function removeException(username) {
-        if (confirm('Снять ограничения для пользователя ' + username + '?')) {
-            document.getElementById('removeForm' + username).submit();
-        }
-    }
-
-    /*<![CDATA[*/
-    const testId = /*[[${test.id}]]*/ null;
-    const testerUsernames = /*[[${testers.![username]}]]*/ [];
-
     $(document).ready(function() {
         testerUsernames.forEach(function(username) {
-            if (username) {
-                loadCooldownStatus(username);
-            }
+            if (username) loadCooldownStatus(username);
         });
-
         setInterval(function() {
             testerUsernames.forEach(function(username) {
-                if (username) {
-                    loadCooldownStatus(username);
-                }
+                if (username) loadCooldownStatus(username);
             });
         }, 30000);
     });

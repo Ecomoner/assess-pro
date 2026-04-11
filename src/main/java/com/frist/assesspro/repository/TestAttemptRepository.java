@@ -95,6 +95,7 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     Page<TestAttempt> searchByTestIdWithUser(@Param("testId") Long testId,
                                              @Param("search") String search,
                                              Pageable pageable);
+
     long countByTestIdAndUserIdAndStatus(Long testId, Long userId, TestAttempt.AttemptStatus status);
 
     @Query("SELECT ta FROM TestAttempt ta " +
@@ -105,5 +106,11 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             "ORDER BY ta.startTime DESC")
     Page<TestAttempt> findAttemptsByTestIdWithAllData(@Param("testId") Long testId, Pageable pageable);
 
+    @Query("SELECT ta FROM TestAttempt ta " +
+            "WHERE ta.test.id = :testId AND ta.user.id = :userId AND ta.status = :status " +
+            "ORDER BY ta.endTime DESC")
+    List<TestAttempt> findLatestByTestIdAndUserIdAndStatus(@Param("testId") Long testId,
+                                                           @Param("userId") Long userId,
+                                                           @Param("status") TestAttempt.AttemptStatus status);
 
 }

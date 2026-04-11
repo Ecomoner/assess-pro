@@ -51,8 +51,6 @@ public class RetryCooldownExceptionController {
             Model model) {
 
         Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
-
-        // 🔥 НОВОЕ: Получаем список всех тестировщиков, проходивших тест
         List<User> testers = testerStatisticsService.getDistinctTestersByTest(testId, userDetails.getUsername());
 
         model.addAttribute("test", test);
@@ -112,7 +110,6 @@ public class RetryCooldownExceptionController {
         try {
             Test test = testService.getTestByIdWithoutOwnershipCheck(testId);
 
-            // 🔥 ИСПРАВЛЕНО: Используем UserService
             User tester = userService.getUserByUsername(testerUsername);
             User creator = userService.getUserByUsername(userDetails.getUsername());
 

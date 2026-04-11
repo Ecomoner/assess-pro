@@ -3,7 +3,6 @@
 <head th:replace="~{fragments/header :: header('Мои тесты')}">
 <body>
 <div th:replace="~{fragments/panel-navigation}"></div>
-
 <div class="container-fluid py-3 py-md-4 bg-light">
     <div class="container px-2 px-md-3">
         <!-- Заголовок -->
@@ -16,9 +15,8 @@
         <a th:href="@{/creator/tests/new}" class="btn btn-dark w-100 w-sm-auto">
             <i class="bi bi-plus-circle me-2"></i>Создать тест
         </a>
-        <!-- Быстрая статистика (без изменений) -->
         <div class="row g-2 g-md-3 mb-3 mb-md-4">
-            <!-- ... оставляем как есть ... -->
+
         </div>
 
         <!-- Фильтры -->
@@ -77,8 +75,6 @@
                 </form>
             </div>
         </div>
-        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show py-2">...</div>
-        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">...</div>
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">

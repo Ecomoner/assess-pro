@@ -41,11 +41,10 @@ public class CooldownService {
             return true;
         }
 
-        Optional<TestAttempt> lastAttempt = testAttemptRepository
-                .findByTestIdAndUserIdAndStatus(
-                        test.getId(),
-                        user.getId(),
-                        TestAttempt.AttemptStatus.COMPLETED);
+        List<TestAttempt> attempts = testAttemptRepository
+                .findLatestByTestIdAndUserIdAndStatus(test.getId(), user.getId(), TestAttempt.AttemptStatus.COMPLETED);
+
+        Optional<TestAttempt> lastAttempt = attempts.isEmpty() ? Optional.empty() : Optional.of(attempts.get(0));
 
         if (lastAttempt.isEmpty()) {
             return true;
@@ -118,11 +117,10 @@ public class CooldownService {
             return now;
         }
 
-        Optional<TestAttempt> lastAttempt = testAttemptRepository
-                .findByTestIdAndUserIdAndStatus(
-                        test.getId(),
-                        user.getId(),
-                        TestAttempt.AttemptStatus.COMPLETED);
+        List<TestAttempt> attempts = testAttemptRepository
+                .findLatestByTestIdAndUserIdAndStatus(test.getId(), user.getId(), TestAttempt.AttemptStatus.COMPLETED);
+
+        Optional<TestAttempt> lastAttempt = attempts.isEmpty() ? Optional.empty() : Optional.of(attempts.get(0));
 
         if (lastAttempt.isEmpty()) {
             return now;
@@ -150,11 +148,10 @@ public class CooldownService {
             return "Доступно (исключение)";
         }
 
-        Optional<TestAttempt> lastAttempt = testAttemptRepository
-                .findByTestIdAndUserIdAndStatus(
-                        test.getId(),
-                        user.getId(),
-                        TestAttempt.AttemptStatus.COMPLETED);
+        List<TestAttempt> attempts = testAttemptRepository
+                .findLatestByTestIdAndUserIdAndStatus(test.getId(), user.getId(), TestAttempt.AttemptStatus.COMPLETED);
+
+        Optional<TestAttempt> lastAttempt = attempts.isEmpty() ? Optional.empty() : Optional.of(attempts.get(0));
 
         if (lastAttempt.isEmpty()) {
             return "Доступно";
