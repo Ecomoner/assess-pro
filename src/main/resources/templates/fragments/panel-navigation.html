@@ -3,8 +3,8 @@
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" th:href="@{/home}">
             <img th:src="@{/images/logo.png}" height="32" class="d-inline-block align-text-top me-2">
-            <span class="d-none d-sm-inline">AssessPro</span>
-            <span class="d-inline d-sm-none">AP</span>
+            <span class="d-none d-sm-inline">Molecule</span>
+            <span class="d-inline d-sm-none">M</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -14,8 +14,8 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
                     <a class="nav-link" th:href="@{/admin/dashboard}">
-                        <i class="bi bi-speedometer2 me-1"></i>
-                        <span class="d-inline">Панель</span>
+                        <i class="bi bi-bookmark me-1"></i>
+                        <span class="d-inline">Главная</span>
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
@@ -38,8 +38,8 @@
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
                     <a class="nav-link" th:href="@{/creator/dashboard}">
-                        <i class="bi bi-speedometer2 me-1"></i>
-                        <span class="d-inline">Панель</span>
+                        <i class="bi bi-bookmark me-1"></i>
+                        <span class="d-inline">Главная</span>
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
@@ -62,8 +62,8 @@
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
                     <a class="nav-link" th:href="@{/tester/dashboard}">
-                        <i class="bi bi-speedometer2 me-1"></i>
-                        <span class="d-inline">Панель</span>
+                        <i class="bi bi-bookmark me-1"></i>
+                        <span class="d-inline">Главная</span>
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">

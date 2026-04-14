@@ -37,20 +37,12 @@
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-xl-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted">Средний балл</h6>
-                        <h2 class="fw-bold h3 h2-md" th:text="${stats.averageScore} + '%'">0%</h2>
-                    </div>
-                </div>
-            </div>
         </div>
         <div class="row g-4 mb-4">
             <div class="col-md-6">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white">
-                        <h5 class="mb-0">Регистрации по дням</h5>
+                        <h5 class="mb-0">Активность по дням</h5>
                     </div>
                     <div class="card-body">
                         <canvas id="registrationsChart" style="height: 300px; width: 100%;"></canvas>
@@ -65,33 +57,6 @@
                     <div class="card-body">
                         <canvas id="rolesChart" style="height: 300px; width: 100%;"></canvas>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Топ тестировщиков</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Тестировщик</th>
-                            <th class="d-none d-sm-table-cell">Пройдено тестов</th>
-                            <th>Средний балл</th>
-                            <th class="d-none d-md-table-cell">Всего попыток</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="tester : ${stats.getTopTesters()}">
-                            <td><span th:text="${tester.fullName} ?: ${tester.username}">username</span></td>
-                            <td class="d-none d-sm-table-cell" th:text="${tester.testsPassed}">15</td>
-                            <td><span th:text="${#numbers.formatDecimal(tester.averageScore, 1, 1)} + '%'">85%</span></td>
-                            <td class="d-none d-md-table-cell" th:text="${tester.testsPassed}">20</td>
-                        </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>

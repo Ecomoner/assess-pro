@@ -302,21 +302,22 @@ public class TesterController {
             Page<TestHistoryDTO> historyPage = testPassingService.getUserTestHistory(
                     userDetails.getUsername(), page, size, status);
 
+
             // Получаем статистику пользователя
             UserStatisticsDTO statistics = testPassingService.getUserStatistics(
                     userDetails.getUsername());
 
             // Рассчитываем дополнительные метрики
             long completedCount = historyPage.getContent().stream()
-                    .filter(attempt -> "COMPLETED".equals(attempt.getStatus()))
+                    .filter(attempt -> TestAttempt.AttemptStatus.COMPLETED.equals(attempt.getStatus()))
                     .count();
 
             long inProgressCount = historyPage.getContent().stream()
-                    .filter(attempt -> "IN_PROGRESS".equals(attempt.getStatus()))
+                    .filter(attempt -> TestAttempt.AttemptStatus.IN_PROGRESS.equals(attempt.getStatus()))
                     .count();
 
             double averageScore = historyPage.getContent().stream()
-                    .filter(attempt -> "COMPLETED".equals(attempt.getStatus()))
+                    .filter(attempt -> TestAttempt.AttemptStatus.COMPLETED.equals(attempt.getStatus()))
                     .mapToDouble(TestHistoryDTO::getPercentage)
                     .average()
                     .orElse(0.0);

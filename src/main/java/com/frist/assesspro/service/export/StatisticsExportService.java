@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -110,12 +111,11 @@ public class StatisticsExportService {
             document.add(createTestInfoTable(test, font));
             document.add(new Paragraph(""));
 
-            // Если указан конкретный тестировщик
+
             if (testerUsername != null && !testerUsername.isEmpty()) {
-                addTesterStatistics(document, test.getId(), testerUsername, font, categoryId);
+                addSingleTesterStatistics(document, test.getId(), testerUsername, null, font, categoryId);
             } else {
-                // Список всех тестировщиков
-                addTesterStatistics(document, test.getId(), testerUsername, font, categoryId);
+                addAllTestersStatistics(document, test.getId(), null, font, categoryId);
             }
 
             // Дата генерации
@@ -126,7 +126,6 @@ public class StatisticsExportService {
                     .setTextAlignment(TextAlignment.RIGHT));
 
             document.close();
-
             log.info("PDF отчет успешно сгенерирован, размер: {} байт", baos.size());
             return baos.toByteArray();
 
@@ -164,8 +163,8 @@ public class StatisticsExportService {
     /**
      * Добавление статистики конкретного тестировщика с фильтрацией по категории
      */
-    private void addTesterStatistics(Document document, Long testId,
-                                     String testerUsername,
+    private void addSingleTesterStatistics(Document document, Long testId,
+                                     String testerUsername,String creatorUsername,
                                      PdfFont font, Long categoryId) {
 
         try {
@@ -176,7 +175,7 @@ public class StatisticsExportService {
 
             do {
                 attemptsPage = testerStatisticsService.getTestersByTest(
-                        testId, null, PageRequest.of(page++, PAGE_SIZE));
+                        testId, creatorUsername, PageRequest.of(page++, PAGE_SIZE));
                 allAttempts.addAll(attemptsPage.getContent());
             } while (attemptsPage.hasNext() && allAttempts.size() < MAX_EXPORT_SIZE);
 
@@ -224,9 +223,7 @@ public class StatisticsExportService {
             document.add(new Paragraph(""));
 
             // Получаем детальные ответы
-            if (!attempts.isEmpty()) {
-                addDetailedAnswers(document, testId, lastAttempt.getAttemptId(), null, font);
-            }
+            addDetailedAnswers(document, testId, lastAttempt.getAttemptId(), creatorUsername, font);
 
         } catch (Exception e) {
             log.error("Ошибка при добавлении статистики тестировщика", e);
@@ -287,6 +284,87 @@ public class StatisticsExportService {
         } catch (Exception e) {
             log.error("Ошибка при добавлении детальных ответов", e);
             document.add(new Paragraph("Ошибка загрузки детальных ответов").setFont(font));
+        }
+    }
+
+    /**
+     * Добавляет сводную статистику по всем тестировщикам (без детальных ответов)
+     */
+    private void addAllTestersStatistics(Document document,Long testId,
+                                        String creatorUsername,PdfFont font,Long categoryId){
+        try {
+            List<TesterAttemptDTO> allAttempt = new ArrayList<>();
+            int page = 0;
+            Page<TesterAttemptDTO> attemptPage;
+            do {
+                attemptPage = testerStatisticsService.getTestersByTest(testId,creatorUsername,
+                        PageRequest.of(page++,PAGE_SIZE));
+                allAttempt.addAll(attemptPage.getContent());
+            }while (attemptPage.hasNext() && allAttempt.size() < MAX_EXPORT_SIZE);
+
+            if (allAttempt.isEmpty()){
+                document.add(new Paragraph("Нет попыток для этого теста").setFont(font));
+                return;
+            }
+
+            Map<String,List<TesterAttemptDTO>> attemptsByUser = allAttempt.stream()
+                    .collect(Collectors.groupingBy(TesterAttemptDTO::getTesterUsername));
+
+            document.add(new Paragraph("Список тестировщиков")
+                    .setFontSize(16)
+                    .setBold()
+                    .setFont(font));
+            document.add(new Paragraph(""));
+
+            for (Map.Entry<String, List<TesterAttemptDTO>> entry : attemptsByUser.entrySet()) {
+                String username = entry.getKey();
+                List<TesterAttemptDTO> userAttempts = entry.getValue();
+
+                // Находим лучший результат (максимальный процент)
+                double bestPercentage = userAttempts.stream()
+                        .mapToDouble(a -> a.getPercentage() != null ? a.getPercentage() : 0.0)
+                        .max()
+                        .orElse(0.0);
+
+                // Находим последнюю попытку (по дате)
+                TesterAttemptDTO lastAttempt = userAttempts.stream()
+                        .max((a1, a2) -> a1.getStartTime().compareTo(a2.getStartTime()))
+                        .orElse(null);
+
+                // Заголовок тестировщика
+                document.add(new Paragraph("Тестировщик: " + username)
+                        .setFontSize(14)
+                        .setBold()
+                        .setFont(font));
+
+                // Таблица со сводкой
+                Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{30, 70}))
+                        .setWidth(UnitValue.createPercentValue(100));
+
+                summaryTable.addCell(createCell("Всего попыток:", true, font));
+                summaryTable.addCell(createCell(String.valueOf(userAttempts.size()), false, font));
+
+                if (lastAttempt != null) {
+                    String lastDate = lastAttempt.getStartTime() != null ?
+                            lastAttempt.getStartTime().format(DATE_FORMATTER) : "-";
+                    summaryTable.addCell(createCell("Последняя попытка:", true, font));
+                    summaryTable.addCell(createCell(lastDate, false, font));
+
+                    summaryTable.addCell(createCell("Результат последней попытки:", true, font));
+                    summaryTable.addCell(createCell(String.format("%d/%d (%.1f%%)",
+                            lastAttempt.getScore(), lastAttempt.getMaxScore(),
+                            lastAttempt.getPercentage() != null ? lastAttempt.getPercentage() : 0.0), false, font));
+                }
+
+                summaryTable.addCell(createCell("Лучший результат:", true, font));
+                summaryTable.addCell(createCell(String.format("%.1f%%", bestPercentage), false, font));
+
+                document.add(summaryTable);
+                document.add(new Paragraph(""));
+            }
+        }catch(Exception e){
+            log.error("Ошибка при добавлении сводной статистики", e);
+            document.add(new Paragraph("Ошибка загрузки сводной статистики").setFont(font));
         }
     }
 
