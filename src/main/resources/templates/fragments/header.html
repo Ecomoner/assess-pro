@@ -1,21 +1,32 @@
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:fragment="header(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#111827">
     <title th:text="${title}">Molecule</title>
+
+    <!-- Google Fonts: Inter (основной шрифт) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <!-- Font Awesome -->
+    <!-- Font Awesome (можно оставить, но Bootstrap Icons покрывает большинство нужд) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <!-- Custom CSS -->
+
+    <!-- Custom CSS (единый стиль) -->
     <link th:href="@{/css/assesspro.css}" rel="stylesheet">
+
+    <!-- Базовые стили для предотвращения горизонтального скролла -->
     <style>
         body {
             overflow-x: hidden;

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="content">
+    <h2 class="section-title">Xerjoff</h2>
+    <hr class="my-4">
+    <div class="text-end">
+        <div th:if="${role == 'ROLE_TESTER'}">
+            <a href="#" class="btn btn-elegant" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;">
+                <i class="bi bi-arrow-up"></i>Наверх
+            </a>
+        </div>
+        <div th:if="${role == 'ROLE_CREATOR'}">
+            <a href="#" class="btn btn-elegant" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;">
+                <i class="bi bi-arrow-up"></i>Наверх
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
