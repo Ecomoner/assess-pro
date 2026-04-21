@@ -437,7 +437,6 @@ html {
     padding-bottom: 0.75rem;
     margin-bottom: 1.5rem;
 }
-
 /* Кнопка "наверх" и элегантные кнопки (по желанию) */
 .btn-elegant {
     border: 1px solid #d1d5db;
@@ -451,7 +450,6 @@ html {
     border-color: #111827;
     color: white;
 }
-
 /* Анимация появления */
 @keyframes fadeIn {
     from { opacity: 0; }
