@@ -465,6 +465,11 @@ public class TestService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<Test> getTestByIdWithoutOwnershipCheckOptional(Long id) {
+        return testRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
     public Optional<Test> getTestWithAllDataWithoutOwnershipCheck(Long testId) {
         // 1. Сначала загружаем тест с категорией (без вопросов)
         Optional<Test> testOpt = testRepository.findByIdWithCategory(testId);

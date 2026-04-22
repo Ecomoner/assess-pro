@@ -69,7 +69,7 @@ public class TesterOverallStatisticsController {
                 List<TesterAttemptDTO> testAttempts = entry.getValue();
 
                 // Получаем информацию о тесте
-                Test test = testService.getTestBasicById(testId, userDetails.getUsername())
+                Test test = testService.getTestByIdWithoutOwnershipCheckOptional(testId)
                         .orElse(null);
 
                 if (test != null) {
