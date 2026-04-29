@@ -62,9 +62,8 @@ public class EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(()->new RuntimeException("Событии с таким ID нет"));
 
-        if (eventDTO.getId()!=null && eventDTO.getDescription()!=null){
-            event.setDescription(eventDTO.getDescription());
-        }
+        event.setName(eventDTO.getName());
+        event.setDescription(eventDTO.getDescription());
 
         Event editedEvent = eventRepository.save(event);
 

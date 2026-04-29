@@ -96,48 +96,31 @@
                 </div>
             </div>
         </div>
-
-        <!-- Основной контент (секции подключаются через th:replace) -->
         <div class="col-12 col-md-8 col-lg-9 order-2">
             <h1 class="display-5 fw-light mb-4" style="font-family: 'Playfair Display', serif;">Материалы для изучения</h1>
-
-            <!-- Секция 1 (активна по умолчанию) -->
             <section id="section1" class="section mb-5 d-block">
                 <div th:replace="~{materials/vilhelm :: content}"></div>
             </section>
-
-            <!-- Секция 2 -->
             <section id="section2" class="section mb-5 d-none">
                 <div th:replace="~{materials/amouage :: content}"></div>
             </section>
-
-            <!-- Секция 3 -->
             <section id="section3" class="section mb-5 d-none">
                 <div th:replace="~{materials/atelier :: content}"></div>
             </section>
-
-            <!-- Секция 4 -->
             <section id="section4" class="section mb-5 d-none">
                 <div th:replace="~{materials/drlevy :: content}"></div>
             </section>
-
-            <!-- Секция 5 -->
             <section id="section5" class="section mb-5 d-none">
                 <div th:replace="~{materials/xerjoff :: content}"></div>
             </section>
-
-            <!-- Секция 6 -->
             <section id="section6" class="section mb-5 d-none">
                 <div th:replace="~{materials/swiss :: content}"></div>
             </section>
         </div>
     </div>
 </main>
-
 <div th:replace="~{fragments/footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Скрипт переключения секций -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const sections = document.querySelectorAll('.section');
