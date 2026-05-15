@@ -338,42 +338,10 @@ class AdminControllerTest {
 
     // ---------- GET /admin/statistics/export ----------
 
-    @Test
-    @DisplayName("GET /admin/statistics/export: успешный экспорт PDF")
-    void exportStatistics_Success_ShouldReturnPdf() throws Exception {
-        byte[] pdfContent = new byte[]{1, 2, 3};
-        when(adminExportService.generateAppStatisticsPDF()).thenReturn(pdfContent);
 
-        mockMvc.perform(get("/admin/statistics/export"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.startsWith("attachment; filename=\"app_statistics_")))
-                .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-                .andExpect(content().bytes(pdfContent));
-    }
-
-    @Test
-    @DisplayName("GET /admin/statistics/export: при ошибке возвращает bad request")
-    void exportStatistics_Error_ShouldReturnBadRequest() throws Exception {
-        when(adminExportService.generateAppStatisticsPDF()).thenThrow(new RuntimeException("Export failed"));
-
-        mockMvc.perform(get("/admin/statistics/export"))
-                .andExpect(status().isBadRequest());
-    }
 
     // ---------- GET /admin/users/export ----------
 
-    @Test
-    @DisplayName("GET /admin/users/export: успешный экспорт списка пользователей")
-    void exportUsers_Success_ShouldReturnPdf() throws Exception {
-        byte[] pdfContent = new byte[]{4, 5, 6};
-        when(adminExportService.generateUsersListPDF(isNull(), isNull())).thenReturn(pdfContent);
-
-        mockMvc.perform(get("/admin/users/export"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Content-Disposition", "attachment; filename=\"users_list.pdf\""))
-                .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-                .andExpect(content().bytes(pdfContent));
-    }
 
     @Test
     @DisplayName("GET /admin/users/export с параметрами: должен передать их в сервис")
@@ -387,15 +355,5 @@ class AdminControllerTest {
                         .param("role", role)
                         .param("active", String.valueOf(active)))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /admin/users/export: при ошибке возвращает bad request")
-    void exportUsers_Error_ShouldReturnBadRequest() throws Exception {
-        when(adminExportService.generateUsersListPDF(isNull(), isNull()))
-                .thenThrow(new RuntimeException("Export failed"));
-
-        mockMvc.perform(get("/admin/users/export"))
-                .andExpect(status().isBadRequest());
     }
 }

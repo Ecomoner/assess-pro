@@ -1,5 +1,6 @@
 package com.frist.assesspro.service;
 
+import com.frist.assesspro.dto.admin.AppStatisticsCountsDTO;
 import com.frist.assesspro.dto.admin.AppStatisticsDTO;
 import com.frist.assesspro.dto.admin.UserManagementDTO;
 import com.frist.assesspro.entity.TestAttempt;
@@ -187,51 +188,37 @@ public class AdminService {
     @Transactional(readOnly = true)
     public AppStatisticsDTO getAppStatistics() {
         AppStatisticsDTO stats = new AppStatisticsDTO();
+        AppStatisticsCountsDTO counts = userRepository.getAppStatisticsCounts();
 
-        // ============= 1. СТАТИСТИКА ПОЛЬЗОВАТЕЛЕЙ =============
-        stats.setTotalUsers(userRepository.countAllUsers());
-        stats.setTotalAdmins(userRepository.countByRole(User.Roles.ADMIN));
-        stats.setTotalCreators(userRepository.countByRole(User.Roles.CREATOR));
-        stats.setTotalTesters(userRepository.countByRole(User.Roles.TESTER));
+        stats.setTotalUsers(counts.getTotalUsers());
+        stats.setTotalAdmins(counts.getTotalAdmins());
+        stats.setTotalCreators(counts.getTotalCreators());
+        stats.setTotalTesters(counts.getTotalTesters());
+        stats.setUsersWithIncompleteProfile(counts.getIncompleteProfiles());
+        stats.setActiveUsers(counts.getActiveUsers());
+        stats.setInactiveUsers(counts.getInactiveUsers());
 
-        List<User> incompleteProfiles = userRepository.findByProfileNotComplete();
-        stats.setUsersWithIncompleteProfile((long) incompleteProfiles.size());
+        stats.setTotalTests(counts.getTotalTests());
+        stats.setPublishedTests(counts.getPublishedTests());
+        stats.setDraftTests(counts.getDraftTests());
+        stats.setTotalQuestions(counts.getTotalQuestions());
+        stats.setTotalCategories(counts.getTotalCategories());
 
-        stats.setActiveUsers(userRepository.countByIsActive(true));
-        stats.setInactiveUsers(userRepository.countByIsActive(false));
-
-        // ============= 2. СТАТИСТИКА ТЕСТОВ =============
-        stats.setTotalTests(testRepository.countAllTests());
-        stats.setPublishedTests(testRepository.countByIsPublished(true));
-        stats.setDraftTests(testRepository.countByIsPublished(false));
-        stats.setTotalQuestions(questionRepository.count());
-        stats.setTotalCategories(categoryRepository.count());
+        stats.setTotalAttempts(counts.getTotalAttempts());
+        stats.setCompletedAttempts(counts.getCompletedAttempts());
+        stats.setInProgressAttempts(counts.getInProgressAttempts());
 
         // ============= 3. СТАТИСТИКА ПРОХОЖДЕНИЙ =============
-        List<TestAttempt> allAttempts = testAttemptRepository.findAll();
-        stats.setTotalAttempts((long) allAttempts.size());
+        List<Object[]> avgAndMinutes = testAttemptRepository.findAverageScoreAndTotalMinutes();
+        double avgScore = 0.0;
+        long totalMinutes = 0L;
+        if (!avgAndMinutes.isEmpty()) {
+            Object[] row = avgAndMinutes.get(0);
+            avgScore = ((Number) row[0]).doubleValue();
+            totalMinutes = ((Number) row[1]).longValue();
+        }
 
-        long completed = allAttempts.stream()
-                .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.COMPLETED)
-                .count();
-        stats.setCompletedAttempts(completed);
-
-        long inProgress = allAttempts.stream()
-                .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS)
-                .count();
-        stats.setInProgressAttempts(inProgress);
-
-        Double avgScore = allAttempts.stream()
-                .filter(a -> a.getStatus() == TestAttempt.AttemptStatus.COMPLETED)
-                .mapToInt(a -> a.getTotalScore() != null ? a.getTotalScore() : 0)
-                .average()
-                .orElse(0.0);
         stats.setAverageScore(avgScore);
-
-        long totalMinutes = allAttempts.stream()
-                .filter(a -> a.getStartTime() != null && a.getEndTime() != null)
-                .mapToLong(a -> java.time.Duration.between(a.getStartTime(), a.getEndTime()).toMinutes())
-                .sum();
         stats.setTotalTimeSpentMinutes(totalMinutes);
 
         // ============= 4. ДИНАМИКА =============
@@ -250,22 +237,6 @@ public class AdminService {
         stats.setRegistrationsByDay(registrations);
 
         // Прохождения по дням (последние 30 дней)
-        Map<LocalDate, Long> attemptsByDay = allAttempts.stream()
-                .filter(a -> a.getStartTime() != null &&
-                        a.getStartTime().isAfter(thirtyDaysAgo))
-                .collect(Collectors.groupingBy(
-                        a -> a.getStartTime().toLocalDate(),
-                        Collectors.counting()
-                ))
-                .entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (e1, e2) -> e1,
-                        LinkedHashMap::new
-                ));
-        stats.setAttemptsByDay(attemptsByDay);
 
         // Тесты по категориям
         Map<String, Long> testsByCategory = new LinkedHashMap<>();

@@ -42,7 +42,7 @@ public class TesterStatisticsService {
                                                    Pageable pageable) {
         validateTestExists(testId,creatorUsername);
 
-        Page<TestAttempt> attemptsPage = testAttemptRepository.findAttemptsByTestIdWithAllData(testId, pageable);
+        Page<TestAttempt> attemptsPage = testAttemptRepository.findAttemptsByTestIdWithUserAndTest(testId, pageable);
 
         List<TesterAttemptDTO> dtos = attemptsPage.getContent().stream()
                 .map(this::convertToTesterAttemptDTO)
@@ -70,13 +70,14 @@ public class TesterStatisticsService {
         }
 
         Integer questionCount = attempt.getTotalQuestions();
-        if (questionCount == null) {
-            // fallback на случай, если поле не заполнено для старых записей
-            questionCount = attempt.getTest() != null && attempt.getTest().getQuestions() != null ?
-                    attempt.getTest().getQuestions().size() : 0;
+        if (questionCount == null || questionCount == 0) {
+            // fallback: получить количество вопросов из теста
+            questionCount = attempt.getTest() != null && attempt.getTest().getQuestionCount() > 0
+                    ? attempt.getTest().getQuestionCount()
+                    : 0;
         }
-        dto.setMaxScore(questionCount);
 
+        dto.setMaxScore(questionCount);
         if (questionCount > 0) {
             dto.setPercentage((double) dto.getScore() / questionCount * 100);
         } else {
@@ -158,7 +159,7 @@ public class TesterStatisticsService {
                 .max()
                 .orElse(0);
 
-        int maxPossibleScore = test.getQuestions() != null ? test.getQuestions().size() : 0;
+        int maxPossibleScore = test.getQuestionCount();
         double averagePercentage = maxPossibleScore > 0 ? (averageScore / maxPossibleScore) * 100 : 0;
         double bestPercentage = maxPossibleScore > 0 ? (bestScore / maxPossibleScore) * 100 : 0;
 
@@ -185,7 +186,9 @@ public class TesterStatisticsService {
 
         validateTestExists(testId, creatorUsername);
 
-        List<TestAttempt> allAttempts = getFilteredAttempts(testId, dateFrom, dateTo);
+        boolean fromNull = (dateFrom == null);
+        boolean toNull = (dateTo == null);
+        List<TestAttempt> allAttempts = testAttemptRepository.findByTestIdAndDateRange(testId,fromNull,dateFrom,toNull,dateTo);
 
         Map<User, List<TestAttempt>> attemptsByTester = allAttempts.stream()
                 .collect(Collectors.groupingBy(TestAttempt::getUser));
@@ -226,28 +229,7 @@ public class TesterStatisticsService {
     }
 
     /**
-     * 8. Поиск тестировщиков с фильтрацией по дате
-     */
-    private List<TestAttempt> getFilteredAttempts(Long testId, LocalDateTime dateFrom, LocalDateTime dateTo) {
-        List<TestAttempt> attempts = testAttemptRepository.findByTestId(testId);
-
-        if (dateFrom != null) {
-            attempts = attempts.stream()
-                    .filter(attempt -> !attempt.getStartTime().isBefore(dateFrom))
-                    .collect(Collectors.toList());
-        }
-
-        if (dateTo != null) {
-            attempts = attempts.stream()
-                    .filter(attempt -> !attempt.getStartTime().isAfter(dateTo))
-                    .collect(Collectors.toList());
-        }
-
-        return attempts;
-    }
-
-    /**
-     * 9. Построение агрегированной статистики тестировщика
+     * 8. Построение агрегированной статистики тестировщика
      */
     private TesterAggregatedStatsDTO buildTesterAggregatedStats(User tester, List<TestAttempt> attempts) {
         if (attempts.isEmpty()) {
@@ -337,7 +319,7 @@ public class TesterStatisticsService {
     }
 
     /**
-     * 10. Получение списка уникальных тестировщиков по тесту
+     * 9. Получение списка уникальных тестировщиков по тесту
      */
     @Transactional(readOnly = true)
     public List<User> getDistinctTestersByTest(Long testId, String creatorUsername) {

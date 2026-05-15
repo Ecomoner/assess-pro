@@ -195,7 +195,7 @@ class TestAttemptRepositoryTest extends BaseRepositoryTest {
         entityManager.flush();
         entityManager.clear();
         Pageable pageable = PageRequest.of(0, 10);
-        Page<TestAttempt> page = testAttemptRepository.findAttemptsByTestIdWithAllData(test.getId(), pageable);
+        Page<TestAttempt> page = testAttemptRepository.findAttemptsByTestIdWithUserAndTest(test.getId(), pageable);
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().get(0).getTest().getQuestions()).isNotEmpty();
     }

@@ -23,15 +23,20 @@
                         Логин: <strong th:text="${tester.username}">tester</strong>
                     </p>
                 </div>
-                <a th:href="@{/creator/tester/{testerUsername}/full-statistics(testerUsername=${tester.username})}"
-                   class="btn btn-dark flex-fill flex-sm-grow-0">
-                    <i class="bi bi-file-pdf me-2"></i>
-                    <span class="d-none d-sm-inline">PDF</span>
-                </a>
-                <a th:href="@{/creator/testers}"
-                   class="btn btn-outline-secondary flex-sm-grow-0">
-                    <i class="bi bi-arrow-left me-2"></i>Назад
-                </a>
+                <div class="d-flex gap-2">
+                    <button id="exportPdfButton" class="btn btn-dark flex-fill flex-sm-grow-0">
+                        <i class="bi bi-file-pdf me-2"></i>
+                        <span class="d-none d-sm-inline">PDF</span>
+                    </button>
+                    <a th:href="@{/creator/testers}"
+                       class="btn btn-outline-secondary flex-sm-grow-0">
+                        <i class="bi bi-arrow-left me-2"></i>Назад
+                    </a>
+                </div>
+            </div>
+            <!-- Статусное сообщение -->
+            <div id="statusMessage" class="alert alert-info d-none small py-2 px-3 mt-3" role="status">
+                <i class="bi bi-hourglass-split me-2"></i><span id="statusText"></span>
             </div>
         </div>
         <div class="row g-2 g-md-4 mb-3 mb-md-4">
@@ -155,5 +160,66 @@
 </div>
 <div th:replace="~{fragments/footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('exportPdfButton').addEventListener('click', async function() {
+        const button = this;
+        const statusDiv = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+        const testerUsername = '[[${tester.username}]]';
+
+        button.disabled = true;
+        statusDiv.classList.remove('d-none');
+        statusText.textContent = 'Запрос отправлен...';
+
+        try {
+            const response = await fetch('/creator/tester/' + testerUsername + '/full-statistics', {
+                credentials: 'same-origin'   // ← отправляем куки
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка сервера: ' + response.status);
+            }
+
+            // Проверим, что ответ действительно JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Сервер вернул не JSON. Возможно, требуется повторный вход.');
+            }
+
+            const data = await response.json();
+            const requestId = data.requestId;
+            statusText.textContent = data.message || 'Генерация отчёта...';
+
+            const checkInterval = setInterval(async () => {
+                const res = await fetch('/export/download/' + requestId, {
+                    credentials: 'same-origin'
+                });
+                if (res.ok) {
+                    clearInterval(checkInterval);
+                    const blob = await res.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = 'tester_' + testerUsername + '_full_statistics.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    statusText.textContent = 'Скачивание началось.';
+                    button.disabled = false;
+                } else if (res.status === 404) {
+                    statusText.textContent = 'Формирование PDF...';
+                } else {
+                    clearInterval(checkInterval);
+                    statusText.textContent = 'Ошибка при получении отчёта.';
+                    button.disabled = false;
+                }
+            }, 2000);
+        } catch (error) {
+            statusText.textContent = 'Ошибка: ' + error.message;
+            button.disabled = false;
+        }
+    });
+</script>
 </body>
 </html>

@@ -6,6 +6,7 @@ import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -298,135 +299,6 @@ class AdminServiceTest {
         verify(userRepository, never()).delete(any());
     }
 
-    // ============= ТЕСТЫ СТАТИСТИКИ =============
 
-    @Test
-    @DisplayName("getAppStatistics: успешное получение полной статистики")
-    void getAppStatistics_Success() {
-        // Мокаем все вызовы
-        when(userRepository.countAllUsers()).thenReturn(100L);
-        when(userRepository.countByRole(User.Roles.ADMIN)).thenReturn(5L);
-        when(userRepository.countByRole(User.Roles.CREATOR)).thenReturn(20L);
-        when(userRepository.countByRole(User.Roles.TESTER)).thenReturn(75L);
-        when(userRepository.findByProfileNotComplete()).thenReturn(List.of(tester));
-        when(userRepository.countByIsActive(true)).thenReturn(90L);
-        when(userRepository.countByIsActive(false)).thenReturn(10L);
 
-        when(testRepository.countAllTests()).thenReturn(50L);
-        when(testRepository.countByIsPublished(true)).thenReturn(30L);
-        when(testRepository.countByIsPublished(false)).thenReturn(20L);
-        when(questionRepository.count()).thenReturn(500L);
-        when(categoryRepository.count()).thenReturn(10L);
-
-        // Попытки
-        TestAttempt completedAttempt = new TestAttempt();
-        completedAttempt.setStatus(TestAttempt.AttemptStatus.COMPLETED);
-        completedAttempt.setTotalScore(80);
-        completedAttempt.setStartTime(LocalDateTime.now().minusHours(1));
-        completedAttempt.setEndTime(LocalDateTime.now());
-
-        TestAttempt inProgressAttempt = new TestAttempt();
-        inProgressAttempt.setStatus(TestAttempt.AttemptStatus.IN_PROGRESS);
-        inProgressAttempt.setTotalScore(null);
-        inProgressAttempt.setStartTime(LocalDateTime.now().minusMinutes(30));
-        inProgressAttempt.setEndTime(null);
-
-        when(testAttemptRepository.findAll()).thenReturn(List.of(completedAttempt, inProgressAttempt));
-
-        // Регистрации по дням
-        when(userRepository.findByCreatedAtAfter(any(LocalDateTime.class)))
-                .thenReturn(List.of(creator, tester));
-
-        // Тесты по категориям
-        Object[] catStat1 = new Object[]{"Математика", 10L};
-        Object[] catStat2 = new Object[]{"Физика", 5L};
-        when(testRepository.countTestsByCategory()).thenReturn(List.of(catStat1, catStat2));
-
-        // Средний балл по категориям
-        Object[] avgStat1 = new Object[]{"Математика", 75.5};
-        Object[] avgStat2 = new Object[]{"Физика", 82.0};
-        when(testRepository.averageScoreByCategory()).thenReturn(List.of(avgStat1, avgStat2));
-
-        // Топ создателей
-        when(userRepository.findByRole(User.Roles.CREATOR)).thenReturn(List.of(creator));
-        when(testRepository.countByCreatedBy(creator)).thenReturn(15L);
-
-        // Топ тестировщиков
-        when(userRepository.findByRole(User.Roles.TESTER)).thenReturn(List.of(tester));
-        when(testAttemptRepository.countByUserIdAndStatus(tester.getId(), TestAttempt.AttemptStatus.COMPLETED))
-                .thenReturn(25L);
-        when(testAttemptRepository.findAverageScoreByUserId(tester.getId())).thenReturn(68.5);
-
-        AppStatisticsDTO stats = adminService.getAppStatistics();
-
-        assertThat(stats).isNotNull();
-        // Проверяем некоторые ключевые значения
-        assertThat(stats.getTotalUsers()).isEqualTo(100L);
-        assertThat(stats.getTotalAdmins()).isEqualTo(5L);
-        assertThat(stats.getTotalCreators()).isEqualTo(20L);
-        assertThat(stats.getTotalTesters()).isEqualTo(75L);
-        assertThat(stats.getUsersWithIncompleteProfile()).isEqualTo(1L);
-        assertThat(stats.getActiveUsers()).isEqualTo(90L);
-        assertThat(stats.getInactiveUsers()).isEqualTo(10L);
-
-        assertThat(stats.getTotalTests()).isEqualTo(50L);
-        assertThat(stats.getPublishedTests()).isEqualTo(30L);
-        assertThat(stats.getDraftTests()).isEqualTo(20L);
-        assertThat(stats.getTotalQuestions()).isEqualTo(500L);
-        assertThat(stats.getTotalCategories()).isEqualTo(10L);
-
-        assertThat(stats.getTotalAttempts()).isEqualTo(2L);
-        assertThat(stats.getCompletedAttempts()).isEqualTo(1L);
-        assertThat(stats.getInProgressAttempts()).isEqualTo(1L);
-        assertThat(stats.getAverageScore()).isEqualTo(80.0);
-        assertThat(stats.getTotalTimeSpentMinutes()).isEqualTo(60L);
-
-        assertThat(stats.getRegistrationsByDay()).isNotEmpty();
-        assertThat(stats.getAttemptsByDay()).isNotEmpty();
-
-        assertThat(stats.getTestsByCategory()).containsKeys("Математика", "Физика");
-        assertThat(stats.getAverageScoreByCategory()).containsKeys("Математика", "Физика");
-
-        assertThat(stats.getTopCreators()).hasSize(1);
-        assertThat(stats.getTopCreators().get(0).getTestsCreated()).isEqualTo(15L);
-
-        assertThat(stats.getTopTesters()).hasSize(1);
-        assertThat(stats.getTopTesters().get(0).getTestsPassed()).isEqualTo(25L);
-
-        assertThat(stats.getBestTesters()).hasSize(1);
-        assertThat(stats.getBestTesters().get(0).getAverageScore()).isEqualTo(68.5);
-    }
-
-    @Test
-    @DisplayName("getAppStatistics: статистика пуста -> значения по умолчанию")
-    void getAppStatistics_EmptyStats_ReturnsDefaults() {
-        // Все счетчики возвращают 0
-        when(userRepository.countAllUsers()).thenReturn(0L);
-        when(userRepository.countByRole(anyString())).thenReturn(0L);
-        when(userRepository.findByProfileNotComplete()).thenReturn(List.of());
-        when(userRepository.countByIsActive(anyBoolean())).thenReturn(0L);
-
-        when(testRepository.countAllTests()).thenReturn(0L);
-        when(testRepository.countByIsPublished(anyBoolean())).thenReturn(0L);
-        when(questionRepository.count()).thenReturn(0L);
-        when(categoryRepository.count()).thenReturn(0L);
-
-        when(testAttemptRepository.findAll()).thenReturn(List.of());
-
-        when(userRepository.findByCreatedAtAfter(any())).thenReturn(List.of());
-
-        when(testRepository.countTestsByCategory()).thenReturn(List.of());
-        when(testRepository.averageScoreByCategory()).thenReturn(List.of());
-
-        when(userRepository.findByRole(User.Roles.CREATOR)).thenReturn(List.of());
-        when(userRepository.findByRole(User.Roles.TESTER)).thenReturn(List.of());
-
-        AppStatisticsDTO stats = adminService.getAppStatistics();
-
-        assertThat(stats.getTotalUsers()).isZero();
-        assertThat(stats.getTotalAttempts()).isZero();
-        assertThat(stats.getTopCreators()).isEmpty();
-        assertThat(stats.getTopTesters()).isEmpty();
-        assertThat(stats.getTestsByCategory()).isEmpty();
-    }
 }

@@ -434,36 +434,31 @@ public class TestPassingService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
         Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
 
-        List<Long> attemptIds = historyPage.getContent().stream()
+// Собираем ID только незавершённых попыток
+        List<Long> inProgressIds = historyPage.getContent().stream()
+                .filter(dto -> dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS)
                 .map(TestHistoryDTO::getAttemptId)
                 .collect(Collectors.toList());
 
+// Получаем количество ответов для этих попыток
         Map<Long, Long> answeredCounts = new HashMap<>();
-        if (!attemptIds.isEmpty()) {
-            List<Object[]> results = userAnswerRepository.countByAttemptIds(attemptIds);
-            for (Object[] result : results) {
-                if (result.length >= 2) {
-                    Long attemptId = ((Number) result[0]).longValue();
-                    Long count = ((Number) result[1]).longValue();
-                    answeredCounts.put(attemptId, count);
-                }
+        if (!inProgressIds.isEmpty()) {
+            List<Object[]> results = userAnswerRepository.countByAttemptIds(inProgressIds);
+            for (Object[] row : results) {
+                answeredCounts.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
             }
         }
 
+// Заполняем прогресс
         for (TestHistoryDTO dto : historyPage.getContent()) {
             if (dto.getStatus() == TestAttempt.AttemptStatus.IN_PROGRESS) {
                 Long answered = answeredCounts.getOrDefault(dto.getAttemptId(), 0L);
                 Long total = dto.getMaxPossibleScore();
-                if (total != null && total > 0) {
-                    dto.setProgressPercentage((int) (answered * 100 / total));
-                } else {
-                    dto.setProgressPercentage(0);
-                }
+                dto.setProgressPercentage(total != null && total > 0 ? (int) (answered * 100 / total) : 0);
             } else {
                 dto.setProgressPercentage(100);
             }
         }
-
         return historyPage;
     }
 

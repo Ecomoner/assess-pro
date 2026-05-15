@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -101,10 +102,9 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     @Query("SELECT ta FROM TestAttempt ta " +
             "JOIN FETCH ta.user " +
             "JOIN FETCH ta.test " +
-            "LEFT JOIN FETCH ta.test.questions " +
             "WHERE ta.test.id = :testId " +
             "ORDER BY ta.startTime DESC")
-    Page<TestAttempt> findAttemptsByTestIdWithAllData(@Param("testId") Long testId, Pageable pageable);
+    Page<TestAttempt> findAttemptsByTestIdWithUserAndTest(@Param("testId") Long testId, Pageable pageable);
 
     @Query("SELECT ta FROM TestAttempt ta " +
             "WHERE ta.test.id = :testId AND ta.user.id = :userId AND ta.status = :status " +
@@ -113,4 +113,20 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
                                                            @Param("userId") Long userId,
                                                            @Param("status") TestAttempt.AttemptStatus status);
 
+    @Query("SELECT ta FROM TestAttempt ta WHERE ta.test.id = :testId " +
+            "AND (:dateFromIsNull = true OR ta.startTime >= :dateFrom) " +
+            "AND (:dateToIsNull = true OR ta.startTime <= :dateTo)")
+    List<TestAttempt> findByTestIdAndDateRange(@Param("testId") Long testId,
+                                               @Param("dateFromIsNull") boolean dateFromIsNull,
+                                               @Param("dateFrom") LocalDateTime dateFrom,
+                                               @Param("dateToIsNull") boolean dateToIsNull,
+                                               @Param("dateTo") LocalDateTime dateTo);
+
+    @Query(value = "SELECT " +
+            "COALESCE(AVG(total_score), 0), " +
+            "COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 60), 0) " +
+            "FROM assess_pro_db.test_attempts " +
+            "WHERE status = 'COMPLETED' AND end_time IS NOT NULL AND start_time IS NOT NULL",
+            nativeQuery = true)
+    List<Object[]> findAverageScoreAndTotalMinutes();
 }

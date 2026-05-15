@@ -4,6 +4,7 @@ import com.frist.assesspro.dto.admin.AppStatisticsDTO;
 import com.frist.assesspro.dto.admin.UserManagementDTO;
 import com.frist.assesspro.service.AdminService;
 import com.frist.assesspro.service.export.AdminExportService;
+import com.frist.assesspro.service.export.AsyncPdfExportService;
 import com.frist.assesspro.service.metrics.MetricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,6 +32,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/admin")
@@ -43,6 +46,7 @@ public class AdminController {
     private final AdminService adminService;
     private final AdminExportService adminExportService;
     private final MetricsService metricsService;
+    private final AsyncPdfExportService asyncPdfExportService;
 
     // ============= DASHBOARD =============
     @Operation(summary = "Получить дашборд администратора")
@@ -277,29 +281,11 @@ public class AdminController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
-    @GetMapping("/statistics/export")
-    public ResponseEntity<byte[]> exportStatistics() {
-
-        log.info("Экспорт общей статистики приложения");
-
-        try {
-            byte[] pdfContent = adminExportService.generateAppStatisticsPDF();
-
-            String filename = "app_statistics_" +
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) +
-                    ".pdf";
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + filename + "\"")
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .contentLength(pdfContent.length)
-                    .body(pdfContent);
-
-        } catch (Exception e) {
-            log.error("Ошибка при экспорте статистики", e);
-            return ResponseEntity.badRequest().build();
-        }
+    @PostMapping("/statistics/export")
+    public ResponseEntity<Map<String, String>> requestAppStatisticsExport() {
+        String requestId = UUID.randomUUID().toString();
+        asyncPdfExportService.generateAppStatistics(requestId);
+        return ResponseEntity.ok(Map.of("requestId", requestId, "message", "Отчёт формируется"));
     }
 
     @Operation(summary = "Экспорт статистики пользователя в PDF файл")
@@ -308,26 +294,11 @@ public class AdminController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
-    @GetMapping("/users/export")
-    public ResponseEntity<byte[]> exportUsers(
-            @RequestParam(required = false) String role,
-            @RequestParam(required = false) Boolean active) {
-
-        log.info("Экспорт списка пользователей, роль: {}, активные: {}", role, active);
-
-        try {
-            // Здесь можно реализовать экспорт пользователей
-            byte[] pdfContent = adminExportService.generateUsersListPDF(role, active);
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"users_list.pdf\"")
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .body(pdfContent);
-
-        } catch (Exception e) {
-            log.error("Ошибка при экспорте пользователей", e);
-            return ResponseEntity.badRequest().build();
-        }
+    @PostMapping("/users/export")
+    public ResponseEntity<Map<String, String>> requestUsersListExport(@RequestParam(required = false) String role,
+                                                                      @RequestParam(required = false) Boolean active) {
+        String requestId = UUID.randomUUID().toString();
+        asyncPdfExportService.generateUsersList(role, active, requestId);
+        return ResponseEntity.ok(Map.of("requestId", requestId, "message", "Отчёт формируется"));
     }
 }

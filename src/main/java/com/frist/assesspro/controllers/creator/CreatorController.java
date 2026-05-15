@@ -16,6 +16,7 @@ import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.EventRepository;
 import com.frist.assesspro.repository.UserRepository;
 import com.frist.assesspro.service.*;
+import com.frist.assesspro.service.export.AsyncPdfExportService;
 import com.frist.assesspro.service.export.StatisticsExportService;
 import com.frist.assesspro.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,6 +64,7 @@ public class CreatorController {
     private final UserService userService;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final AsyncPdfExportService asyncPdfExportService;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -409,40 +411,22 @@ public class CreatorController {
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
     @GetMapping("/tests/{testId}/export")
-    public ResponseEntity<byte[]> exportTestStatistics(
+    public ResponseEntity<Map<String, String>> exportTestStatistics(
             @PathVariable Long testId,
             @RequestParam(required = false) String testerUsername,
             @RequestParam(required = false) Long categoryId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        log.info("Экспорт статистики теста ID: {}, тестировщик: {}, категория: {}",
-                testId, testerUsername, categoryId);
+        Test test = testService.getTestWithAllDataWithoutOwnershipCheck(testId)
+                .orElseThrow(() -> new RuntimeException("Тест не найден"));
 
-        try {
-            // Загружаем тест со всеми необходимыми данными
-            Test test = testService.getTestWithAllDataWithoutOwnershipCheck(testId)
-                    .orElseThrow(() -> new RuntimeException("Тест не найден"));
+        String requestId = UUID.randomUUID().toString();
+        asyncPdfExportService.generateTestStatistics(test, testerUsername, categoryId, requestId);
 
-            byte[] pdfContent = statisticsExportService.generateTestStatisticsPDF(
-                    test, testerUsername, categoryId);
-
-            String filename = "statistics_test_" + testId;
-            if (testerUsername != null) {
-                filename += "_" + testerUsername;
-            }
-            filename += "_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".pdf";
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + filename + "\"")
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .contentLength(pdfContent.length)
-                    .body(pdfContent);
-
-        } catch (Exception e) {
-            log.error("Ошибка при экспорте статистики", e);
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(Map.of(
+                "requestId", requestId,
+                "message", "Отчёт формируется. Ожидайте..."
+        ));
     }
 
     @Operation(summary = "Страница экспорта в PDF")

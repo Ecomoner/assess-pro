@@ -1,5 +1,6 @@
 package com.frist.assesspro.repository;
 
+import com.frist.assesspro.dto.admin.AppStatisticsCountsDTO;
 import com.frist.assesspro.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -70,4 +71,23 @@ public interface UserRepository extends JpaRepository<User,Long> {
     @Query("SELECT u FROM User u WHERE u.role = 'ROLE_CREATOR' ORDER BY u.username")
     List<User> findAllCreators();
 
+
+    @Query("SELECT new com.frist.assesspro.dto.admin.AppStatisticsCountsDTO(" +
+            "COUNT(u), " +
+            "SUM(CASE WHEN u.role = 'ROLE_ADMIN' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN u.role = 'ROLE_CREATOR' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN u.role = 'ROLE_TESTER' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN u.isProfileComplete = false THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN u.isActive = true THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN u.isActive = false THEN 1 ELSE 0 END), " +
+            "(SELECT COUNT(t) FROM Test t), " +
+            "(SELECT COUNT(t) FROM Test t WHERE t.isPublished = true), " +
+            "(SELECT COUNT(t) FROM Test t WHERE t.isPublished = false), " +
+            "(SELECT COUNT(q) FROM Question q), " +
+            "(SELECT COUNT(c) FROM Category c), " +
+            "(SELECT COUNT(ta) FROM TestAttempt ta), " +
+            "(SELECT COUNT(ta) FROM TestAttempt ta WHERE ta.status = 'COMPLETED'), " +
+            "(SELECT COUNT(ta) FROM TestAttempt ta WHERE ta.status = 'IN_PROGRESS') " +
+            ") FROM User u")
+    AppStatisticsCountsDTO getAppStatisticsCounts();
 }

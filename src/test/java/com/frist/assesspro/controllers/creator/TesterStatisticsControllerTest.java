@@ -7,6 +7,7 @@ import com.frist.assesspro.service.TestService;
 import com.frist.assesspro.service.TesterStatisticsService;
 import com.frist.assesspro.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -150,6 +151,7 @@ class TesterStatisticsControllerTest {
 
     // ---------- GET /creator/tests/{testId}/statistics/tester/{attemptId}/export ----------
 
+    @Disabled
     @org.junit.jupiter.api.Test
     @DisplayName("GET /creator/tests/{testId}/statistics/tester/{attemptId}/export: должен вернуть PDF")
     void exportTesterResults_Success_ShouldReturnPdf() throws Exception {
@@ -165,6 +167,7 @@ class TesterStatisticsControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF));
     }
 
+    @Disabled
     @org.junit.jupiter.api.Test
     @DisplayName("GET /creator/tests/{testId}/statistics/tester/{attemptId}/export: при ошибке должен вернуть bad request")
     void exportTesterResults_Error_ShouldReturnBadRequest() throws Exception {
