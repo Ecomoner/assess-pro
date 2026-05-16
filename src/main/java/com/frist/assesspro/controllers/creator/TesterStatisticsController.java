@@ -84,7 +84,7 @@ public class TesterStatisticsController {
 
             Pageable pageable = PageRequest.of(page, size);
             Page<TesterAttemptDTO> attemptsPage = testerStatisticsService.getTestersByTest(
-                    testId, userDetails.getUsername(), pageable);
+                    testId, userDetails.getUsername(),search, pageable);
 
             model.addAttribute("test", test);
             model.addAttribute("testers", attemptsPage.getContent());

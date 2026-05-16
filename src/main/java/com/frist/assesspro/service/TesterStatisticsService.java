@@ -40,15 +40,26 @@ public class TesterStatisticsService {
     public Page<TesterAttemptDTO> getTestersByTest(Long testId,
                                                    String creatorUsername,
                                                    Pageable pageable) {
-        validateTestExists(testId,creatorUsername);
+        return getTestersByTest(testId, creatorUsername, null, pageable);
+    }
 
-        Page<TestAttempt> attemptsPage = testAttemptRepository.findAttemptsByTestIdWithUserAndTest(testId, pageable);
+    @Cacheable(value = "testerStatistics", key = "T(String).format('%d_%d_%d_%s_%s', " +
+            "#testId, #pageable.pageNumber, #pageable.pageSize, #pageable.sort.toString(), #search ?: '')")
+    @Transactional(readOnly = true)
+    public Page<TesterAttemptDTO> getTestersByTest(Long testId,
+                                                   String creatorUsername,
+                                                   String search,
+                                                   Pageable pageable) {
+        validateTestExists(testId, creatorUsername);
 
-        List<TesterAttemptDTO> dtos = attemptsPage.getContent().stream()
-                .map(this::convertToTesterAttemptDTO)
-                .collect(Collectors.toList());
+        Page<TestAttempt> attemptsPage;
+        if (search != null && !search.trim().isEmpty()) {
+            attemptsPage = testAttemptRepository.searchByTestIdWithUser(testId, search.trim(), pageable);
+        } else {
+            attemptsPage = testAttemptRepository.findByTestIdWithUser(testId, pageable);
+        }
 
-        return new PageImpl<>(dtos, pageable, attemptsPage.getTotalElements());
+        return attemptsPage.map(this::convertToTesterAttemptDTO);
     }
 
     /**

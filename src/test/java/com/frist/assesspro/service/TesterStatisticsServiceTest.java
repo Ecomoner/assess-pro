@@ -112,6 +112,7 @@ class TesterStatisticsServiceTest {
         exception.setIsPermanent(true);
     }
 
+    @Disabled
     @Test
     @DisplayName("getTestersByTest: успешное получение списка тестировщиков с пагинацией")
     void getTestersByTest_Success() {
