@@ -139,7 +139,6 @@ public class TesterStatisticsController {
         }
     }
 
-
     @Operation(summary = "Экспорт результатов тестировщика в PDF")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Успешно"),
