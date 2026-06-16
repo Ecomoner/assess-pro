@@ -4,6 +4,7 @@ package com.frist.assesspro.service;
 import com.frist.assesspro.dto.TestDTO;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.*;
+import com.frist.assesspro.mapper.TestMapper;
 import com.frist.assesspro.repository.*;
 import com.frist.assesspro.repository.specification.TestSpecifications;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class TestService {
     private final AnswerOptionRepository answerOptionRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final TestMapper testMapper;
 
     private static final int MAX_TITLE_LENGTH = 200;
     private static final int MAX_DESCRIPTION_LENGTH = 1000;
@@ -490,22 +492,6 @@ public class TestService {
      * Конвертирует Entity Test в TestDTO
      */
     public TestDTO convertToDTO(Test test) {
-        TestDTO dto = new TestDTO();
-        dto.setId(test.getId());
-        dto.setTitle(test.getTitle())   ;
-        dto.setDescription(test.getDescription());
-        dto.setPublished(Boolean.TRUE.equals(test.getIsPublished()));
-        dto.setQuestionCount((long) test.getQuestionCount());
-        dto.setCreatedAt(test.getCreatedAt());
-        dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
-        dto.setRetryCooldownHours(test.getRetryCooldownHours());
-        dto.setRetryCooldownDays(test.getRetryCooldownDays());
-
-        if (test.getCategory() != null) {
-            dto.setCategoryId(test.getCategory().getId());
-            dto.setCategoryName(test.getCategory().getName());
-        }
-
-        return dto;
+        return testMapper.toDto(test);
     }
 }

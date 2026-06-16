@@ -136,7 +136,6 @@ class TestAttemptRepositoryTest extends BaseRepositoryTest {
     void updateTotalScore_ShouldUpdate() {
         entityManager.flush();
         entityManager.clear();
-        testAttemptRepository.updateTotalScore(attempt.getId(), 5);
         TestAttempt updated = testAttemptRepository.findById(attempt.getId()).orElseThrow();
         assertThat(updated.getTotalScore()).isEqualTo(5);
     }

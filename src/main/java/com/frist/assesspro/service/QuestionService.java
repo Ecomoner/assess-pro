@@ -5,6 +5,8 @@ import com.frist.assesspro.dto.QuestionDTO;
 import com.frist.assesspro.entity.AnswerOption;
 import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
+import com.frist.assesspro.mapper.AnswerOptionMapper;
+import com.frist.assesspro.mapper.QuestionMapper;
 import com.frist.assesspro.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,8 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final TestRepository testRepository;
+    private final QuestionMapper questionMapper;
+    private final AnswerOptionMapper answerOptionMapper;
 
     /**
      * Создание вопроса из DTO
@@ -32,7 +36,9 @@ public class QuestionService {
         validateQuestionDTO(questionDTO);
         Test test = getTestWithAuthCheck(testId, username);
 
-        checkDuplicateQuestion(testId, questionDTO.getText().trim());
+        if (questionRepository.existsByTestIdAndTextIgnoreCase(testId, questionDTO.getText().trim())) {
+            throw new RuntimeException("Такой вопрос уже существует в этом тесте!");
+        }
 
         Question question = new Question();
         question.setText(questionDTO.getText().trim());
@@ -209,38 +215,13 @@ public class QuestionService {
         return validAnswers;
     }
 
-    private void checkDuplicateQuestion(Long testId, String questionText) {
-        List<Question> existingQuestions = questionRepository.findByTestIdOrderByOrderIndex(testId);
-
-        boolean duplicateExists = existingQuestions.stream()
-                .anyMatch(q -> q.getText() != null &&
-                        q.getText().trim().equalsIgnoreCase(questionText));
-
-        if (duplicateExists) {
-            throw new RuntimeException("Такой вопрос уже существует в этом тесте!");
-        }
-    }
 
     private QuestionDTO convertToDTO(Question question) {
-        QuestionDTO dto = new QuestionDTO();
-        dto.setId(question.getId());
-        dto.setText(question.getText());
-        dto.setOrderIndex(question.getOrderIndex());
-
-        List<AnswerOptionDTO> answerDTOs = question.getAnswerOptions().stream()
-                .map(this::convertToAnswerOptionDTO)
-                .collect(Collectors.toList());
-
-        dto.setAnswerOptions(answerDTOs);
-        return dto;
+        return questionMapper.toDto(question);
     }
 
     private AnswerOptionDTO convertToAnswerOptionDTO(AnswerOption answer) {
-        AnswerOptionDTO dto = new AnswerOptionDTO();
-        dto.setId(answer.getId());
-        dto.setText(answer.getText());
-        dto.setIsCorrect(answer.getIsCorrect());
-        return dto;
+        return answerOptionMapper.toDto(answer);
     }
 
 

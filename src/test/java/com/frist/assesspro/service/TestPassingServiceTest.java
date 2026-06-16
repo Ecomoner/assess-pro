@@ -298,7 +298,6 @@ class TestPassingServiceTest {
         testPassingService.saveAnswer(passingDTO, "tester");
 
         verify(userAnswerRepository).upsertAnswer(1L, 1L, 1L, true, 1);
-        verify(testAttemptRepository).updateTotalScore(1L, 1);
         verify(testAttemptRepository, never()).save(any(TestAttempt.class)); // не завершён
     }
 

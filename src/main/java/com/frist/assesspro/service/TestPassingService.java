@@ -264,8 +264,6 @@ public class TestPassingService {
             throw new RuntimeException("Не удалось сохранить ответ", e);
         }
 
-        updateAttemptTotalScore(attempt.getId());
-
         long answeredCount = userAnswerRepository.countByAttemptId(attempt.getId());
         long totalQuestions = attempt.getTest().getQuestions().size();
 
@@ -504,18 +502,6 @@ public class TestPassingService {
         }
 
         return historyPage.getContent();
-    }
-
-    /**
-     * Обновление общего счета попытки
-     */
-    private void updateAttemptTotalScore(Long attemptId) {
-        Integer totalScore = userAnswerRepository.sumPointsEarnedByAttemptId(attemptId);
-        if (totalScore == null) {
-            totalScore = 0;
-        }
-
-        testAttemptRepository.updateTotalScore(attemptId, totalScore);
     }
 
     /**

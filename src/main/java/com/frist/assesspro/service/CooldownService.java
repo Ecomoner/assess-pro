@@ -41,10 +41,7 @@ public class CooldownService {
             return true;
         }
 
-        List<TestAttempt> attempts = testAttemptRepository
-                .findLatestByTestIdAndUserIdAndStatus(test.getId(), user.getId(), TestAttempt.AttemptStatus.COMPLETED);
-
-        Optional<TestAttempt> lastAttempt = attempts.isEmpty() ? Optional.empty() : Optional.of(attempts.get(0));
+        Optional<TestAttempt> lastAttempt = getLastCompletedAttempt(test, user);
 
         if (lastAttempt.isEmpty()) {
             return true;
@@ -117,10 +114,7 @@ public class CooldownService {
             return now;
         }
 
-        List<TestAttempt> attempts = testAttemptRepository
-                .findLatestByTestIdAndUserIdAndStatus(test.getId(), user.getId(), TestAttempt.AttemptStatus.COMPLETED);
-
-        Optional<TestAttempt> lastAttempt = attempts.isEmpty() ? Optional.empty() : Optional.of(attempts.get(0));
+        Optional<TestAttempt> lastAttempt = getLastCompletedAttempt(test, user);
 
         if (lastAttempt.isEmpty()) {
             return now;
@@ -173,6 +167,13 @@ public class CooldownService {
             long minutesRemaining = java.time.Duration.between(now, nextAllowed).toMinutes();
             return "Недоступно еще " + minutesRemaining + " мин";
         }
+    }
+
+    private Optional<TestAttempt> getLastCompletedAttempt(Test test, User user) {
+        List<TestAttempt> attempts = testAttemptRepository
+                .findLatestByTestIdAndUserIdAndStatus(
+                        test.getId(), user.getId(), TestAttempt.AttemptStatus.COMPLETED);
+        return attempts.isEmpty() ? Optional.empty() : Optional.of(attempts.get(0));
     }
 
 

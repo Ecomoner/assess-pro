@@ -27,4 +27,6 @@ public interface QuestionRepository extends JpaRepository<Question,Long> {
             "WHERE q.test.id = :testId " +
             "ORDER BY q.orderIndex")
     List<Question> findQuestionsWithAnswersByTestId(@Param("testId") Long testId);
+
+    boolean existsByTestIdAndTextIgnoreCase(Long testId, String text);
 }

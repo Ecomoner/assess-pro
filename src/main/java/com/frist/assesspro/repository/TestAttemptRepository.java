@@ -47,11 +47,6 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             "WHERE ta.user.id = :userId AND ta.status = 'COMPLETED'")
     Double findAverageScoreByUserId(@Param("userId") Long userId);
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE TestAttempt ta SET ta.totalScore = :score WHERE ta.id = :attemptId")
-    void updateTotalScore(@Param("attemptId") Long attemptId, @Param("score") Integer score);
-
     @Query("SELECT COALESCE(MAX(ta.totalScore), 0) FROM TestAttempt ta " +
             "WHERE ta.user.id = :userId AND ta.status = 'COMPLETED'")
     Integer findBestScoreByUserId(@Param("userId") Long userId);
