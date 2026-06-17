@@ -1,3 +1,9 @@
 databaseChangeLog:
   - include:
       file: db/changelog/000-initial-schema.yaml
+  - include:
+      file: db/changelog/001-add-email-to-users.yaml
+  - include:
+      file: db/changelog/002-create-projects.yaml
+  - include:
+      file: db/changelog/003-add-project-to-users.yaml

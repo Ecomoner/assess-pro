@@ -20,8 +20,13 @@
                 <div class="card-body p-3 p-md-4">
                     <i class="bi bi-person-circle display-3 display-md-1 text-success"></i>
                     <h3 class="mt-2 mt-md-3 h4 h3-md" th:text="${user.username}">username</h3>
-                    <p class="text-muted small" th:text="${user.role == 'ADMIN' ? 'Администратор' :
-                                                           (user.role == 'CREATOR' ? 'Создатель' : 'Тестировщик')}">РОЛЬ</p>
+                    <p class="text-muted small">
+                        <!-- Отображение всех ролей -->
+                        <span th:if="${user.role == 'ROLE_ADMIN'}">Администратор</span>
+                        <span th:if="${user.role == 'ROLE_CREATOR'}">Создатель</span>
+                        <span th:if="${user.role == 'ROLE_TESTER'}">Тестировщик</span>
+                        <span th:if="${user.role == 'ROLE_MANAGER'}">Менеджер</span>
+                    </p>
                     <div class="mt-2 mt-md-3 d-flex gap-1 justify-content-center flex-wrap">
                         <span class="badge" th:classappend="${user.isActive} ? 'bg-success' : 'bg-danger'"
                               th:text="${user.isActive} ? 'Активен' : 'Неактивен'">Активен</span>
@@ -52,12 +57,39 @@
                                 <td class="small" th:text="${user.fullName} ?: '-'">Иванов Иван Иванович</td>
                             </tr>
                             <tr>
+                                <th class="small">Email:</th>
+                                <td class="small" th:text="${user.email}">email</td>
+                            </tr>
+                            <tr>
                                 <th class="small">Роль:</th>
                                 <td>
-                                    <span class="badge" th:classappend="${user.role == 'ADMIN'} ? 'bg-dark' :
-                                                                         (${user.role == 'CREATOR'} ? 'bg-primary' : 'bg-info')"
-                                          th:text="${user.role == 'ADMIN' ? 'Администратор' :
-                                                   (user.role == 'CREATOR' ? 'Создатель' : 'Тестировщик')}">Тестировщик</span>
+                                    <span class="badge"
+                                          th:classappend="${user.role == 'ROLE_ADMIN'} ? 'bg-dark' :
+                                                          (${user.role == 'ROLE_CREATOR'} ? 'bg-primary' :
+                                                          (${user.role == 'ROLE_MANAGER'} ? 'bg-warning' : 'bg-info'))"
+                                          th:text="${user.role == 'ROLE_ADMIN'} ? 'Администратор' :
+                                                   (${user.role == 'ROLE_CREATOR'} ? 'Создатель' :
+                                                   (${user.role == 'ROLE_MANAGER'} ? 'Менеджер' : 'Тестировщик'))">Тестировщик</span>
+                                </td>
+                            </tr>
+                            <!-- Новый блок: Проект -->
+                            <tr th:if="${user.role == 'ROLE_TESTER'}">
+                                <th class="small">Проект:</th>
+                                <td class="small">
+                                    <span th:if="${user.projectName != null}" th:text="${user.projectName}"></span>
+                                    <span th:if="${user.projectName == null}" class="text-muted">Не назначен</span>
+                                </td>
+                            </tr>
+
+
+                            <!-- Для менеджера: список управляемых проектов -->
+                            <tr th:if="${user.role == 'ROLE_MANAGER'}">
+                                <th class="small">Управляет проектами:</th>
+                                <td class="small">
+                                    <ul class="list-unstyled mb-0" th:if="${projects != null and !projects.isEmpty()}">
+                                        <li th:each="proj : ${projects}" th:text="${proj.name}"></li>
+                                    </ul>
+                                    <span th:if="${projects == null or projects.isEmpty()}" class="text-muted">Нет проектов</span>
                                 </td>
                             </tr>
                             <tr>

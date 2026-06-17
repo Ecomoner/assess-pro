@@ -44,13 +44,15 @@
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Ошибка</div>
                             <small class="text-muted d-block small">Только буквы, цифры и подчеркивания</small>
                         </div>
-                        <div th:if="${action == 'create'}" class="mb-2 mb-md-3">
-                            <label for="password-create" class="form-label fw-semibold small">Пароль *</label>
-                            <input type="password" class="form-control form-control-sm form-control-md-normal"
-                                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
-                                   id="password-create" name="password" th:value="*{password}" required>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Ошибка</div>
-                            <small class="text-muted d-block small">Минимум 6 символов, буква и цифра</small>
+                        <div th:if="${action == 'create'}">
+                            <div class="mb-2 mb-md-3">
+                                <label for="password-create" class="form-label fw-semibold small">Пароль *</label>
+                                <input type="password" class="form-control form-control-sm form-control-md-normal"
+                                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                                       id="password-create" name="password" th:value="*{password}" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Ошибка</div>
+                                <small class="text-muted d-block small">Минимум 6 символов, буква и цифра</small>
+                            </div>
                             <div class="mb-2 mb-md-3">
                                 <label for="password-confirm-create" class="form-label fw-semibold small">Подтверждение пароля *</label>
                                 <input type="password" class="form-control form-control-sm form-control-md-normal" id="password-confirm-create" th:field="*{passwordConfirm}" required>
@@ -92,17 +94,32 @@
                         </div>
                         <div class="row g-2 mt-2">
                             <div class="col-12 col-md-6 mb-2 mb-md-0">
-                                <label for="role" class="form-label fw-semibold small">Роль *</label>
+                                <label for="roleSelect" class="form-label fw-semibold small">Роль *</label>
                                 <select class="form-select form-select-sm"
                                         th:classappend="${#fields.hasErrors('role')} ? 'is-invalid'"
-                                        id="role" th:field="*{role}" required>
+                                        id="roleSelect" th:field="*{role}" required>
                                     <option value="">Выберите роль</option>
                                     <option value="ROLE_ADMIN">Администратор</option>
                                     <option value="ROLE_CREATOR">Создатель</option>
                                     <option value="ROLE_TESTER">Тестировщик</option>
+                                    <option value="ROLE_MANAGER">Менеджер</option>
                                 </select>
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('role')}" th:errors="*{role}">Ошибка</div>
                             </div>
+                            <div class="col-12 col-md-6">
+                                <div id="projectBlock" style="display: none;">
+                                    <label class="form-label fw-semibold small">Проект *</label>
+                                    <select name="projectId" id="projectSelect" class="form-select">
+                                        <option value="">Выберите проект</option>
+                                        <option th:each="proj : ${allProjects}"
+                                                th:value="${proj.id}"
+                                                th:text="${proj.name}"
+                                                th:selected="${user.projectId == proj.id}"></option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-2">
                             <div class="col-12 col-md-6">
                                 <label class="form-label fw-semibold small d-block">Статус</label>
                                 <div class="form-check form-switch">
@@ -130,5 +147,24 @@
 <div th:replace="~{fragments/footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/user-form-validation.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var roleSelect = document.getElementById('roleSelect');
+        var projectBlock = document.getElementById('projectBlock');
+        var projectSelect = document.getElementById('projectSelect');
+
+        function toggleProject() {
+            if (!roleSelect || !projectBlock || !projectSelect) return;
+            var isTester = roleSelect.value === 'ROLE_TESTER';
+            projectBlock.style.display = isTester ? 'block' : 'none';
+            projectSelect.required = isTester;
+        }
+
+        if (roleSelect) {
+            roleSelect.addEventListener('change', toggleProject);
+            toggleProject();
+        }
+    });
+</script>
 </body>
 </html>

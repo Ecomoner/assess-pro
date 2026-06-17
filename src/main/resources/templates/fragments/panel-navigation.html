@@ -26,12 +26,6 @@
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
-                    <a class="nav-link rounded-pill px-3" th:href="@{/admin/users}">
-                        <i class="bi bi-people me-1"></i>
-                        <span class="d-inline">Пользователи</span>
-                    </a>
-                </li>
-                <li class="nav-item" th:if="${role == 'ROLE_ADMIN'}">
                     <a class="nav-link rounded-pill px-3" th:href="@{/admin/statistics}">
                         <i class="bi bi-bar-chart me-1"></i>
                         <span class="d-inline">Статистика</span>

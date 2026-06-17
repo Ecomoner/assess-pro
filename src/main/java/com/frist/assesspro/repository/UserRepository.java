@@ -90,4 +90,12 @@ public interface UserRepository extends JpaRepository<User,Long> {
             "(SELECT COUNT(ta) FROM TestAttempt ta WHERE ta.status = 'IN_PROGRESS') " +
             ") FROM User u")
     AppStatisticsCountsDTO getAppStatisticsCounts();
+
+    long countByProjectId(Long id);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.project.id = :projectId")
+    long countUsersByProjectId(@Param("projectId") Long projectId);
+
+    List<User> findByProjectId(Long projectId);
+
 }

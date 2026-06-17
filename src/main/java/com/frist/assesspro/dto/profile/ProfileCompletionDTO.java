@@ -20,4 +20,7 @@ public class ProfileCompletionDTO {
 
     @Size(max = 100, message = "Отчество не должно превышать 100 символов")
     private String middleName;
+
+    @NotBlank(message = "Email обязателен")
+    private String email;
 }

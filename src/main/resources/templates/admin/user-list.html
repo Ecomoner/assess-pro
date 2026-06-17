@@ -32,6 +32,7 @@
                             <option value="ROLE_ADMIN" th:selected="${role == 'ROLE_ADMIN'}">Админ</option>
                             <option value="ROLE_CREATOR" th:selected="${role == 'ROLE_CREATOR'}">Создатель</option>
                             <option value="ROLE_TESTER" th:selected="${role == 'ROLE_TESTER'}">Тестер</option>
+                            <option value="ROLE_MANAGER" th:selected="${role == 'ROLE_NAMAGER'}">Менеджер</option>
                         </select>
                     </div>
                     <div class="col-6 col-md-2">
@@ -94,9 +95,11 @@
                             <td class="d-none d-sm-table-cell"><span th:text="${user.fullName} ?: '-'">Иванов И.И.</span></td>
                             <td>
         <span class="badge" th:classappend="${user.role == 'ROLE_ADMIN'} ? 'bg-dark' :
-                                         (${user.role == 'ROLE_CREATOR'} ? 'bg-primary' : 'bg-info')"
-              th:text="${user.role == 'ROLE_ADMIN' ? 'Админ' :
-                       (user.role == 'ROLE_CREATOR' ? 'Созд' : 'Тест')}">Тест</span>
+                                     (${user.role == 'ROLE_CREATOR'} ? 'bg-primary' :
+                                     (${user.role == 'ROLE_MANAGER'} ? 'bg-success' : 'bg-info'))"
+              th:text="${user.role == 'ROLE_ADMIN'} ? 'Админ' :
+               (${user.role == 'ROLE_CREATOR'} ? 'Созд' :
+               (${user.role == 'ROLE_MANAGER'} ? 'Менед' : 'Тест'))">Тест</span>
                             </td>
                             <td class="d-none d-lg-table-cell" th:text="${#temporals.format(user.createdAt, 'dd.MM.yy')}">01.01.24</td>
                             <td>

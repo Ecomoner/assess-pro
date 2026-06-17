@@ -439,8 +439,10 @@ public class TesterController {
                     .orElse(0.0);
 
             List<EventDTO> lastEvents = eventService.getLastEvents(5);
+            String projectName = user.getProject() != null ? user.getProject().getName() : "Не назначен";
 
             // Добавляем в модель - ИСПОЛЬЗУЕМ ИМЕНА, КОТОРЫЕ ОЖИДАЕТ ШАБЛОН
+            model.addAttribute("currentProjectName", projectName);
             model.addAttribute("stats", stats);
             model.addAttribute("recentAttempts", recentAttempts);
             model.addAttribute("inProgressAttempts", inProgressAttempts);

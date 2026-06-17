@@ -2,7 +2,9 @@ package com.frist.assesspro.controllers.admin;
 
 import com.frist.assesspro.dto.admin.AppStatisticsDTO;
 import com.frist.assesspro.dto.admin.UserManagementDTO;
+import com.frist.assesspro.dto.manager.ProjectDTO;
 import com.frist.assesspro.service.AdminService;
+import com.frist.assesspro.service.ProjectService;
 import com.frist.assesspro.service.export.AdminExportService;
 import com.frist.assesspro.service.export.AsyncPdfExportService;
 import com.frist.assesspro.service.metrics.MetricsService;
@@ -32,6 +34,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,9 +47,9 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
-    private final AdminExportService adminExportService;
     private final MetricsService metricsService;
     private final AsyncPdfExportService asyncPdfExportService;
+    private final ProjectService projectService;
 
     // ============= DASHBOARD =============
     @Operation(summary = "Получить дашборд администратора")
@@ -109,6 +112,10 @@ public class AdminController {
         UserManagementDTO user = adminService.getUserById(id)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
         model.addAttribute("user", user);
+        if ("ROLE_MANAGER".equals(user.getRole())) {
+            List<ProjectDTO> managerProjects = projectService.getProjectsByManagerId(user.getId());
+            model.addAttribute("projects", managerProjects);
+        }
         return "admin/user-view";
     }
 
@@ -121,6 +128,7 @@ public class AdminController {
     @GetMapping("/users/new")
     public String showCreateForm(Model model) {
         model.addAttribute("user", new UserManagementDTO());
+        model.addAttribute("allProjects", projectService.getAllActiveProjects());
         model.addAttribute("action", "create");
         return "admin/user-form";
     }
@@ -165,9 +173,10 @@ public class AdminController {
     })
     @GetMapping("/users/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
-        UserManagementDTO user = adminService.getUserById(id)
+        UserManagementDTO userDTO = adminService.getUserById(id)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-        model.addAttribute("user", user);
+        model.addAttribute("user", userDTO);
+        model.addAttribute("allProjects", projectService.getAllActiveProjects());
         model.addAttribute("action", "edit");
         return "admin/user-form";
     }

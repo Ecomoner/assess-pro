@@ -40,8 +40,13 @@ public class UserManagementDTO {
     private String middleName;
 
     @NotBlank(message = "Роль обязательна")
-    @Pattern(regexp = "^(ROLE_ADMIN|ROLE_CREATOR|ROLE_TESTER)$")
+    @Pattern(regexp = "^(ROLE_ADMIN|ROLE_CREATOR|ROLE_TESTER|ROLE_MANAGER)$")
     private String role;
+
+    private String email;
+
+    private Long projectId;
+    private String projectName;
 
     private Boolean isActive;
     private Boolean isProfileComplete;

@@ -50,6 +50,17 @@
                                    placeholder="Иванович">
                             <small class="text-muted d-block mt-1 small">Необязательное поле</small>
                         </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-semibold small">Email</label>
+                            <input type="text" class="form-control"
+                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"
+                                   id="email"
+                                   name="email"
+                                   th:value="*{email}"
+                                   placeholder="email@mail.ru"
+                                   required>
+                            <div class="invalid-feedback small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Ошибка</div>
+                        </div>
                         <button type="submit" class="btn btn-dark w-100 py-2">
                             <i class="bi bi-check-circle me-2"></i>Сохранить и продолжить
                         </button>

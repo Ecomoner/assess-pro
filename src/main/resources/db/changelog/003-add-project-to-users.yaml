@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1781610032581-1
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: project_id
+                  type: BIGINT
+            tableName: users
+  - changeSet:
+      id: 1781610032581-2
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: project_id
+            baseTableName: users
+            constraintName: FK_USERS_ON_PROJECT
+            referencedColumnNames: id
+            referencedTableName: projects
+

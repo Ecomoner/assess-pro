@@ -81,6 +81,13 @@ public class User implements UserDetails {
     @ToString.Exclude
     private List<Event> createdEvents;
 
+    @Column(unique = true)
+    private String email;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    private Project project;
+
     /**
      * Проверка заполненности профиля
      */
@@ -88,7 +95,8 @@ public class User implements UserDetails {
     public boolean isProfileComplete() {
         return isProfileComplete != null && isProfileComplete &&
                 firstName != null && !firstName.trim().isEmpty() &&
-                lastName != null && !lastName.trim().isEmpty();
+                lastName != null && !lastName.trim().isEmpty() &&
+                email != null && !email.trim().isEmpty();
     }
 
     /**
@@ -111,31 +119,15 @@ public class User implements UserDetails {
         return fullName.length() > 0 ? fullName.toString() : username;
     }
 
-    /**
-     * Получение инициалов
-     */
-    @Transient
-    public String getInitials() {
-        StringBuilder initials = new StringBuilder();
-        if (lastName != null && !lastName.isEmpty()) {
-            initials.append(lastName.charAt(0));
-        }
-        if (firstName != null && !firstName.isEmpty()) {
-            initials.append(firstName.charAt(0));
-        }
-        if (middleName != null && !middleName.isEmpty()) {
-            initials.append(middleName.charAt(0));
-        }
-        return initials.length() > 0 ? initials.toString().toUpperCase() : username.substring(0, 1).toUpperCase();
-    }
 
     public static class Roles {
         public static final String ADMIN = "ROLE_ADMIN";
         public static final String CREATOR = "ROLE_CREATOR";
         public static final String TESTER = "ROLE_TESTER";
+        public static final String MANAGER = "ROLE_MANAGER";
 
         public static boolean isValidRole(String role) {
-            return ADMIN.equals(role) || CREATOR.equals(role) || TESTER.equals(role);
+            return ADMIN.equals(role) || CREATOR.equals(role) || TESTER.equals(role) || MANAGER.equals(role);
         }
     }
 
@@ -168,4 +160,6 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return isActive != null && isActive;
     }
+
+
 }

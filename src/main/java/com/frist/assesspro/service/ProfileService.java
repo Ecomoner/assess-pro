@@ -36,6 +36,7 @@ public class ProfileService {
 
         user.setFirstName(profileDTO.getFirstName().trim());
         user.setLastName(profileDTO.getLastName().trim());
+        user.setEmail(profileDTO.getEmail().trim());
         user.setMiddleName(profileDTO.getMiddleName() != null ? profileDTO.getMiddleName().trim() : null);
         user.setIsProfileComplete(true);
 

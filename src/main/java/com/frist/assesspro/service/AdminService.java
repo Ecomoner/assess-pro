@@ -3,8 +3,10 @@ package com.frist.assesspro.service;
 import com.frist.assesspro.dto.admin.AppStatisticsCountsDTO;
 import com.frist.assesspro.dto.admin.AppStatisticsDTO;
 import com.frist.assesspro.dto.admin.UserManagementDTO;
+import com.frist.assesspro.entity.Project;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
+import com.frist.assesspro.mapper.UserMapper;
 import com.frist.assesspro.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +31,9 @@ public class AdminService {
     private final UserRepository userRepository;
     private final TestRepository testRepository;
     private final TestAttemptRepository testAttemptRepository;
-    private final CategoryRepository categoryRepository;
-    private final QuestionRepository questionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ProjectRepository projectRepository;
+    private final UserMapper  userMapper;
 
     // ============= УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ =============
 
@@ -53,11 +55,9 @@ public class AdminService {
         log.info("Найдено пользователей: {}", usersPage.getTotalElements());
         log.info("==========================================");
 
-        List<UserManagementDTO> dtos = usersPage.getContent().stream()
-                .map(this::convertToUserManagementDTO)
-                .collect(Collectors.toList());
+        Page<UserManagementDTO> dtoPage = usersPage.map(userMapper::toDto);
 
-        return new PageImpl<>(dtos, pageable, usersPage.getTotalElements());
+        return dtoPage;
     }
 
     /**
@@ -66,7 +66,7 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Optional<UserManagementDTO> getUserById(Long id) {
         return userRepository.findById(id)
-                .map(this::convertToUserManagementDTO);
+                .map(userMapper::toDto);
     }
 
     /**
@@ -81,6 +81,7 @@ public class AdminService {
             throw new IllegalArgumentException("Имя пользователя уже занято");
         }
 
+
         User user = new User();
         user.setUsername(dto.getUsername().trim());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -90,6 +91,16 @@ public class AdminService {
             throw new RuntimeException("Пароль обязателен");
         }
         user.setRole(dto.getRole());
+        if (User.Roles.TESTER.equals(dto.getRole())) {
+            if (dto.getProjectId() == null) {
+                throw new IllegalArgumentException("Для тестировщика необходимо выбрать проект");
+            }
+            Project project = projectRepository.findById(dto.getProjectId())
+                    .orElseThrow(() -> new RuntimeException("Проект не найден"));
+            user.setProject(project);
+        } else {
+            user.setProject(null);
+        }
         user.setFirstName(dto.getFirstName().trim());
         user.setLastName(dto.getLastName().trim());
         user.setMiddleName(dto.getMiddleName() != null ? dto.getMiddleName().trim() : null);
@@ -131,9 +142,17 @@ public class AdminService {
         if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
-
+        if (User.Roles.TESTER.equals(dto.getRole()) && dto.getProjectId() != null) {
+            Project project = projectRepository.findById(dto.getProjectId())
+                    .orElseThrow(() -> new RuntimeException("Проект не найден"));
+            user.setProject(project);
+        }else {
+            user.setProject(null);
+        }
         User updatedUser = userRepository.save(user);
-        log.info("Пользователь {} обновлен", updatedUser.getUsername());
+        log.info("Пользователь {} обновлён, проект: {}",
+                updatedUser.getUsername(),
+                updatedUser.getProject() != null ? updatedUser.getProject().getName() : "нет");
 
         return updatedUser;
     }
@@ -314,23 +333,4 @@ public class AdminService {
         return stats;
     }
 
-    /**
-     * Конвертация User в UserManagementDTO
-     */
-    private UserManagementDTO convertToUserManagementDTO(User user) {
-        UserManagementDTO dto = UserManagementDTO.fromEntity(user);
-
-        // Дополнительная статистика в зависимости от роли
-        if (User.Roles.CREATOR.equals(user.getRole())) {
-            dto.setTestsCreated(testRepository.countByCreatedBy(user));
-        } else if (User.Roles.TESTER.equals(user.getRole())) {
-            dto.setTestsPassed(testAttemptRepository.countByUserIdAndStatus(
-                    user.getId(), TestAttempt.AttemptStatus.COMPLETED));
-
-            Double avg = testAttemptRepository.findAverageScoreByUserId(user.getId());
-            dto.setAverageScore(avg != null ? avg : 0.0);
-        }
-
-        return dto;
-    }
 }

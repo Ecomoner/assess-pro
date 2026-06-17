@@ -92,8 +92,12 @@ public class ProfileController {
 
             if (role.equals(User.Roles.CREATOR)) {
                 return "redirect:/creator/dashboard";
-            } else {
+            } else if (role.equals(User.Roles.TESTER)) {
                 return "redirect:/tester/dashboard";
+            }  else if (role.equals(User.Roles.ADMIN)) {
+                return "redirect:/admin/dashboard";
+            } else  {
+                return "redirect:/manager/dashboard";
             }
 
         } catch (IllegalArgumentException e) {

@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1781609453822-1
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_projects
+                  name: id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: manager_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: active
+                  type: BOOLEAN
+            tableName: projects
+  - changeSet:
+      id: 1781609453822-2
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addUniqueConstraint:
+            columnNames: name
+            constraintName: uc_projects_name
+            tableName: projects
+  - changeSet:
+      id: 1781609453822-3
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: manager_id
+            baseTableName: projects
+            constraintName: FK_PROJECTS_ON_MANAGER
+            referencedColumnNames: id
+            referencedTableName: users
+
