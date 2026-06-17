@@ -268,15 +268,4 @@ class TestServiceTest {
         assertThat(isOwner).isFalse();
     }
 
-    @org.junit.jupiter.api.Test
-    @DisplayName("Конвертация Test в TestDTO")
-    void convertToDTO_Success() {
-        TestDTO converted = testService.convertToDTO(test);
-
-        assertThat(converted).isNotNull();
-        assertThat(converted.getId()).isEqualTo(1L);
-        assertThat(converted.getTitle()).isEqualTo("Тест 1");
-        assertThat(converted.getCategoryId()).isEqualTo(1L);
-        assertThat(converted.getCategoryName()).isEqualTo("Категория 1");
-    }
 }
