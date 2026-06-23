@@ -4,8 +4,10 @@ package com.frist.assesspro.controllers.creator;
 import com.frist.assesspro.dto.AnswerOptionDTO;
 import com.frist.assesspro.dto.QuestionDTO;
 import com.frist.assesspro.dto.QuestionWithStatsDTO;
+import com.frist.assesspro.dto.TestDTO;
 import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
+import com.frist.assesspro.mapper.TestMapper;
 import com.frist.assesspro.repository.UserRepository;
 import com.frist.assesspro.service.QuestionService;
 import com.frist.assesspro.service.TestService;
@@ -17,9 +19,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -34,8 +39,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Tag(name = "Вопросы",description = "API для создателей")
 public class QuestionController {
+    private final TestMapper testMapper;
 
     private final QuestionService questionService;
+    private final TestService testService;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -48,6 +55,8 @@ public class QuestionController {
             @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
+
+    @Transactional(readOnly = true)
     @GetMapping
     public String manageQuestions(
             @PathVariable Long testId,
@@ -57,13 +66,13 @@ public class QuestionController {
         try {
             List<Question> questions = questionService.getQuestionsByTestId(testId, userDetails.getUsername());
             Test test = questionService.getTestById(testId, userDetails.getUsername());
-
+            TestDTO testDTO = testMapper.toDto(test);
             // Конвертируем в DTO со статистикой - НО ФИЛЬТРУЕМ ПУСТЫЕ!
             List<QuestionWithStatsDTO> questionDTOs = questions.stream()
                     .map(question -> convertToQuestionWithStatsDTO(question))
                     .collect(Collectors.toList());
 
-            model.addAttribute("test", test);
+            model.addAttribute("test", testDTO);
             model.addAttribute("questions", questions);
             model.addAttribute("questionDTOs", questionDTOs);
             return "creator/question-list";
@@ -212,6 +221,43 @@ public class QuestionController {
             redirectAttributes.addFlashAttribute("questionDTO", questionDTO);
             return "redirect:/creator/tests/" + testId + "/questions/new";
         }
+    }
+
+    @GetMapping("/retake/new")
+    public String showRetakeQuestionForm(@PathVariable Long testId,
+                                         Model model,
+                                         Authentication auth) {
+        Test mainTest = testService.getTestWithAllDataWithoutOwnershipCheck(testId)
+                .orElseThrow(() -> new RuntimeException("Тест не найден"));
+        if (mainTest.getRetakeTest() == null) throw new RuntimeException("Тест для пересдачи не создан");
+        if (!mainTest.getCreatedBy().getId().equals(auth.getName())) {
+            throw new AccessDeniedException("Нет доступа");
+        }
+        model.addAttribute("mainTest", testMapper.toDto(mainTest));
+        model.addAttribute("questionDTO",new QuestionDTO());
+        model.addAttribute("retakeMode", true);
+        return "creator/question-form";
+    }
+
+    @PostMapping("/retake/new")
+    public String saveRetakeQuestion(@PathVariable Long testId,
+                                     @Valid QuestionDTO dto,
+                                     BindingResult br,
+                                     Authentication auth,
+                                     RedirectAttributes redirectAttributes) {
+        Test mainTest = testService.getTestWithAllDataWithoutOwnershipCheck(testId)
+                .orElseThrow(() -> new RuntimeException("Тест не найден"));
+        Test retakeTest = mainTest.getRetakeTest();
+        if (retakeTest == null) throw new RuntimeException("Тест для пересдачи не создан");
+        if (!mainTest.getCreatedBy().getId().equals(auth.getName())) {
+            throw new AccessDeniedException("Нет доступа");
+        }
+        if (br.hasErrors()) {
+            return "creator/question-form";
+        }
+        questionService.createQuestion(retakeTest.getId(), dto, auth.getName());
+        redirectAttributes.addFlashAttribute("successMessage","Дополнительный вопрос добавлен в тест для пересдачи");
+        return "redirect:/creator/tests/" + testId + "/questions";
     }
 
     @Operation(summary = "Форма редактирования вопроса")

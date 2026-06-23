@@ -4,9 +4,12 @@ import com.frist.assesspro.dto.*;
 import com.frist.assesspro.dto.category.CategoryDTO;
 import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
 import com.frist.assesspro.dto.test.*;
+import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.repository.TestAttemptRepository;
+import com.frist.assesspro.repository.TestRepository;
+import com.frist.assesspro.repository.UserAnswerRepository;
 import com.frist.assesspro.service.*;
 import com.frist.assesspro.service.metrics.MetricsService;
 import com.frist.assesspro.util.TestConstants;
@@ -21,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -49,6 +53,9 @@ public class TesterController {
     private final UserService userService;
     private final EventService eventService;
     private final TesterStatisticsService testerStatisticsService;
+    private final TestService testService;
+    private final TestRepository testRepository;
+    private final UserAnswerRepository userAnswerRepository;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -439,7 +446,7 @@ public class TesterController {
                     .orElse(0.0);
 
             List<EventDTO> lastEvents = eventService.getLastEvents(5);
-            String projectName = user.getProject() != null ? user.getProject().getName() : "Не назначен";
+            String projectName = userService.getProjectName(username);
 
             // Добавляем в модель - ИСПОЛЬЗУЕМ ИМЕНА, КОТОРЫЕ ОЖИДАЕТ ШАБЛОН
             model.addAttribute("currentProjectName", projectName);
@@ -490,4 +497,36 @@ public class TesterController {
                 .findFirst()
                 .orElse(null);
     }
+
+    @PostMapping("/retake/start")
+    public String startRetake(@RequestParam Long retakeTestId, Authentication auth, RedirectAttributes ra) {
+        User user = userService.getUserByUsername(auth.getName());
+
+        Test retakeTest = testService.getTestByIdWithoutOwnershipCheck(retakeTestId);
+        if (retakeTest == null || !Boolean.TRUE.equals(retakeTest.getRetake())) {
+            throw new RuntimeException("Тест пересдачи недоступен");
+        }
+
+        Test parentTest = testRepository.findParentByRetakeTestId(retakeTestId);
+        if (parentTest == null || parentTest.getPassThresholdPercent() == null) {
+            throw new RuntimeException("Неверный тест пересдачи");
+        }
+
+        // Вычисляем требуемое количество правильных ответов
+        int totalQuestions = testRepository.countQuestionsByTestId(parentTest.getId());
+        int requiredScore = (int) Math.ceil(totalQuestions * parentTest.getPassThresholdPercent() / 100.0);
+
+        boolean hasFailed = testAttemptRepository.hasFailedAttempt(
+                parentTest.getId(), user.getId(), requiredScore);
+        if (!hasFailed) {
+            ra.addFlashAttribute("errorMessage", "У вас нет доступа к пересдаче");
+            return "redirect:/tester/dashboard";
+        }
+        // Запуск retake-теста
+        TestTakingDTO dto = testPassingService.getTestForTaking(retakeTestId, user.getUsername())
+                .orElseThrow(() -> new RuntimeException("Не удалось начать пересдачу"));
+        return "redirect:/tester/attempt/" + dto.getAttemptId();
+    }
+
+
 }

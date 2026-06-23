@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/002-create-projects.yaml
   - include:
       file: db/changelog/003-add-project-to-users.yaml
+  - include:
+      file: db/changelog/004-update-test-entity.yaml

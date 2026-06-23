@@ -22,6 +22,10 @@ public interface TestMapper {
     @Mapping(target = "retryCooldownHours", source = "retryCooldownHours")
     @Mapping(target = "retryCooldownDays", source = "retryCooldownDays")
     @Mapping(target = "timeLimitMinutes", source = "timeLimitMinutes")
+    @Mapping(target = "passThresholdPercent", source = "passThresholdPercent")
+    @Mapping(target = "reTestOnFail", source = "reTestOnFail")
+    @Mapping(target = "retakeTestId", source = "retakeTest.id")
+    @Mapping(target = "retake", source = "retake")
     TestDTO toDto(Test test);
 
     List<TestDTO> toDtoList(List<Test> tests);

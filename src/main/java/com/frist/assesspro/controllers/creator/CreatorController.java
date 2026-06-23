@@ -13,6 +13,7 @@ import com.frist.assesspro.entity.AnswerOption;
 import com.frist.assesspro.entity.Question;
 import com.frist.assesspro.entity.Test;
 import com.frist.assesspro.entity.User;
+import com.frist.assesspro.mapper.TestMapper;
 import com.frist.assesspro.repository.EventRepository;
 import com.frist.assesspro.repository.UserRepository;
 import com.frist.assesspro.service.*;
@@ -65,6 +66,7 @@ public class CreatorController {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final AsyncPdfExportService asyncPdfExportService;
+    private final TestMapper testMapper;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -208,7 +210,7 @@ public class CreatorController {
                         return "redirect:/creator/tests";
                     }
                     // Конвертируем Entity в DTO
-                    TestDTO testDTO = testService.convertToDTO(test);
+                    TestDTO testDTO = testMapper.toDto(test);
 
                     model.addAttribute("test", testDTO);
                     model.addAttribute("formAction", "/creator/tests/update/" + id);

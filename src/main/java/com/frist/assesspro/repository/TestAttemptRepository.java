@@ -124,4 +124,13 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             "WHERE status = 'COMPLETED' AND end_time IS NOT NULL AND start_time IS NOT NULL",
             nativeQuery = true)
     List<Object[]> findAverageScoreAndTotalMinutes();
+
+    @Query("SELECT COUNT(ta) > 0 FROM TestAttempt ta " +
+            "WHERE ta.test.id = :testId " +
+            "AND ta.user.id = :userId " +
+            "AND ta.status = 'COMPLETED' " +
+            "AND ta.totalScore < :requiredScore")
+    boolean hasFailedAttempt(@Param("testId") Long testId,
+                             @Param("userId") Long userId,
+                             @Param("requiredScore") Integer requiredScore);
 }

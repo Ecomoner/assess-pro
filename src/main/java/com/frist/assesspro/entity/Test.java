@@ -103,26 +103,23 @@ public class Test {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    private Integer passThresholdPercent;
+
+    private Boolean reTestOnFail;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "retake_test_id")
+    private Test retakeTest;
+
+    private Boolean retake = false;
+
+
     @Transient
     public int getQuestionCount() {
         return questions != null ? questions.size() : 0;
     }
 
-    public void validateForPublishing() {
-        if (questions == null || questions.isEmpty()) {
-            throw new IllegalStateException("Нельзя опубликовать тест без вопросов");
-        }
 
-        if (questions.size() > 100) {
-            throw new IllegalStateException("Максимальное количество вопросов - 100");
-        }
-
-        for (Question question : questions) {
-            if (question.getAnswerOptions() == null || question.getAnswerOptions().size() < 2) {
-                throw new IllegalStateException("Каждый вопрос должен иметь минимум 2 варианта ответа");
-            }
-        }
-    }
     @Transient
     public boolean hasRetryCooldown() {
         return retryCooldownHours != null && retryCooldownHours > 0;

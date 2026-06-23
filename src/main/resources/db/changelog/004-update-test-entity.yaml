@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1782141686489-1
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: pass_threshold_percent
+                  type: INT
+              - column:
+                  name: re_test_on_fail
+                  type: BOOLEAN
+              - column:
+                  name: retake
+                  type: BOOLEAN
+              - column:
+                  name: retake_test_id
+                  type: BIGINT
+            tableName: tests
+  - changeSet:
+      id: 1782141686489-5
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addUniqueConstraint:
+            columnNames: retake_test_id
+            constraintName: uc_tests_retake_test
+            tableName: tests
+  - changeSet:
+      id: 1782141686489-6
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: retake_test_id
+            baseTableName: tests
+            constraintName: FK_TESTS_ON_RETAKE_TEST
+            referencedColumnNames: id
+            referencedTableName: tests
+

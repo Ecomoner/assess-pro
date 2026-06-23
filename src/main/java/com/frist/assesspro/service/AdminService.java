@@ -133,6 +133,7 @@ public class AdminService {
         if (dto.getMiddleName() != null) {
             user.setMiddleName(dto.getMiddleName().trim());
         }
+        user.setIsProfileComplete(true);
         if (dto.getRole() != null) {
             user.setRole(dto.getRole());
         }

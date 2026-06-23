@@ -49,4 +49,7 @@ public interface UserAnswerRepository extends JpaRepository<UserAnswer,Long> {
             "WHERE ua.attempt.id IN :attemptIds " +
             "GROUP BY ua.attempt.id")
     List<Object[]> countByAttemptIds(@Param("attemptIds") List<Long> attemptIds);
+
+    @Query("SELECT COUNT(ua) FROM UserAnswer ua WHERE ua.attempt.id = :attemptId AND ua.isCorrect = true")
+    int countCorrectAnswersByAttemptId(@Param("attemptId") Long attemptId);
 }

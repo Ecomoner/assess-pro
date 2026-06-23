@@ -101,6 +101,7 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "FROM Test t " +
             "LEFT JOIN t.questions q " +
             "WHERE t.id IN :testIds " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
             "GROUP BY t.id, t.title, t.description, t.isPublished, t.createdAt, " +
             "t.timeLimitMinutes, t.category.id, t.category.name, t.createdBy.id, t.createdBy.username " +
             "ORDER BY t.createdAt DESC")
@@ -115,6 +116,7 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "FROM Test t " +
             "LEFT JOIN t.questions q " +
             "WHERE t.createdBy = :creator " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
             "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "GROUP BY t.id, t.title, t.description, t.isPublished, t.createdAt, " +
             "t.timeLimitMinutes, t.retryCooldownHours, t.retryCooldownDays, " +
@@ -137,6 +139,7 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "       OR (:status = 'draft' AND t.isPublished = false)) " +
             "AND (:categoryId IS NULL OR t.category.id = :categoryId) " +
             "AND (:creatorId IS NULL OR t.createdBy.id = :creatorId) " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
             "AND (:search IS NULL OR :search = '' OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "GROUP BY t.id, t.title, t.description, t.isPublished, t.createdAt, t.timeLimitMinutes, " +
             "t.retryCooldownHours, t.retryCooldownDays, t.category.id, t.category.name, " +
@@ -156,6 +159,7 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "FROM Test t " +
             "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
             "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
             "t.category.id, t.category.name")
     Page<TestInfoDTO> findPublishedTestInfoDTOs(Pageable pageable);
@@ -167,6 +171,7 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "FROM Test t " +
             "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true AND t.category.id = :categoryId " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
             "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
             "t.category.id, t.category.name")
     Page<TestInfoDTO> findPublishedTestInfoDTOsByCategoryId(
@@ -181,6 +186,7 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true " +
             "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
             "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
             "t.category.id, t.category.name")
     Page<TestInfoDTO> searchPublishedTests(@Param("searchTerm") String searchTerm, Pageable pageable);
@@ -218,5 +224,16 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
     List<Object[]> averageScoreByCategory();
 
 
+    @Query("SELECT t FROM Test t WHERE t.retakeTest.id = :retakeTestId")
+    Test findParentByRetakeTestId(@Param("retakeTestId") Long retakeTestId);
+
+    @Query("SELECT t.id, t.retakeTest.id FROM Test t WHERE t.id IN :ids AND t.retakeTest IS NOT NULL")
+    List<Object[]> findRetakeTestIdsByIds(@Param("ids") List<Long> ids);
+
+    @Query("SELECT COUNT(q) FROM Question q WHERE q.test.id = :testId")
+    int countQuestionsByTestId(@Param("testId") Long testId);
+
+    @Query("SELECT t FROM Test t LEFT JOIN FETCH t.questions WHERE t.id = :id")
+    Optional<Test> findByIdWithQuestions(@Param("id") Long id);
 
 }

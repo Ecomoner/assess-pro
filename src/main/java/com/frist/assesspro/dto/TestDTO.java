@@ -46,6 +46,12 @@ public class TestDTO {
     private Long creatorId;
     private String creatorUsername;
 
+    private Integer passThresholdPercent;
+    private Boolean reTestOnFail;
+    private Long retakeTestId;
+    private Boolean retake;
+
+
     public TestDTO(Long id, String title, String description, Boolean published,
                    Long questionCount, LocalDateTime createdAt, Integer timeLimitMinutes,
                    Long categoryId, String categoryName,

@@ -68,4 +68,13 @@ public class UserService {
                 .orElse(false);
     }
 
+    @Transactional(readOnly = true)
+    public String getProjectName(String username) {
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user != null && user.getProject() != null) {
+            return user.getProject().getName();
+        }
+        return "Не назначен";
+    }
+
 }

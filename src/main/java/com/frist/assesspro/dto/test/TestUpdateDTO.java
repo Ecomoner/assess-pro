@@ -31,4 +31,7 @@ public class TestUpdateDTO {
     @Min(0)
     @Max(14)
     private Integer retryCooldownDays = 0;
+
+    private Integer passThresholdPercent;
+    private Boolean reTestOnFail;
 }

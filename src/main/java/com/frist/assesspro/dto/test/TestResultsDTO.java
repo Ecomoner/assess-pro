@@ -20,6 +20,8 @@ public class TestResultsDTO {
     private Integer answeredQuestions;
     private Integer correctAnswers;
     private List<QuestionResultDTO> questionResults;
+    private boolean belowThreshold;
+    private Long retakeTestId;
 
     public Double getPercentage() {
         if (maxPossibleScore == null || maxPossibleScore == 0) {

@@ -86,8 +86,26 @@ public class TestService {
                     .orElseThrow(() -> new RuntimeException("Категория не найдена"));
             test.setCategory(category);
         }
+        test.setPassThresholdPercent(testDTO.getPassThresholdPercent());
+        test.setReTestOnFail(testDTO.getReTestOnFail());
+
 
         Test savedTest = testRepository.save(test);
+
+        if (test.getPassThresholdPercent() != null && test.getPassThresholdPercent() > 0
+                && test.getReTestOnFail() != null && test.getReTestOnFail()) {
+            Test retake = new Test();
+            retake.setTitle(test.getTitle() + " (пересдача)");
+            retake.setDescription("Пересдача для теста \"" + test.getTitle() + "\"");
+            retake.setCreatedBy(test.getCreatedBy());
+            retake.setCategory(test.getCategory());
+            retake.setTimeLimitMinutes(test.getTimeLimitMinutes());
+            retake.setIsPublished(false);
+            retake.setRetake(true);
+            retake = testRepository.save(retake);
+            test.setRetakeTest(retake);
+            testRepository.save(test);
+        }
         log.info("Создан тест: {} с ограничением на повтор: {}",
                 savedTest.getTitle(), savedTest.getRetryCooldownDisplay());
 
@@ -173,11 +191,32 @@ public class TestService {
             existingTest.setRetryCooldownDays(0);
         }
 
+        existingTest.setPassThresholdPercent(updateDTO.getPassThresholdPercent());
+        existingTest.setReTestOnFail(updateDTO.getReTestOnFail());
+
         if (updateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(updateDTO.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Категория не найдена"));
             existingTest.setCategory(category);
         }
+
+
+        if (existingTest.getPassThresholdPercent() != null && existingTest.getPassThresholdPercent() > 0
+                && Boolean.TRUE.equals(existingTest.getReTestOnFail())
+                && existingTest.getRetakeTest() == null) {
+            Test retake = new Test();
+            retake.setTitle(existingTest.getTitle() + " (пересдача)");
+            retake.setDescription("Пересдача для теста \"" + existingTest.getTitle() + "\"");
+            retake.setCreatedBy(existingTest.getCreatedBy());
+            retake.setCategory(existingTest.getCategory());
+            retake.setTimeLimitMinutes(existingTest.getTimeLimitMinutes());
+            retake.setIsPublished(false);
+            retake.setRetake(true);
+            retake = testRepository.save(retake);
+            existingTest.setRetakeTest(retake);
+            testRepository.save(existingTest);
+        }
+
 
         Test updatedTest = testRepository.save(existingTest);
         log.info("Обновлен тест: {}, ограничение на повтор: {}",
@@ -444,7 +483,22 @@ public class TestService {
         log.debug("Получение всех тестов с фильтрацией: status={}, search={}, categoryId={}, creatorId={}",
                 status, search, categoryId, creatorId);
 
-        return testRepository.findAllTestsWithFilters(status, categoryId, creatorId, search, pageable);
+        Page<TestDTO> dtoPage = testRepository.findAllTestsWithFilters(
+                status, categoryId, creatorId, search, pageable);
+
+        // Дозаполняем retakeTestId, если есть содержимое
+        if (dtoPage.hasContent()) {
+            List<Long> testIds = dtoPage.getContent().stream()
+                    .map(TestDTO::getId)
+                    .collect(Collectors.toList());
+            Map<Long, Long> retakeMap = testRepository.findRetakeTestIdsByIds(testIds)
+                    .stream()
+                    .collect(Collectors.toMap(arr -> (Long) arr[0], arr -> (Long) arr[1]));
+            dtoPage.getContent().forEach(dto -> {
+                dto.setRetakeTestId(retakeMap.get(dto.getId()));
+            });
+        }
+        return dtoPage;
     }
 
     /**

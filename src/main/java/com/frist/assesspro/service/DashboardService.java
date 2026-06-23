@@ -65,7 +65,7 @@ public class DashboardService {
         return testRepository.countQuestionsByCreatorId(creator.getId());
     }
 
-    @Cacheable(value = "testerStats", key = "#username", unless = "#result.totalAttempts == 0")
+
     @Transactional(readOnly = true)
     public DashboardStatsDTO getTesterStats(String username) {
         User tester = userRepository.findByUsername(username)

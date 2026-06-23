@@ -63,6 +63,16 @@
                                 <small class="text-muted d-block mt-1 small">0 = без ограничения</small>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Проходной процент (%)</label>
+                            <input type="number" th:field="*{passThresholdPercent}" class="form-control form-control-sm"
+                                   min="0" max="100" placeholder="Оставьте пустым, если не нужно">
+                            <small class="text-muted">Если результат ниже – тест считается не пройденным</small>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" th:field="*{reTestOnFail}" value="true">
+                            <label class="form-check-label">Назначать пересдачу при неудаче</label>
+                        </div>
                         <div class="mb-3 mt-3">
                             <label class="form-label fw-semibold small">Ограничение на повторное прохождение</label>
                             <div class="card bg-light">

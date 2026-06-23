@@ -37,6 +37,7 @@ public class TestPassingService {
     private final CooldownService cooldownService;
 
 
+
     /**
      * Получение ВСЕХ доступных тестов С ПАГИНАЦИЕЙ (для каталога)
      * Кэширование с учетом страницы и размера
@@ -79,9 +80,20 @@ public class TestPassingService {
             throw new RuntimeException("Для прохождения тестов необходимо заполнить профиль (ФИО)");
         }
 
-        Test test = testRepository.findByIdAndIsPublishedTrueWithQuestions(testId)
-                .orElse(null);
+        // Загружаем тест без вопросов, чтобы узнать, retake ли он
+        Test testCheck = testRepository.findById(testId).orElse(null);
+        if (testCheck == null) {
+            return Optional.empty();
+        }
+        boolean isRetake = Boolean.TRUE.equals(testCheck.getRetake());
 
+        // Загружаем тест с вопросами в зависимости от типа
+        Test test;
+        if (isRetake) {
+            test = testRepository.findByIdWithQuestions(testId).orElse(null);
+        } else {
+            test = testRepository.findByIdAndIsPublishedTrueWithQuestions(testId).orElse(null);
+        }
         if (test == null) {
             return Optional.empty();
         }
@@ -89,7 +101,8 @@ public class TestPassingService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        if (!cooldownService.canUserTakeTest(test, user)) {
+        // Проверка кулдауна только для обычных тестов
+        if (!isRetake && !cooldownService.canUserTakeTest(test, user)) {
             LocalDateTime nextAvailable = cooldownService.getNextAvailableTime(test, user);
             String message = String.format(
                     "Вы уже проходили этот тест. Следующая попытка доступна %s",
@@ -98,6 +111,7 @@ public class TestPassingService {
             throw new RuntimeException(message);
         }
 
+        // Поиск существующей незавершённой попытки
         Optional<TestAttempt> existingAttempt = testAttemptRepository
                 .findByTestIdAndUserIdAndStatus(testId, user.getId(), TestAttempt.AttemptStatus.IN_PROGRESS);
 
@@ -125,7 +139,6 @@ public class TestPassingService {
         }
 
         List<Question> allQuestions = test.getQuestions();
-
         Set<Long> answeredQuestionIds = userAnswerRepository.findByAttemptId(attemptId).stream()
                 .map(userAnswer -> userAnswer.getQuestion().getId())
                 .collect(Collectors.toSet());
@@ -163,10 +176,7 @@ public class TestPassingService {
         dto.setTimeLimitMinutes(test.getTimeLimitMinutes());
         dto.setQuestions(questionDTOs);
         dto.setTotalQuestions(allQuestions.size());
-
         dto.setCurrentQuestionIndex(0);
-
-
         dto.setAnsweredQuestions(answeredQuestionIds.size());
         dto.setRemainingQuestions(unansweredQuestions.size());
 
@@ -359,17 +369,27 @@ public class TestPassingService {
                 .count();
         int maxPossibleScore = totalQuestions;
 
+
         // Пересчитываем totalScore из ответов (сумма баллов)
         int recalculatedTotalScore = userAnswerRepository.sumPointsEarnedByAttemptId(attemptId);
         if (recalculatedTotalScore < 0) recalculatedTotalScore = 0;
 
         TestResultsDTO dto = new TestResultsDTO();
+        if (test.getPassThresholdPercent() != null && test.getPassThresholdPercent() > 0
+                && test.getReTestOnFail() != null && test.getReTestOnFail()
+                && test.getRetakeTest() != null) {
+            double percentage = (double) correctAnswers / totalQuestions * 100.0;
+            if (percentage < test.getPassThresholdPercent()) {
+                dto.setBelowThreshold(true);
+                dto.setRetakeTestId(test.getRetakeTest().getId());
+            }
+        }
         dto.setAttemptId(attempt.getId());
         dto.setTestId(test.getId());
         dto.setTestTitle(test.getTitle());
         dto.setStartTime(attempt.getStartTime());
         dto.setEndTime(attempt.getEndTime());
-        dto.setTotalScore(recalculatedTotalScore);  // ← используем пересчитанное значение
+        dto.setTotalScore(recalculatedTotalScore);
         dto.setMaxPossibleScore(maxPossibleScore);
         dto.setTotalQuestions(totalQuestions);
         dto.setAnsweredQuestions(answeredQuestions);

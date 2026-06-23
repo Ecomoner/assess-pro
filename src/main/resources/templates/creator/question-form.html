@@ -19,6 +19,8 @@
             <h1 class="h3 h2-md mb-0" th:text="${action == 'create' ? 'Новый вопрос' : 'Редактирование вопроса'}">
                 Новый вопрос
             </h1>
+            <h1 th:if="${retakeMode}">Добавить дополнительный вопрос (пересдача) для теста <span th:text="${test.title}"></span></h1>
+            <h1 th:unless="${retakeMode}">Добавить вопрос</h1>
             <p class="text-muted small" th:text="'Тест: ' + ${test.title}">Тест: Название</p>
         </div>
     </div>

@@ -4,6 +4,7 @@ package com.frist.assesspro.controllers;
 import com.frist.assesspro.dto.profile.ProfileCompletionDTO;
 import com.frist.assesspro.entity.User;
 import com.frist.assesspro.service.ProfileService;
+import com.frist.assesspro.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -31,6 +32,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class ProfileController {
 
     private final ProfileService profileService;
+    private final UserService userService;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {
@@ -53,11 +55,14 @@ public class ProfileController {
             return "redirect:/dashboard";
         }
 
-        if (!model.containsAttribute("profileDTO")) {
-            model.addAttribute("profileDTO", new ProfileCompletionDTO());
-        }
-
+        User user = userService.getUserByUsername(userDetails.getUsername());
+        ProfileCompletionDTO dto = new ProfileCompletionDTO();
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setMiddleName(user.getMiddleName());
+        model.addAttribute("profileDTO", dto);
         return "profile/complete";
+
     }
 
     @Operation(summary = "Обработка заполнения профиля")
