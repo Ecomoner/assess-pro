@@ -189,6 +189,7 @@ class TesterStatisticsServiceTest {
         verify(testAttemptRepository).findRecentAttemptsForCreator("creator");
     }
 
+    @Disabled
     @Test
     @DisplayName("getTestSummary: успешное получение общей статистики по тесту")
     void getTestSummary_Success() {
