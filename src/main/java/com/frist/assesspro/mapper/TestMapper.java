@@ -39,5 +39,6 @@ public interface TestMapper {
     @Mapping(target = "attempts", ignore = true)
     Test toEntity(TestDTO dto);
 
+
     TestLinkDTO toTestLinkDto(Test test);
 }

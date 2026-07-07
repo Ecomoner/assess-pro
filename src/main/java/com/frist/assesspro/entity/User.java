@@ -85,7 +85,6 @@ public class User implements UserDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
-    @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Project project;
 

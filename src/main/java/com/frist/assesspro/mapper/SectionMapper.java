@@ -9,12 +9,13 @@ import com.frist.assesspro.entity.Test;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",uses = {TestMapper.class})
 public interface SectionMapper {
 
     @Mapping(target = "tests", source = "tests")
     @Mapping(target = "materials", source = "materials")
     SectionDTO toDto(Section section);
+
     MaterialDTO toDto(Material material);
     TestLinkDTO toTestLinkDto(Test test);
 }

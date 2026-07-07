@@ -36,6 +36,7 @@ public class Notification {
     private Long relatedEntityId;      // ID связанного объекта (тест, попытка, материал)
 
     @Column(name = "is_read", nullable = false)
+    @Builder.Default
     private boolean isRead = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
