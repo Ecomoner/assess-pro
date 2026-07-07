@@ -1,6 +1,7 @@
 package com.frist.assesspro.repository;
 
 import com.frist.assesspro.dto.TestDTO;
+import com.frist.assesspro.dto.material.TestLinkDTO;
 import com.frist.assesspro.dto.test.AnswerPreviewDTO;
 import com.frist.assesspro.dto.test.QuestionPreviewDTO;
 import com.frist.assesspro.dto.test.TestInfoDTO;
@@ -18,6 +19,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,16 +35,17 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
     Optional<Test> findByIdAndCreatedBy(@Param("id") Long id, @Param("creator") User createdBy);
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
-            "t.id, t.title, t.description, " +
-            "COUNT(q.id), t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name) " +
+            "t.id, t.title, t.description, t.questionCount, t.timeLimitMinutes, t.createdAt, " +
+            "t.category.id, t.category.name, t.availableFrom, t.availableTo) " +
             "FROM Test t " +
-            "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true " +
-            "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
+            "AND (t.availableFrom IS NULL OR t.availableFrom <= :now) " +
+            "AND (t.availableTo IS NULL OR t.availableTo >= :now) " +
             "ORDER BY t.createdAt DESC")
-    List<TestInfoDTO> findPublishedTestInfoDTOs();
+    Page<TestInfoDTO> findPublishedTestInfoDTOsWithDates(@Param("now") LocalDateTime now, Pageable pageable);
+
+
 
     @Query("SELECT COUNT(t) FROM Test t")
     long countByTests(@Param("creator") User creator);
@@ -61,16 +64,16 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
     Optional<Test> findByIdWithCreatorAndCategory(@Param("id") Long id, @Param("creator") User creator);
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
-            "t.id, t.title, t.description, " +
-            "COUNT(q.id), t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name) " +
+            "t.id, t.title, t.description, t.questionCount, t.timeLimitMinutes, t.createdAt, " +
+            "t.category.id, t.category.name, t.availableFrom, t.availableTo) " +
             "FROM Test t " +
-            "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true AND t.category.id = :categoryId " +
-            "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name " +
+            "AND (t.retake = false OR t.retake IS NULL) " +
+            "AND (t.availableFrom IS NULL OR t.availableFrom <= :now) " +
+            "AND (t.availableTo IS NULL OR t.availableTo >= :now) " +
             "ORDER BY t.createdAt DESC")
-    List<TestInfoDTO> findPublishedTestInfoDTOsByCategoryId(@Param("categoryId") Long categoryId);
+    List<TestInfoDTO> findPublishedTestInfoDTOsByCategoryIdWithDates(@Param("categoryId") Long categoryId,
+                                                                     @Param("now") LocalDateTime now);
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestPreviewDTO(" +
             "t.id, t.title, t.description, t.timeLimitMinutes, " +
@@ -153,43 +156,43 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
 
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
-            "t.id, t.title, t.description, " +
-            "COUNT(q.id), t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name) " +
+            "t.id, t.title, t.description, t.questionCount, t.timeLimitMinutes, t.createdAt, " +
+            "t.category.id, t.category.name, t.availableFrom, t.availableTo) " +
             "FROM Test t " +
-            "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true " +
             "AND (t.retake = false OR t.retake IS NULL) " +
-            "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name")
-    Page<TestInfoDTO> findPublishedTestInfoDTOs(Pageable pageable);
+            "AND (t.availableFrom IS NULL OR t.availableFrom <= :now) " +
+            "AND (t.availableTo IS NULL OR t.availableTo >= :now) " +
+            "ORDER BY t.createdAt DESC")
+    List<TestInfoDTO> findAllPublishedTestInfoDTOsWithDates(@Param("now") LocalDateTime now);
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
-            "t.id, t.title, t.description, " +
-            "COUNT(q.id), t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name) " +
+            "t.id, t.title, t.description, t.questionCount, t.timeLimitMinutes, t.createdAt, " +
+            "t.category.id, t.category.name, t.availableFrom, t.availableTo) " +
             "FROM Test t " +
-            "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true AND t.category.id = :categoryId " +
             "AND (t.retake = false OR t.retake IS NULL) " +
-            "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name")
-    Page<TestInfoDTO> findPublishedTestInfoDTOsByCategoryId(
-            @Param("categoryId") Long categoryId,
-            Pageable pageable);
+            "AND (t.availableFrom IS NULL OR t.availableFrom <= :now) " +
+            "AND (t.availableTo IS NULL OR t.availableTo >= :now) " +
+            "ORDER BY t.createdAt DESC")
+    Page<TestInfoDTO> findPublishedTestInfoDTOsByCategoryIdWithDates(@Param("categoryId") Long categoryId,
+                                                                     @Param("now") LocalDateTime now,
+                                                                     Pageable pageable);
+
 
     @Query("SELECT new com.frist.assesspro.dto.test.TestInfoDTO(" +
-            "t.id, t.title, t.description, " +
-            "COUNT(q.id), t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name) " +
+            "t.id, t.title, t.description, t.questionCount, t.timeLimitMinutes, t.createdAt, " +
+            "t.category.id, t.category.name, t.availableFrom, t.availableTo) " +
             "FROM Test t " +
-            "LEFT JOIN t.questions q " +
             "WHERE t.isPublished = true " +
             "AND LOWER(t.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
             "AND (t.retake = false OR t.retake IS NULL) " +
-            "GROUP BY t.id, t.title, t.description, t.timeLimitMinutes, t.createdAt, " +
-            "t.category.id, t.category.name")
-    Page<TestInfoDTO> searchPublishedTests(@Param("searchTerm") String searchTerm, Pageable pageable);
+            "AND (t.availableFrom IS NULL OR t.availableFrom <= :now) " +
+            "AND (t.availableTo IS NULL OR t.availableTo >= :now) " +
+            "ORDER BY t.createdAt DESC")
+    Page<TestInfoDTO> searchPublishedTestsWithDates(@Param("searchTerm") String searchTerm,
+                                                    @Param("now") LocalDateTime now,
+                                                    Pageable pageable);
 
     @Query("SELECT COUNT(t) FROM Test t WHERE t.isPublished = :isPublished")
     long countByIsPublished(@Param("isPublished") boolean isPublished);
@@ -236,4 +239,12 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
     @Query("SELECT t FROM Test t LEFT JOIN FETCH t.questions WHERE t.id = :id")
     Optional<Test> findByIdWithQuestions(@Param("id") Long id);
 
+    @Query("SELECT t FROM Test t LEFT JOIN FETCH t.createdBy c LEFT JOIN FETCH t.category cat " +
+            "WHERE t.isPublished = true AND t.retake = false " +
+            "AND (t.availableFrom IS NULL OR t.availableFrom <= :now) " +
+            "AND (t.availableTo IS NULL OR t.availableTo >= :now)")
+    List<Test> findPublishedTestsWithDates(@Param("now") LocalDateTime now);
+
+    @Query("SELECT t FROM Test t WHERE t.isPublished = true ")
+    List<Test> findAllPublishedTests();
 }

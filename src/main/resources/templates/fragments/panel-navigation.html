@@ -4,16 +4,14 @@
     <div class="container-fluid">
         <!-- Логотип -->
         <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/home}">
-            <img th:src="@{/images/logo.png}" height="36" class="d-inline-block align-text-top me-2" alt="Logo">
-            <span class="d-none d-sm-inline" style="color: #111827;">Molecule</span>
-            <span class="d-inline d-sm-none" style="color: #111827;">M</span>
+<!--            <img th:src="@{/images/logo.png}" height="36" class="d-inline-block align-text-top me-2" alt="Logo">-->
+<!--            <span class="d-none d-sm-inline" style="color: #111827;">Molecule</span>-->
+<!--            <span class="d-inline d-sm-none" style="color: #111827;">M</span>-->
         </a>
-
         <!-- Кнопка бургер-меню -->
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <!-- Основное меню -->
         <div class="collapse navbar-collapse" id="navbarNav"
              th:with="role=${#authentication != null and #authentication.isAuthenticated() ? #authentication.authorities.iterator().next().authority : 'ROLE_ANONYMOUS'}">
@@ -58,7 +56,27 @@
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_CREATOR'}">
-                    <a class="nav-link rounded-pill px-3" th:href="@{/navigation/materials}">
+                    <a class="nav-link rounded-pill px-3" th:href="@{/materials}">
+                        <i class="bi bi-book me-1"></i>
+                        <span class="d-inline">Материалы</span>
+                    </a>
+                </li>
+
+                <!-- Менеджер -->
+                <li class="nav-item" th:if="${role == 'ROLE_MANAGER'}">
+                    <a class="nav-link rounded-pill px-3" th:href="@{/manager/dashboard}">
+                        <i class="bi bi-speedometer2 me-1"></i>
+                        <span class="d-inline">Главная</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_MANAGER'}">
+                    <a class="nav-link rounded-pill px-3" th:href="@{/navigation/regulations}">
+                        <i class="bi bi-file-text me-1"></i>
+                        <span class="d-inline">Регламент</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_MANAGER'}">
+                    <a class="nav-link rounded-pill px-3" th:href="@{/materials}">
                         <i class="bi bi-book me-1"></i>
                         <span class="d-inline">Материалы</span>
                     </a>
@@ -72,7 +90,7 @@
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
-                    <a class="nav-link rounded-pill px-3" th:href="@{/navigation/materials}">
+                    <a class="nav-link rounded-pill px-3" th:href="@{/materials}">
                         <i class="bi bi-book me-1"></i>
                         <span class="d-inline">Материалы</span>
                     </a>
@@ -96,9 +114,18 @@
                     </a>
                 </li>
             </ul>
-
             <!-- Правая часть: профиль / вход -->
             <ul class="navbar-nav ms-auto gap-1">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="notificationsDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell"></i>
+                        <span id="notificationBadge" class="badge bg-danger d-none">0</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" id="notificationList" style="width: 300px;">
+                        <li><span class="dropdown-item-text text-muted">Нет новых уведомлений</span></li>
+                    </ul>
+                </li>
                 <li class="nav-item dropdown" th:if="${#authentication != null and #authentication.isAuthenticated() and #authentication.name != 'anonymousUser'}">
                     <a class="nav-link dropdown-toggle rounded-pill px-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle me-1"></i>
@@ -121,12 +148,6 @@
                     <a class="nav-link rounded-pill px-3" th:href="@{/login}">
                         <i class="bi bi-box-arrow-in-right me-1"></i>
                         <span class="d-none d-sm-inline">Вход</span>
-                    </a>
-                </li>
-                <li class="nav-item" th:if="${#authentication == null or not #authentication.isAuthenticated()}">
-                    <a class="nav-link rounded-pill px-3" th:href="@{/register}">
-                        <i class="bi bi-person-plus me-1"></i>
-                        <span class="d-none d-sm-inline">Регистрация</span>
                     </a>
                 </li>
             </ul>

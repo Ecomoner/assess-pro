@@ -12,7 +12,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -85,7 +87,7 @@ public class DashboardService {
         Integer bestScore = testAttemptRepository.findBestScoreByUserId(tester.getId());
         stats.setBestScore(bestScore != null ? bestScore : 0);
 
-        List<?> publishedTests = testRepository.findPublishedTestInfoDTOs();
+        List<?> publishedTests = testRepository.findAllPublishedTestInfoDTOsWithDates(LocalDateTime.now());
         stats.setAvailableTests((long) publishedTests.size());
 
         return stats;

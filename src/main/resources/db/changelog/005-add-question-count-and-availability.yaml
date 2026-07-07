@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-question-count-and-availability
+      author: Вадим
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tests
+                columnName: question_count
+      changes:
+        - addColumn:
+            tableName: tests
+            columns:
+              - column:
+                  name: question_count
+                  type: int
+                  defaultValue: 0
+              - column:
+                  name: available_from
+                  type: timestamp
+              - column:
+                  name: available_to
+                  type: timestamp
+        - sql:
+            sql: >
+              UPDATE tests t
+              SET question_count = (
+                SELECT COUNT(*) FROM questions q WHERE q.test_id = t.id
+              )
+      rollback:
+        - dropColumn:
+            tableName: tests
+            columnName: question_count
+        - dropColumn:
+            tableName: tests
+            columnName: available_from
+        - dropColumn:
+            tableName: tests
+            columnName: available_to

@@ -77,4 +77,7 @@ public class UserService {
         return "Не назначен";
     }
 
+    public Long getUserIdByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow().getId();
+    }
 }

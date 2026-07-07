@@ -65,7 +65,7 @@ public class TesterStatisticsService {
     /**
      * Конвертация TestAttempt в TesterAttemptDTO
      */
-    private TesterAttemptDTO convertToTesterAttemptDTO(TestAttempt attempt) {
+    public TesterAttemptDTO convertToTesterAttemptDTO(TestAttempt attempt) {
         TesterAttemptDTO dto = new TesterAttemptDTO();
         dto.setAttemptId(attempt.getId());
         dto.setTesterUsername(attempt.getUser().getUsername());
@@ -386,7 +386,7 @@ public class TesterStatisticsService {
         return new PageImpl<>(dtos, pageable, attemptsPage.getTotalElements());
     }
 
-    private TesterStatisticsDTO convertToTesterStatisticsDTO(TestAttempt attempt, Set<Long> userIdsWithExceptions) {
+    public TesterStatisticsDTO convertToTesterStatisticsDTO(TestAttempt attempt, Set<Long> userIdsWithExceptions) {
         TesterStatisticsDTO dto = new TesterStatisticsDTO();
 
         dto.setAttemptId(attempt.getId());
@@ -575,5 +575,14 @@ public class TesterStatisticsService {
     @Transactional(readOnly = true)
     public long getTotalTesters() {
         return userRepository.countAllTesters();
+    }
+
+    @Transactional(readOnly = true)
+    public TestSummaryDTO getFilteredTestSummary(Long testId, Set<Long> userIds) {
+        Test test = testRepository.findById(testId).orElseThrow();
+        List<TestAttempt> attempts = testAttemptRepository.findByTestId(testId).stream()
+                .filter(a -> userIds.contains(a.getUser().getId()))
+                .collect(Collectors.toList());
+        return calculateTestSummary(test, attempts);
     }
 }

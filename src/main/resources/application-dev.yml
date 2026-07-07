@@ -8,6 +8,7 @@ spring:
       connection-timeout: 30000
       maximum-pool-size: 10
       minimum-idle: 5
+
   jpa:
     show-sql: false
     hibernate:
@@ -20,6 +21,7 @@ spring:
           create_namespaces: true
         format_sql: false
         use_sql_comments: false
+
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/master.yaml
@@ -41,3 +43,10 @@ logging:
 
 springdoc:
   enabled: true
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin123
+  bucket-name: assesspro-materials
+  secure: false

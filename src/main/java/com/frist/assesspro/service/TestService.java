@@ -2,6 +2,7 @@ package com.frist.assesspro.service;
 
 
 import com.frist.assesspro.dto.TestDTO;
+import com.frist.assesspro.dto.material.TestLinkDTO;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.*;
 import com.frist.assesspro.mapper.TestMapper;
@@ -9,6 +10,7 @@ import com.frist.assesspro.repository.*;
 import com.frist.assesspro.repository.specification.TestSpecifications;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -32,6 +34,7 @@ public class TestService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final TestMapper testMapper;
+    private final NotificationService notificationService;
 
     private static final int MAX_TITLE_LENGTH = 200;
     private static final int MAX_DESCRIPTION_LENGTH = 1000;
@@ -163,6 +166,7 @@ public class TestService {
     /**
      * Обновление теста
      */
+    @CacheEvict(value = "publishedTests", allEntries = true)
     @Transactional
     public Test updateTest(Long testId, TestUpdateDTO updateDTO, String username) {
         Test existingTest = testRepository.findById(testId)
@@ -266,6 +270,9 @@ public class TestService {
                 test.getTitle(), testId,
                 publish ? "опубликован" : "снят с публикации",
                 username);
+        if (test.getIsPublished() == true) {
+            notifyTestPublished(test);
+        }
 
         test.setIsPublished(publish);
         return testRepository.save(test);
@@ -547,5 +554,22 @@ public class TestService {
      */
     public TestDTO convertToDTO(Test test) {
         return testMapper.toDto(test);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TestLinkDTO> getAllPublishedTests() {
+        return testRepository.findAllPublishedTests().stream()
+                .map(testMapper::toTestLinkDto)
+                .collect(Collectors.toList());
+    }
+
+    private void notifyTestPublished(Test test) {
+        List<User> testers = userRepository.findAllByRoleAndIsActive("ROLE_TESTER",true);
+        for (User user : testers) {
+            notificationService.createNotification(
+                    user,"Доступен новый тест: " + test.getTitle(),
+                    Notification.NotificationType.TEST_PUBLISHED,test.getId()
+            );
+        }
     }
 }

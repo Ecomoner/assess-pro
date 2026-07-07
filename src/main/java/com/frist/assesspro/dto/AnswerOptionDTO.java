@@ -20,9 +20,4 @@ public class AnswerOptionDTO {
 
     }
 
-    public AnswerOptionDTO(Long id, String text, Boolean isCorrect) {
-        this.id = id;
-        this.text = text;
-        this.isCorrect = isCorrect;
-    }
 }

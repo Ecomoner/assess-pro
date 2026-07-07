@@ -9,3 +9,10 @@ databaseChangeLog:
       file: db/changelog/003-add-project-to-users.yaml
   - include:
       file: db/changelog/004-update-test-entity.yaml
+  - include:
+      file: db/changelog/005-add-question-count-and-availability.yaml
+  - include:
+      file: db/changelog/006-create-sections-and-materials.yaml
+  - include:
+      file: db/changelog/007-create-notifications-table.yaml
+

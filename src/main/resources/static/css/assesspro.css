@@ -469,3 +469,28 @@ html {
         top: 100px; /* высота навбара (примерно 70-80px) + отступ */
     }
 }
+/*Уведомления */
+#notificationList .dropdown-item {
+    white-space: normal !important;      /* разрешаем перенос */
+    word-break: break-word !important;   /* принудительный перенос длинных слов */
+    display: flex;
+    align-items: flex-start;
+    padding: 0.5rem 1rem;
+}
+.notification-text {
+    flex: 1;
+    white-space: normal !important;
+    word-break: break-word !important;
+    margin-right: 0.5rem;
+}
+.mark-read {
+    flex-shrink: 0;
+    padding: 0 4px;
+    color: #6c757d;
+    align-self: flex-start;
+}
+/* чтобы список не выходил за экран */
+#notificationList {
+    max-height: 400px;
+    overflow-y: auto;
+}

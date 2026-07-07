@@ -1,5 +1,6 @@
 package com.frist.assesspro.exeption;
 
+import com.frist.assesspro.controllers.export.TestNotAvailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -89,6 +90,12 @@ public class GlobalExceptionHandler {
         }
 
         return "error/general";
+    }
+
+    @ExceptionHandler(TestNotAvailableException.class)
+    public String handleTestNotAvailable(TestNotAvailableException ex, RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        return "redirect:/tester/tests";
     }
 
     private boolean isAdmin(HttpServletRequest request) {

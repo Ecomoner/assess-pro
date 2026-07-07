@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Экспорт статистики')}">
+<body>
+<div th:replace="~{fragments/panel-navigation}"></div>
+<div class="container py-3 py-md-4">
+    <div class="row">
+        <div class="col-12 mb-3 mb-md-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb flex-wrap">
+
+                    <li class="breadcrumb-item active">Экспорт</li>
+                </ol>
+            </nav>
+            <h1 class="h3 h2-md mb-0" th:text="'Экспорт статистики: ' + ${test.title}">
+                Экспорт статистики
+            </h1>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow border-0">
+                <div class="card-body p-3 p-md-4">
+                    <form id="exportForm" th:action="@{/manager/tests/{testId}/export(testId=${test.id})}" method="get">
+                        <!-- все поля формы остаются без изменений -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Тестировщик</label>
+                            <select class="form-select form-select-sm" name="testerUsername">
+                                <option value="">Все тестировщики</option>
+                                <option th:each="tester : ${testers}"
+                                        th:value="${tester.username}"
+                                        th:text="${tester.fullName} + ' (' + ${tester.username} + ')'">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Категория</label>
+                            <select class="form-select form-select-sm" name="categoryId">
+                                <option value="">Все категории</option>
+                                <option th:each="cat : ${categories}"
+                                        th:value="${cat.id}"
+                                        th:text="${cat.name}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6 mb-2 mb-md-0">
+                                <label class="form-label fw-semibold small">Дата с</label>
+                                <input type="date" class="form-control form-control-sm" name="dateFrom">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold small">Дата по</label>
+                                <input type="date" class="form-control form-control-sm" name="dateTo">
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label class="form-label fw-semibold small">Включить в отчет</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeCorrect" name="includeCorrect" value="true" checked>
+                                <label class="form-check-label small" for="includeCorrect">
+                                    Правильные ответы
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeIncorrect" name="includeIncorrect" value="true" checked>
+                                <label class="form-check-label small" for="includeIncorrect">
+                                    Неправильные ответы
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Статусное сообщение -->
+                        <div id="statusMessage" class="alert alert-info d-none small py-2 px-3" role="status">
+                            <i class="bi bi-hourglass-split me-2"></i><span id="statusText"></span>
+                        </div>
+                        <hr class="my-3">
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <button type="button" id="exportButton" class="btn btn-dark px-4 py-2 w-100 w-sm-auto">
+                                <i class="bi bi-file-pdf me-2"></i>Сгенерировать PDF
+                            </button>
+                            <a th:href="@{/manager/tests/{testId}/statistics(testId=${test.id})}" class="btn btn-outline-secondary px-4 py-2 w-100 w-sm-auto">
+                                <i class="bi bi-x-circle me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('exportButton').addEventListener('click', async function() {
+        const form = document.getElementById('exportForm');
+        const button = this;
+        const statusDiv = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+
+        // Собираем данные формы (можно отправить POST с JSON или URLSearchParams)
+        const formData = new URLSearchParams(new FormData(form));
+        const url = form.action; // предполагается /manager/tests/{testId}/statistics/export
+
+        button.disabled = true;
+        statusDiv.classList.remove('d-none');
+        statusText.textContent = 'Запрос отправлен...';
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            if (!response.ok) throw new Error('Ошибка сервера');
+            const data = await response.json();
+            const requestId = data.requestId;
+            statusText.textContent = data.message;
+
+            const checkInterval = setInterval(async () => {
+                const res = await fetch('/export/download/' + requestId);
+                if (res.ok) {
+                    clearInterval(checkInterval);
+                    const blob = await res.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = 'manager_report.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    statusText.textContent = 'Скачивание началось.';
+                    button.disabled = false;
+                } else if (res.status === 404) {
+                    statusText.textContent = 'Генерация PDF...';
+                } else {
+                    clearInterval(checkInterval);
+                    statusText.textContent = 'Ошибка получения отчёта.';
+                    button.disabled = false;
+                }
+            }, 2000);
+        } catch (error) {
+            statusText.textContent = 'Ошибка: ' + error.message;
+            button.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

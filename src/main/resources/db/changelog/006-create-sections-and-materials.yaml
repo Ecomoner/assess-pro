@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-sections-and-materials
+      author: Вадим
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sections
+      changes:
+        - createTable:
+            tableName: sections
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: order_index
+                  type: int
+                  defaultValue: 0
+              - column:
+                  name: active
+                  type: boolean
+                  defaultValue: true
+        - createTable:
+            tableName: materials
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: section_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_material_section
+                    references: sections(id)
+              - column:
+                  name: file_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content_type
+                  type: varchar(100)
+              - column:
+                  name: file_size
+                  type: bigint
+              - column:
+                  name: object_key
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: uploaded_at
+                  type: timestamp
+                  defaultValueComputed: now()
+        - createTable:
+            tableName: section_tests
+            columns:
+              - column:
+                  name: section_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_section_test_section
+                    references: sections(id)
+              - column:
+                  name: test_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_section_test_test
+                    references: tests(id)

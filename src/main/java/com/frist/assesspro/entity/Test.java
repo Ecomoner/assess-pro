@@ -113,11 +113,15 @@ public class Test {
 
     private Boolean retake = false;
 
+    @Column(name = "available_from")
+    private LocalDateTime availableFrom;
 
-    @Transient
-    public int getQuestionCount() {
-        return questions != null ? questions.size() : 0;
-    }
+    @Column(name = "available_to")
+    private LocalDateTime availableTo;
+
+    @Column(nullable = false)
+    private Integer questionCount = 0;
+
 
 
     @Transient

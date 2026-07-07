@@ -68,6 +68,8 @@ public class DashboardController {
             return "redirect:/creator/dashboard";
         } else if (role.equals("ROLE_TESTER")) {
             return "redirect:/tester/dashboard";
+        }else if (role.equals("ROLE_MANAGER")) {
+            return "redirect:/manager/dashboard";
         }
 
         return "redirect:/home";

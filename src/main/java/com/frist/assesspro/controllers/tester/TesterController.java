@@ -152,7 +152,8 @@ public class TesterController {
     public String takeTest(
             @PathVariable Long attemptId,
             @AuthenticationPrincipal UserDetails userDetails,
-            Model model) {
+            Model model,
+            RedirectAttributes redirectAttributes) {
 
         try {
 
@@ -189,7 +190,8 @@ public class TesterController {
 
         } catch (Exception e) {
             log.error("Ошибка при загрузке теста", e);
-            return "redirect:/tester/tests?error=" + e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка: " + e.getMessage());
+            return "redirect:/tester/tests";
         }
     }
 

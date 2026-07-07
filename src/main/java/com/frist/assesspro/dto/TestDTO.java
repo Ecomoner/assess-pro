@@ -1,6 +1,7 @@
 package com.frist.assesspro.dto;
 
 
+import com.frist.assesspro.validation.ValidDateRange;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ValidDateRange
 public class TestDTO {
 
     private Long id;
@@ -50,6 +52,8 @@ public class TestDTO {
     private Boolean reTestOnFail;
     private Long retakeTestId;
     private Boolean retake;
+    private LocalDateTime availableFrom;
+    private LocalDateTime availableTo;
 
 
     public TestDTO(Long id, String title, String description, Boolean published,

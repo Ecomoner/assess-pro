@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 public class TestUpdateDTO {
@@ -34,4 +36,8 @@ public class TestUpdateDTO {
 
     private Integer passThresholdPercent;
     private Boolean reTestOnFail;
+
+    private LocalDateTime availableFrom;
+    private LocalDateTime availableTo;
+
 }

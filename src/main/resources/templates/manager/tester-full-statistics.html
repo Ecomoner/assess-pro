@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Статистика тестировщика')}">
+<body>
+<div th:replace="~{fragments/panel-navigation}"></div>
+<div class="container-fluid py-3 py-md-4 bg-light">
+    <div class="container px-2 px-md-3">
+        <!-- Хлебные крошки -->
+        <div class="mb-3 mb-md-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb flex-wrap">
+                    <li class="breadcrumb-item"><a th:href="@{/manager/dashboard}" class="text-decoration-none">Дашборд</a></li>
+                    <li class="breadcrumb-item active">Статистика тестировщика</li>
+                </ol>
+            </nav>
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                <div>
+                    <h1 class="h3 h2-md mb-1">
+                        <i class="bi bi-person-circle text-success me-2"></i>
+                        <span th:text="${tester.fullName}">Иванов И.И.</span>
+                    </h1>
+                    <p class="text-muted small mb-0">
+                        Логин: <strong th:text="${tester.username}">tester</strong>
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="exportPdfButton" class="btn btn-dark flex-fill flex-sm-grow-0">
+                        <i class="bi bi-file-pdf me-2"></i>
+                        <span class="d-none d-sm-inline">Экспорт PDF</span>
+                    </button>
+                    <a th:href="@{/manager/dashboard}"
+                       class="btn btn-outline-secondary flex-sm-grow-0">
+                        <i class="bi bi-arrow-left me-2"></i>Назад
+                    </a>
+                </div>
+            </div>
+            <div id="statusMessage" class="alert alert-info d-none small py-2 px-3 mt-3" role="status">
+                <i class="bi bi-hourglass-split me-2"></i><span id="statusText"></span>
+            </div>
+        </div>
+
+        <!-- Карточки статистики -->
+        <div class="row g-2 g-md-4 mb-3 mb-md-4">
+            <div class="col-6 col-md-4">
+                <div class="card border-0 shadow-sm bg-primary bg-opacity-10 stats-card">
+                    <div class="card-body p-2 p-md-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted text-uppercase small fw-semibold d-block text-xs">Всего попыток</span>
+                                <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md" th:text="${totalAttempts}">0</h3>
+                            </div>
+                            <div class="bg-primary bg-opacity-25 p-2 p-md-3 rounded-circle">
+                                <i class="bi bi-play-circle text-primary fs-5 fs-md-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="card border-0 shadow-sm bg-success bg-opacity-10 stats-card">
+                    <div class="card-body p-2 p-md-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted text-uppercase small fw-semibold d-block text-xs">Завершено</span>
+                                <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md" th:text="${completedAttempts}">0</h3>
+                            </div>
+                            <div class="bg-success bg-opacity-25 p-2 p-md-3 rounded-circle">
+                                <i class="bi bi-check-circle text-success fs-5 fs-md-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="card border-0 shadow-sm bg-warning bg-opacity-10 stats-card">
+                    <div class="card-body p-2 p-md-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted text-uppercase small fw-semibold d-block text-xs">Средний балл</span>
+                                <h3 class="mt-1 mt-md-2 mb-0 fw-bold h5 h3-md" th:text="${#numbers.formatDecimal(overallAverage, 1, 1)} + '%'">0%</h3>
+                            </div>
+                            <div class="bg-warning bg-opacity-25 p-2 p-md-3 rounded-circle">
+                                <i class="bi bi-star text-warning fs-5 fs-md-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список тестов с попытками -->
+        <div th:each="stat : ${testStatistics}" class="mb-3 mb-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text text-success me-2"></i>
+                        <span th:text="${stat.testTitle}"></span>
+                    </h5>
+                    <span class="badge bg-dark" th:text="'Попыток: ' + ${stat.totalAttempts}"></span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <!-- ... -->
+                        <tbody>
+                        <tr th:each="attempt : ${stat.attempts}">
+                            <td th:text="${#temporals.format(attempt.startTime, 'dd.MM.yy HH:mm')}"></td>
+                            <td>
+                                <span th:text="${attempt.score} + '/' + ${attempt.maxScore}"></span>
+                                <span class="d-inline d-sm-none small" th:text="' (' + ${#numbers.formatDecimal(attempt.percentage, 1, 1)} + '%)'"></span>
+                            </td>
+                            <td class="d-none d-sm-table-cell">
+                        <span class="badge" th:classappend="${attempt.percentage >= 70} ? 'bg-success' : (${attempt.percentage >= 50} ? 'bg-warning' : 'bg-danger')"
+                              th:text="${#numbers.formatDecimal(attempt.percentage, 1, 1)} + '%'"></span>
+                            </td>
+                            <td class="d-none d-md-table-cell" th:text="${attempt.formattedDuration}"></td>
+                            <td class="d-none d-lg-table-cell">
+                        <span class="badge" th:classappend="${attempt.completed} ? 'bg-success' : 'bg-warning'"
+                              th:text="${attempt.completed} ? 'Завершен' : 'В процессе'"></span>
+                            </td>
+                            <td class="text-end">
+                                <a th:href="@{/manager/tests/{testId}/statistics/tester/{attemptId}(testId=${stat.testId}, attemptId=${attempt.attemptId})}"
+                                   class="btn btn-sm btn-outline-dark">
+                                    <i class="bi bi-eye"></i>
+                                    <span class="d-none d-sm-inline ms-1">Детали</span>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Если нет данных -->
+        <div th:if="${testStatistics.isEmpty()}" class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-bar-chart display-1 text-muted mb-3"></i>
+                <h3 class="text-muted h4 h3-md">Нет данных</h3>
+                <p class="text-muted small">Тестировщик еще не проходил ни одного теста</p>
+                <a th:href="@{/manager/dashboard}" class="btn btn-dark mt-3">
+                    <i class="bi bi-arrow-left me-2"></i>Назад
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    document.getElementById('exportPdfButton').addEventListener('click', async function() {
+        const button = this;
+        const statusDiv = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+        const testerUsername = /*[[${tester.username}]]*/ '';
+
+        button.disabled = true;
+        statusDiv.classList.remove('d-none');
+        statusText.textContent = 'Запрос отправлен...';
+
+        try {
+            const response = await fetch('/manager/tester/' + testerUsername + '/full-statistics/export', {
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) throw new Error('Ошибка сервера');
+
+            const data = await response.json();
+            const requestId = data.requestId;
+            statusText.textContent = data.message || 'Генерация отчёта...';
+
+            const checkInterval = setInterval(async () => {
+                try {
+                    const res = await fetch('/export/download/' + requestId, {
+                        credentials: 'same-origin'
+                    });
+                    if (res.ok) {
+                        clearInterval(checkInterval);
+                        const blob = await res.blob();
+                        const downloadUrl = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = downloadUrl;
+                        a.download = 'tester_' + testerUsername + '_full_statistics.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(downloadUrl);
+                        statusText.textContent = 'Скачивание началось.';
+                        button.disabled = false;
+                    } else if (res.status === 404) {
+                        statusText.textContent = 'Формирование PDF...';
+                    } else {
+                        clearInterval(checkInterval);
+                        statusText.textContent = 'Ошибка при получении отчёта.';
+                        button.disabled = false;
+                    }
+                } catch (e) {
+                    clearInterval(checkInterval);
+                    statusText.textContent = 'Ошибка соединения.';
+                    button.disabled = false;
+                }
+            }, 2000);
+        } catch (error) {
+            statusText.textContent = 'Ошибка: ' + error.message;
+            button.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

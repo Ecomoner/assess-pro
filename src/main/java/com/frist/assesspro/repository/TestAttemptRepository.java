@@ -1,5 +1,8 @@
 package com.frist.assesspro.repository;
 
+import com.frist.assesspro.dto.statistics.ProjectAggregatedStatsDTO;
+import com.frist.assesspro.dto.statistics.TesterProjectStatsDTO;
+import com.frist.assesspro.dto.statistics.TesterProjectStatsProjection;
 import com.frist.assesspro.dto.test.TestHistoryDTO;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> {
@@ -133,4 +137,37 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     boolean hasFailedAttempt(@Param("testId") Long testId,
                              @Param("userId") Long userId,
                              @Param("requiredScore") Integer requiredScore);
+
+    @Query("SELECT new com.frist.assesspro.dto.statistics.ProjectAggregatedStatsDTO(" +
+            "COUNT(ta.id), COALESCE(AVG(ta.totalScore), 0)) " +
+            "FROM TestAttempt ta " +
+            "JOIN ta.user u " +
+            "WHERE u.project.id = :projectId AND ta.status = 'COMPLETED'")
+    ProjectAggregatedStatsDTO getAggregatedStatsByProjectId(@Param("projectId") Long projectId);
+
+    @Query(value = "SELECT u.id AS userId, u.username AS username, " +
+            "u.first_name AS firstName, u.last_name AS lastName, " +
+            "COUNT(ta.id) AS attemptCount, " +
+            "COALESCE(AVG(ta.total_score), 0.0) AS averageScore, " +
+            "MAX(ta.start_time) AS lastAttemptDate " +
+            "FROM users u " +
+            "LEFT JOIN test_attempts ta ON u.id = ta.user_id AND ta.status = 'COMPLETED' " +
+            "WHERE u.project_id = :projectId AND u.role = 'ROLE_TESTER' " +
+            "GROUP BY u.id, u.username, u.first_name, u.last_name", nativeQuery = true)
+    List<TesterProjectStatsProjection> findTesterStatsByProjectId(@Param("projectId") Long projectId);
+
+    @Query("SELECT ta FROM TestAttempt ta " +
+            "JOIN FETCH ta.user " +
+            "JOIN FETCH ta.test " +
+            "WHERE ta.test.id = :testId AND ta.user.id IN :userIds " +
+            "ORDER BY ta.startTime DESC")
+    Page<TestAttempt> findAttemptsByTestIdAndUserIds(@Param("testId") Long testId,
+                                                     @Param("userIds") Set<Long> userIds,
+                                                     Pageable pageable);
+
+    @Query("SELECT ta FROM TestAttempt ta JOIN FETCH ta.test JOIN FETCH ta.user WHERE ta.user.id IN :userIds ORDER BY ta.startTime DESC")
+    List<TestAttempt> findTopByUserIdsOrderByStartTimeDesc(@Param("userIds") Set<Long> userIds);
+
+    @Query("SELECT a FROM TestAttempt a WHERE a.test.id = :testId AND a.user.id IN :userIds ORDER BY a.startTime DESC")
+    List<TestAttempt> findByTestIdAndUserIds(@Param("testId") Long testId, @Param("userIds") Set<Long> userIds);
 }

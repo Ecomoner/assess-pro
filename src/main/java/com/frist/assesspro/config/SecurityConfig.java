@@ -55,8 +55,11 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/prometheus").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
+                        .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/sse/subscribe").authenticated()
                         .requestMatchers("/creator/**").hasAnyRole("CREATOR", "ADMIN")
-                        .requestMatchers("/export/**").hasAnyRole("CREATOR", "ADMIN")
+                        .requestMatchers("/export/**").hasAnyRole("CREATOR", "ADMIN","MANAGER")
+                        .requestMatchers("/manager/**").hasRole("MANAGER")
                         .requestMatchers("/tester/**").hasAnyRole("TESTER", "ADMIN")
                         .requestMatchers("/admin/**", "/swagger-ui/**", "/swagger-ui.html",
                                 "/api-docs/**", "/v3/api-docs/**").hasRole("ADMIN")

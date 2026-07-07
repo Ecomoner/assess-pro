@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Материалы для обучения')}">
+    <style>
+        /* те же стили, что и раньше */
+    </style>
+<body>
+<div th:replace="~{fragments/panel-navigation}"></div>
+<main class="container-fluid px-0 py-4">
+    <div class="row g-4">
+        <!-- Оглавление -->
+        <div class="col-12 col-md-4 col-lg-3 order-1">
+            <div class="card toc-card sticky-md-top sticky-top-offset">
+                <div class="card-header">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-journal-bookmark-fill me-2" style="color: #b78c5a;"></i>Разделы
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="toc-list">
+                        <a th:each="section : ${sections}"
+                           th:href="'#' + ${section.id}"
+                           class="list-group-item toc-item"
+                           th:text="${section.title}">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-8 col-lg-9 order-2">
+            <h1 class="display-5 fw-light mb-4" style="font-family: 'Playfair Display', serif;">Материалы для изучения</h1>
+            <div th:each="section : ${sections}" th:id="${section.id}" class="section mb-5">
+                <h2 th:text="${section.title}"></h2>
+                <div th:if="${section.description}" th:utext="${section.description}" class="mb-3"></div>
+                <!-- PDF просмотр -->
+                <div th:if="${section.hasPdf}">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-2">
+                            <h5 class="mb-0"><i class="bi bi-file-pdf text-danger me-2"></i>Материал</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="pdf-container" th:attr="data-pdf-url=@{/materials/pdf/{id}(id=${section.materials[0].id})}"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Привязанные тесты -->
+                <div th:if="${!section.tests.isEmpty()}" class="mt-3">
+                    <h5>Связанные тесты:</h5>
+                    <ul>
+                        <li th:each="test : ${section.tests}">
+                            <a th:href="@{/tester/attempt/{id}(id=${test.id})}" th:text="${test.title}"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:replace="~{fragments/footer}"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script th:inline="javascript">
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    // для каждого контейнера с PDF запускаем рендеринг
+    document.addEventListener('DOMContentLoaded', function() {
+        const containers = document.querySelectorAll('.pdf-container');
+        containers.forEach(container => {
+            const url = container.getAttribute('data-pdf-url');
+            if (url) {
+                loadPdf(container, url);
+            }
+        });
+
+        // скрыть/показать секции при клике в оглавлении
+        const tocLinks = document.querySelectorAll('.toc-item');
+        const sections = document.querySelectorAll('.section');
+        tocLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                sections.forEach(sec => {
+                    sec.style.display = (sec.id === targetId) ? 'block' : 'none';
+                });
+                // если в секции есть PDF, который ещё не загружен – загрузить (ленивая загрузка)
+                const pdfContainer = document.querySelector(`#${targetId} .pdf-container`);
+                if (pdfContainer && !pdfContainer.classList.contains('loaded')) {
+                    const url = pdfContainer.getAttribute('data-pdf-url');
+                    loadPdf(pdfContainer, url);
+                    pdfContainer.classList.add('loaded');
+                }
+                history.pushState(null, null, '#' + targetId);
+            });
+        });
+
+        // при загрузке показать только первую секцию (или по хэшу)
+        const hash = window.location.hash.substring(1);
+        const defaultSection = sections[0]?.id;
+        let showId = hash || defaultSection;
+        if (showId) {
+            sections.forEach(sec => sec.style.display = (sec.id == showId) ? 'block' : 'none');
+        }
+    });
+
+    function loadPdf(container, url) {
+        pdfjsLib.getDocument(url).promise.then(pdf => {
+            container.innerHTML = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                pdf.getPage(i).then(page => {
+                    const scale = 1.2;
+                    const viewport = page.getViewport({scale});
+                    const canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    canvas.style.display = 'block';
+                    canvas.style.margin = '10px auto';
+                    canvas.style.maxWidth = '100%';
+                    canvas.style.height = 'auto';
+                    container.appendChild(canvas);
+                    page.render({canvasContext: canvas.getContext('2d'), viewport});
+                });
+            }
+        }).catch(err => {
+            container.innerHTML = '<p class="text-danger p-3">Не удалось загрузить PDF.</p>';
+        });
+    }
+</script>
+</body>
+</html>

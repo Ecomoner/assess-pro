@@ -223,4 +223,5 @@ public class ProjectService {
     public List<Project> getProjectsByManager(Long id) {
         return projectRepository.findByManagerId(id);
     }
+
 }

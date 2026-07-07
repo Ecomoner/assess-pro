@@ -20,6 +20,7 @@ services:
     container_name: assesspro-app
     depends_on:
       - postgres
+      - minio
     environment:
       SPRING_PROFILES_ACTIVE: dev
       DB_URL: jdbc:postgresql://postgres:5432/dev_postgres?currentSchema=assess_pro_db
@@ -30,8 +31,24 @@ services:
     networks:
       - assesspro-net
 
+  minio:
+    image: minio/minio:latest
+    container_name: assesspro-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - assesspro-net   # ← теперь та же сеть, что и у остальных
+
 volumes:
   postgres_data:
+  minio_data:
 
 networks:
-  assesspro-net:
+  assesspro-net:   # ← единое имя сети

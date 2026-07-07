@@ -1,6 +1,7 @@
 package com.frist.assesspro.service;
 
 
+import com.frist.assesspro.controllers.export.TestNotAvailableException;
 import com.frist.assesspro.dto.UserStatisticsDTO;
 import com.frist.assesspro.dto.category.CategoryDTO;
 import com.frist.assesspro.dto.test.*;
@@ -35,7 +36,9 @@ public class TestPassingService {
     private final CategoryService categoryService;
     private final ProfileService profileService;
     private final CooldownService cooldownService;
-
+    private final ProjectService projectService;
+    private final NotificationService notificationService;
+    private final ManagerService managerService;
 
 
     /**
@@ -49,7 +52,7 @@ public class TestPassingService {
     public Page<TestInfoDTO> getAllAvailableTestsDTOPaginated(int page, int size) {
         log.info("Запрос всех доступных тестов (страница: {}, размер: {})", page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return testRepository.findPublishedTestInfoDTOs(pageable);
+        return testRepository.findPublishedTestInfoDTOsWithDates(LocalDateTime.now(),pageable);
     }
     /**
      *  Получение тестов ПО КАТЕГОРИИ С ПАГИНАЦИЕЙ
@@ -65,10 +68,10 @@ public class TestPassingService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         if (categoryId == null) {
-            return testRepository.findPublishedTestInfoDTOs(pageable);
+            return testRepository.findPublishedTestInfoDTOsWithDates(LocalDateTime.now(),pageable);
         }
 
-        return testRepository.findPublishedTestInfoDTOsByCategoryId(categoryId, pageable);
+        return testRepository.findPublishedTestInfoDTOsByCategoryIdWithDates(categoryId,LocalDateTime.now(), pageable);
     }
     /**
      * Получение теста для прохождения как DTO
@@ -86,6 +89,16 @@ public class TestPassingService {
             return Optional.empty();
         }
         boolean isRetake = Boolean.TRUE.equals(testCheck.getRetake());
+
+        if (!isRetake) {
+            LocalDateTime now = LocalDateTime.now();
+            if (testCheck.getAvailableFrom() != null && testCheck.getAvailableFrom().isAfter(now)) {
+                throw new TestNotAvailableException("Тест станет доступен " + formatDateTime(testCheck.getAvailableFrom()));
+            }
+            if (testCheck.getAvailableTo() != null && testCheck.getAvailableTo().isBefore(now)) {
+                throw new TestNotAvailableException("Тест был доступен до " + formatDateTime(testCheck.getAvailableTo()));
+            }
+        }
 
         // Загружаем тест с вопросами в зависимости от типа
         Test test;
@@ -293,7 +306,7 @@ public class TestPassingService {
     @Transactional(readOnly = true)
     public List<TestInfoDTO> getAllAvailableTestsDTO() {
         log.info("Запрос всех доступных тестов (список)");
-        return testRepository.findPublishedTestInfoDTOs();
+        return testRepository.findAllPublishedTestInfoDTOsWithDates(LocalDateTime.now());
     }
     /**
      * Получение тестов ПО КАТЕГОРИИ (без пагинации)
@@ -310,7 +323,7 @@ public class TestPassingService {
             return getAllAvailableTestsDTO();
         }
 
-        return testRepository.findPublishedTestInfoDTOsByCategoryId(categoryId);
+        return testRepository.findPublishedTestInfoDTOsByCategoryIdWithDates(categoryId,LocalDateTime.now());
     }
     /**
      * Завершение теста и получение результатов как DTO
@@ -339,13 +352,41 @@ public class TestPassingService {
         testAttemptRepository.save(attempt);
         log.info("Завершена попытка теста ID: {}, итоговый балл: {}", attempt.getTest().getId(), recalculatedTotalScore);
 
+        // ==== Уведомление менеджеров ====
+        List<User> managers = managerService.getManagersForTester(attempt.getUser().getId());
+        if (managers != null && !managers.isEmpty()) {
+            String fullName = attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName();
+            Test test = attempt.getTest();
+            int totalQuestions = attempt.getTotalQuestions() != null
+                    ? attempt.getTotalQuestions()
+                    : test.getQuestions().size();
+            double percentage = totalQuestions > 0
+                    ? (double) recalculatedTotalScore / totalQuestions * 100
+                    : 0;
+
+            for (User manager : managers) {
+                notificationService.createNotification(
+                        manager,
+                        String.format("Тестировщик %s завершил тест «%s» с результатом %d/%d (%.1f%%)",
+                                fullName,
+                                test.getTitle(),
+                                recalculatedTotalScore,
+                                totalQuestions,
+                                percentage),
+                        Notification.NotificationType.ATTEMPT_COMPLETED,
+                        attempt.getId()      // relatedEntityId = attemptId
+                );
+            }
+        }
+        // =============================================
+
         return getTestResults(attemptId, username);
     }
 
     /**
      * Получение результатов теста как DTO
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public TestResultsDTO getTestResults(Long attemptId, String username) {
         TestAttempt attempt = testAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new RuntimeException("Попытка не найдена"));
@@ -373,6 +414,7 @@ public class TestPassingService {
         // Пересчитываем totalScore из ответов (сумма баллов)
         int recalculatedTotalScore = userAnswerRepository.sumPointsEarnedByAttemptId(attemptId);
         if (recalculatedTotalScore < 0) recalculatedTotalScore = 0;
+
 
         TestResultsDTO dto = new TestResultsDTO();
         if (test.getPassThresholdPercent() != null && test.getPassThresholdPercent() > 0
@@ -563,7 +605,7 @@ public class TestPassingService {
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return testRepository.searchPublishedTests(searchTerm.trim(), pageable);
+        return testRepository.searchPublishedTestsWithDates(searchTerm.trim(),LocalDateTime.now(), pageable);
     }
 
     /**
@@ -576,7 +618,7 @@ public class TestPassingService {
         }
 
         Pageable pageable = PageRequest.of(0, limit);
-        return testRepository.searchPublishedTests(searchTerm.trim(), pageable).getContent();
+        return testRepository.searchPublishedTestsWithDates(searchTerm.trim(),LocalDateTime.now(), pageable).getContent();
     }
 
 }

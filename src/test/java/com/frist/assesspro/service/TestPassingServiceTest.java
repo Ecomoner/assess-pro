@@ -108,7 +108,7 @@ class TestPassingServiceTest {
         testInfoDTO = new TestInfoDTO();
         testInfoDTO.setId(1L);
         testInfoDTO.setTitle("Тест по математике");
-        testInfoDTO.setQuestionCount(1L);
+        testInfoDTO.setQuestionCount(1);
         testInfoDTO.setTimeLimitMinutes(30);
 
         categoryDTO = new CategoryDTO();
@@ -122,13 +122,13 @@ class TestPassingServiceTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
         Page<TestInfoDTO> page = new PageImpl<>(List.of(testInfoDTO), pageable, 1);
 
-        when(testRepository.findPublishedTestInfoDTOs(pageable)).thenReturn(page);
+        when(testRepository.findPublishedTestInfoDTOsWithDates(LocalDateTime.now(),pageable)).thenReturn(page);
 
         Page<TestInfoDTO> result = testPassingService.getAllAvailableTestsDTOPaginated(0, 10);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getId()).isEqualTo(1L);
-        verify(testRepository).findPublishedTestInfoDTOs(pageable);
+        verify(testRepository).findPublishedTestInfoDTOsWithDates(LocalDateTime.now(),pageable);
     }
 
     @Test
@@ -137,12 +137,12 @@ class TestPassingServiceTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
         Page<TestInfoDTO> page = new PageImpl<>(List.of(testInfoDTO), pageable, 1);
 
-        when(testRepository.findPublishedTestInfoDTOsByCategoryId(1L, pageable)).thenReturn(page);
+        when(testRepository.findPublishedTestInfoDTOsByCategoryIdWithDates(1L,LocalDateTime.now(), pageable)).thenReturn(page);
 
         Page<TestInfoDTO> result = testPassingService.getAvailableTestsByCategoryDTOPaginated(1L, 0, 10);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(testRepository).findPublishedTestInfoDTOsByCategoryId(1L, pageable);
+        verify(testRepository).findPublishedTestInfoDTOsByCategoryIdWithDates(1L,LocalDateTime.now(), pageable);
     }
 
     @Test
@@ -151,12 +151,12 @@ class TestPassingServiceTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
         Page<TestInfoDTO> page = new PageImpl<>(List.of(testInfoDTO), pageable, 1);
 
-        when(testRepository.findPublishedTestInfoDTOs(pageable)).thenReturn(page);
+        when(testRepository.findPublishedTestInfoDTOsWithDates(LocalDateTime.now(),pageable)).thenReturn(page);
 
         Page<TestInfoDTO> result = testPassingService.getAvailableTestsByCategoryDTOPaginated(null, 0, 10);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(testRepository).findPublishedTestInfoDTOs(pageable);
+        verify(testRepository).findPublishedTestInfoDTOsWithDates(LocalDateTime.now(),pageable);
     }
 
     @Test
@@ -471,18 +471,18 @@ class TestPassingServiceTest {
     void searchTests_Success() {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
         Page<TestInfoDTO> page = new PageImpl<>(List.of(testInfoDTO), pageable, 1);
-        when(testRepository.searchPublishedTests("математика", pageable)).thenReturn(page);
+        when(testRepository.searchPublishedTestsWithDates("математика", LocalDateTime.now(),pageable)).thenReturn(page);
 
         Page<TestInfoDTO> result = testPassingService.searchTests("математика", 0, 10);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(testRepository).searchPublishedTests("математика", pageable);
+        verify(testRepository).searchPublishedTestsWithDates("математика",LocalDateTime.now(), pageable);
     }
 
     @Test
     @DisplayName("searchTests: пустой поиск -> все тесты")
     void searchTests_EmptySearch() {
-        when(testRepository.findPublishedTestInfoDTOs(any(Pageable.class)))
+        when(testRepository.findPublishedTestInfoDTOsWithDates(LocalDateTime.now(),any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(testInfoDTO)));
 
         Page<TestInfoDTO> result = testPassingService.searchTests(null, 0, 10);
@@ -495,7 +495,7 @@ class TestPassingServiceTest {
     void quickSearchTests_Success() {
         Pageable pageable = PageRequest.of(0, 5);
         Page<TestInfoDTO> page = new PageImpl<>(List.of(testInfoDTO), pageable, 1);
-        when(testRepository.searchPublishedTests("мат", pageable)).thenReturn(page);
+        when(testRepository.searchPublishedTestsWithDates("мат",LocalDateTime.now(), pageable)).thenReturn(page);
 
         List<TestInfoDTO> result = testPassingService.quickSearchTests("мат", 5);
 

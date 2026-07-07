@@ -2,6 +2,7 @@ package com.frist.assesspro.mapper;
 
 
 import com.frist.assesspro.dto.TestDTO;
+import com.frist.assesspro.dto.material.TestLinkDTO;
 import com.frist.assesspro.entity.Test;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -37,4 +38,6 @@ public interface TestMapper {
     @Mapping(target = "questions", ignore = true)
     @Mapping(target = "attempts", ignore = true)
     Test toEntity(TestDTO dto);
+
+    TestLinkDTO toTestLinkDto(Test test);
 }

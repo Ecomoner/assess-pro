@@ -1,37 +1,68 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header('Дашборд менеджера')}",>
-    <meta charset="UTF-8">
+<head th:replace="~{fragments/header :: header('Панель менеджера')}">
 <body>
 <div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container-fluid py-3 py-md-4 bg-light">
-    <div class="container px-2 px-md-3">
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 mb-md-4 gap-2">
-            <div>
-                <h1 class="h3 h2-md mb-1">
-                    Панель управления
-                </h1>
-            </div>
+<div class="container py-3">
+    <h1 class="mb-4">Мои проекты</h1>
+    <div th:if="${projects.isEmpty()}" class="alert alert-info">
+        У вас пока нет назначенных проектов.
+    </div>
+    <div th:each="project : ${projects}" class="card mb-3 shadow-sm">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0" th:text="${project.name}"></h5>
+            <a th:href="@{/manager/projects/{id}(id=${project.id})}"
+               class="btn btn-dark btn-sm">Подробнее</a>
         </div>
-        <div class="row g-2 g-md-4 mb-3 mb-md-4">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
-                    <div class="card-body p-2 p-md-3">
-                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-primary bg-opacity-25 p-2 p-md-3 rounded-circle me-2 me-md-3">
-                                    <i class="bi bi-people text-primary fs-5 fs-md-3"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-1 h6 h5-md">Управление проектами</h5>
-                                </div>
-                            </div>
-                            <a th:href="@{/manager/projects}" class="btn btn-dark w-100 w-sm-auto">
-                                <i class="bi bi-arrow-right me-2"></i>Пререйти к списку</a>
-                        </div>
-                    </div>
+    </div>
+    <div class="mb-5">
+        <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-calendar-event me-2 fs-4"></i>
+            <h2 class="h4 mb-0 fw-semibold">Ближайшие мероприятия</h2>
+        </div>
+        <div th:if="${!lastEvents.isEmpty()}">
+            <div th:each="event : ${lastEvents}" class="card mb-3 border-0 shadow-sm">
+                <div class="card-body py-3 px-4">
+                    <h3 class="h6 fw-bold mb-1" th:text="${event.name}">Название события</h3>
+                    <p class="text-muted small mb-0" th:text="${event.description} ?: 'Нет описания'"></p>
                 </div>
             </div>
+        </div>
+        <div th:if="${lastEvents.isEmpty()}" class="card border-0 shadow-sm">
+            <div class="card-body text-center py-4 text-muted">
+                <i class="bi bi-calendar-x me-2"></i>Нет запланированных событий
+            </div>
+        </div>
+    </div>
+    <div class="mt-5">
+        <h4>Последние попытки тестировщиков</h4>
+        <div th:if="${recentAttempts != null and !recentAttempts.isEmpty()}">
+            <table class="table table-sm table-hover">
+                <thead class="table-light">
+                <tr>
+                    <th>Тестировщик</th>
+                    <th>Тест</th>
+                    <th>Результат</th>
+                    <th>Дата</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="attempt : ${recentAttempts}">
+                    <td th:text="${attempt.testerFullName}"></td>
+                    <td th:text="${attempt.testTitle}"></td>
+                    <td th:text="${attempt.score} + '/' + ${attempt.maxScore}"></td>
+                    <td th:text="${#temporals.format(attempt.startTime, 'dd.MM.yy HH:mm')}"></td>
+                    <td>
+                        <a th:href="@{/manager/tests/{testId}/statistics/tester/{attemptId}(testId=${attempt.testId}, attemptId=${attempt.attemptId})}"
+                           class="btn btn-sm btn-outline-dark">Детали</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:if="${recentAttempts == null or recentAttempts.isEmpty()}" class="text-muted">
+            Нет недавних попыток.
         </div>
     </div>
 </div>
