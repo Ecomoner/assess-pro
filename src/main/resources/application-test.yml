@@ -14,3 +14,14 @@ spring:
         default_schema: ASSESS_PRO_DB
   liquibase:
     enabled: false
+  mail:
+    host: localhost
+    port: 1025
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false

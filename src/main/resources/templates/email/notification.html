@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #343a40; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f8f9fa; }
+        .button { display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+        .footer { font-size: 12px; color: #6c757d; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>AssessPro</h2>
+    </div>
+    <div class="content">
+        <p th:text="${message}">Текст уведомления</p>
+        <p th:if="${targetUrl}">
+            <a class="button" th:href="${baseUrl + targetUrl}">Перейти к просмотру</a>
+        </p>
+        <p th:if="${targetUrl}">
+            Или перейдите по ссылке: <a th:href="${baseUrl + targetUrl}">открыть</a>
+        </p>
+    </div>
+    <div class="footer">
+        <p>Это автоматическое уведомление от системы AssessPro. Пожалуйста, не отвечайте на это письмо.</p>
+    </div>
+</div>
+</body>
+</html>

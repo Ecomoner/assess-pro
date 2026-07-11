@@ -170,4 +170,6 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
 
     @Query("SELECT a FROM TestAttempt a WHERE a.test.id = :testId AND a.user.id IN :userIds ORDER BY a.startTime DESC")
     List<TestAttempt> findByTestIdAndUserIds(@Param("testId") Long testId, @Param("userIds") Set<Long> userIds);
+
+    boolean existsByUserIdAndStatus(Long userId, TestAttempt.AttemptStatus status);
 }

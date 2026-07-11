@@ -62,13 +62,13 @@
                         data.forEach(n => {
                             const item = document.createElement('li');
                             item.innerHTML = `
-                            <a class="dropdown-item d-flex align-items-start"
-                               href="${n.targetUrl || '#'}" data-id="${n.id}">
-                                <span class="notification-text">${n.message}</span>
-                                <button class="btn btn-sm btn-link mark-read" data-id="${n.id}" title="Отметить прочитанным">
-                                    <i class="bi bi-check"></i>
-                                </button>
-                            </a>`;
+                        <a class="dropdown-item d-flex align-items-start"
+                           href="${n.targetUrl || '#'}" data-id="${n.id}">
+                            <span class="notification-text">${n.message}</span>
+                            <button class="btn btn-sm btn-link mark-read" data-id="${n.id}" title="Отметить прочитанным">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        </a>`;
                             list.appendChild(item);
                         });
                     }
@@ -104,38 +104,59 @@
             }
         });
 
-        // SSE подписка
-        const eventSource = new EventSource('/sse/subscribe');
-        eventSource.onmessage = function(event) {
-            const notification = JSON.parse(event.data);
-            showToast(notification.message, notification.targetUrl);
-            loadUnreadNotifications();
-        };
-        eventSource.onerror = function() {
-            console.warn('SSE connection error, will retry...');
-        };
+        let eventSource = null;
+
+        function connectSSE() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            eventSource = new EventSource('/sse/subscribe');
+
+            eventSource.onmessage = function(event) {
+                const notification = JSON.parse(event.data);
+                showToast(notification.message, notification.targetUrl);
+                loadUnreadNotifications();
+            };
+
+            eventSource.onerror = function() {
+                console.warn('SSE connection error, will retry...');
+                // Браузер автоматически переподключится
+            };
+        }
+
+        // Закрываем соединение при уходе со страницы
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+        });
+
+        // Запускаем SSE после загрузки
+        connectSSE();
+        // -------------------------------------------------
 
         function showToast(message, url) {
             const toastContainer = document.getElementById('toast-container');
             if (!toastContainer) return;
             const toastHTML = `
-            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header">
-                    <strong class="me-auto">Уведомление</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
-                    <a href="${url}" class="btn btn-sm btn-primary ms-2">Перейти</a>
-                </div>
-            </div>`;
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Уведомление</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+                <a href="${url}" class="btn btn-sm btn-primary ms-2">Перейти</a>
+            </div>
+        </div>`;
             toastContainer.insertAdjacentHTML('beforeend', toastHTML);
             const toastEl = toastContainer.lastElementChild;
             const toast = new bootstrap.Toast(toastEl);
             toast.show();
         }
 
-        // Первая загрузка
+        // Первая загрузка списка уведомлений
         loadUnreadNotifications();
     });
 </script>

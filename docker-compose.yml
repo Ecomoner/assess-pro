@@ -46,6 +46,16 @@ services:
     networks:
       - assesspro-net   # ← теперь та же сеть, что и у остальных
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: assesspro-mailhog
+    restart: always
+    ports:
+      - "1025:1025"   # SMTP-порт
+      - "8025:8025"   # веб-интерфейс
+    networks:
+      - assesspro-net
+
 volumes:
   postgres_data:
   minio_data:

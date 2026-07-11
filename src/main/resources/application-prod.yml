@@ -26,6 +26,20 @@ spring:
   devtools:
     restart:
       enabled: false
+  mail:
+    host: mailhog
+    port: 1025
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+app:
+  base-url: http://72.56.5.58:8080
 server:
   forward-headers-strategy: native
 logging:

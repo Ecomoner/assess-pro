@@ -54,6 +54,10 @@
                     </div>
                 </div>
             </div>
+            <div th:if="${param.materialAccessDenied != null}" class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Доступ к материалам запрещён во время прохождения теста. Завершите попытку, чтобы вернуться к обучению.
+            </div>
             <div class="col-6 col-xl-3">
                 <div class="card stats-card h-100">
                     <div class="card-body d-flex flex-column">

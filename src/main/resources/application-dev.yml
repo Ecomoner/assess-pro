@@ -6,8 +6,10 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 30000
-      maximum-pool-size: 10
+      maximum-pool-size: 40
       minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
     show-sql: false
@@ -33,6 +35,17 @@ spring:
     restart:
       enabled: true
 
+  mail:
+    host: localhost          # имя сервиса в Docker
+    port: 1025
+    username:              # не требуется
+    password:              # не требуется
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
 logging:
   level:
     com.frist.assesspro: DEBUG

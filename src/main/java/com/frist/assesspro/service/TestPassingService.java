@@ -621,4 +621,14 @@ public class TestPassingService {
         return testRepository.searchPublishedTestsWithDates(searchTerm.trim(),LocalDateTime.now(), pageable).getContent();
     }
 
+    /**
+     * Активно ли прохождение теста
+     */
+    @Transactional(readOnly = true)
+    public boolean hasActiveAttempt(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        return testAttemptRepository.existsByUserIdAndStatus(user.getId(), TestAttempt.AttemptStatus.IN_PROGRESS);
+    }
+
 }

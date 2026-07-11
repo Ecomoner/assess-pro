@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +27,7 @@ public class NotificationService {
     private final NotificationMapper notificationMapper;
     private final SseService sseService;
     private final TestAttemptRepository  testAttemptRepository;
+    private final EmailService emailService;
 
     @Transactional
     public NotificationDTO createNotification(User recipient, String message,
@@ -42,6 +45,18 @@ public class NotificationService {
 
         try {
             sseService.sendToUser(recipient.getId(), dto);
+
+            if (recipient.getEmail() != null && !recipient.getEmail().isBlank()) {
+                try {
+                    Map<String, Object> model = new HashMap<>();
+                    model.put("message", message);
+                    model.put("targetUrl", dto.getTargetUrl());
+                    emailService.sendEmail(recipient.getEmail(), "Новое уведомление в AssessPro",
+                            "email/notification", model);
+                } catch (Exception e) {
+                    log.error("Failed to queue email for user {}: {}", recipient.getUsername(), e.getMessage());
+                }
+            }
         } catch (Exception e) {
             log.error("Не удалось отправить SSE-уведомление пользователю {}: {}", recipient.getId(), e.getMessage());
         }

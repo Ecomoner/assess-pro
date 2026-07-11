@@ -3,6 +3,7 @@ package com.frist.assesspro.controllers;
 
 import com.frist.assesspro.dto.material.SectionDTO;
 import com.frist.assesspro.service.MaterialService;
+import com.frist.assesspro.service.TestPassingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.InputStream;
+import java.security.Principal;
 import java.util.List;
 
 @Controller
@@ -22,9 +24,15 @@ import java.util.List;
 public class MaterialPageController {
 
     private final MaterialService materialService;
+    private final TestPassingService testPassingService;
 
     @GetMapping
-    public String viewMaterials(Model model) {
+    public String viewMaterials(Model model, Principal principal) {
+
+        if (principal != null && testPassingService.hasActiveAttempt(principal.getName())) {
+            // Перенаправляем на дашборд тестировщика с сообщением
+            return "redirect:/tester/dashboard?materialAccessDenied";
+        }
         List<SectionDTO> sections = materialService.getAllActiveSections();
         model.addAttribute("sections", sections);
         return "materials/public-page";
@@ -34,8 +42,6 @@ public class MaterialPageController {
     @GetMapping("/pdf/{materialId}")
     public ResponseEntity<InputStreamResource> getPdf(@PathVariable Long materialId) throws Exception {
         InputStream pdfStream = materialService.getPdfInputStream(materialId);
-        // materialService.getMaterialById(materialId) для имени файла
-        // но здесь нам не нужно имя, просто отдаём поток
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(new InputStreamResource(pdfStream));
