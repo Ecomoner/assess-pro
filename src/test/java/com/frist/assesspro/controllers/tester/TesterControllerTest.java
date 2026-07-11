@@ -454,7 +454,6 @@ class TesterControllerTest {
 
         List<CategoryDTO> categories = List.of(createCategoryDTO(1L, "Math"));
         List<TestInfoDTO> recommendedTests = List.of(createTestInfo());
-        List<EventDTO> lastEvents = List.of(new EventDTO());
 
         double overallAverage = 80.0; // из allAttempts
 
@@ -465,7 +464,6 @@ class TesterControllerTest {
         when(testPassingService.getAvailableCategories()).thenReturn(categories);
         when(testPassingService.getAllAvailableTestsDTO()).thenReturn(recommendedTests);
         when(userService.findByUsername(eq(TEST_USERNAME))).thenReturn(Optional.of(tester));
-        when(eventService.getLastEvents(5)).thenReturn(lastEvents);
 
         mockMvc.perform(get("/tester/dashboard"))
                 .andExpect(status().isOk())
@@ -478,8 +476,8 @@ class TesterControllerTest {
                 .andExpect(model().attribute("categories", categories))
                 .andExpect(model().attribute("recommendedTests", recommendedTests))
                 .andExpect(model().attribute("username", TEST_USERNAME))
-                .andExpect(model().attribute("firstName", "John")) // из объекта tester
-                .andExpect(model().attribute("lastEvents", lastEvents));
+                .andExpect(model().attribute("firstName", "John")); // из объекта tester
+
     }
 
     @Test

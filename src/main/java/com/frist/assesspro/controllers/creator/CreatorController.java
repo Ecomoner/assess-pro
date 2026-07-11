@@ -59,7 +59,6 @@ public class CreatorController {
 
     private final TestService testService;
     private final CategoryService categoryService;
-    private final StatisticsExportService statisticsExportService;
     private final TesterStatisticsService testerStatisticsService;
     private final DashboardService dashboardService;
     private final UserService userService;
@@ -480,7 +479,6 @@ public class CreatorController {
 
             // Получаем общее количество уникальных тестировщиков
             long totalTesters = testerStatisticsService.getTotalTesters();
-            long totalEvents= eventRepository.getTotalEvent();
 
             model.addAttribute("username", username);
             model.addAttribute("role", auth.getAuthorities().iterator().next().getAuthority());
@@ -489,7 +487,6 @@ public class CreatorController {
             model.addAttribute("firstName", firstName);
             model.addAttribute("recentAttempts", recentAttempts);
             model.addAttribute("totalTesters", totalTesters);
-            model.addAttribute("totalEvents", totalEvents);
 
             return "creator/dashboard";
         } catch (Exception e) {

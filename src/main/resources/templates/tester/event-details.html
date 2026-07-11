@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Событие')}">
+</head>
+<body>
+<div th:replace="~{fragments/panel-navigation}"></div>
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/tester/calendar}">Календарь</a></li>
+            <li class="breadcrumb-item active" th:text="${event.title}">Событие</li>
+        </ol>
+    </nav>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title" th:text="${event.title}"></h2>
+            <p class="text-muted">
+                <i class="bi bi-calendar-event me-2"></i>
+                <span th:text="${#temporals.format(event.start, 'dd.MM.yyyy')}">01.01.2026</span>
+            </p>
+            <hr>
+            <div th:if="${event.description}">
+                <h5>Описание</h5>
+                <p class="card-text" th:text="${event.description}"></p>
+            </div>
+            <div th:unless="${event.description}">
+                <p class="text-muted">Описание отсутствует</p>
+            </div>
+            <hr>
+            <p class="text-muted small">
+                Создал: <span th:text="${event.createdByName}">Иванов И.И.</span>
+            </p>
+        </div>
+    </div>
+    <a th:href="@{/tester/calendar}" class="btn btn-outline-secondary mt-3">
+        <i class="bi bi-arrow-left me-2"></i>Назад к календарю
+    </a>
+</div>
+<div th:replace="~{fragments/footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

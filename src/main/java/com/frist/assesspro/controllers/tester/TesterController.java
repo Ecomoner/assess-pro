@@ -447,7 +447,6 @@ public class TesterController {
                     .average()
                     .orElse(0.0);
 
-            List<EventDTO> lastEvents = eventService.getLastEvents(5);
             String projectName = userService.getProjectName(username);
 
             // Добавляем в модель - ИСПОЛЬЗУЕМ ИМЕНА, КОТОРЫЕ ОЖИДАЕТ ШАБЛОН
@@ -460,7 +459,6 @@ public class TesterController {
             model.addAttribute("recommendedTests", recommendedTests);
             model.addAttribute("username", username);
             model.addAttribute("firstName", firstName);
-            model.addAttribute("lastEvents", lastEvents);
             model.addAttribute("overallAverage", overallAverage);
 
             log.debug("Загружен дашборд тестировщика: {}", username);
@@ -528,6 +526,11 @@ public class TesterController {
         TestTakingDTO dto = testPassingService.getTestForTaking(retakeTestId, user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Не удалось начать пересдачу"));
         return "redirect:/tester/attempt/" + dto.getAttemptId();
+    }
+
+    @GetMapping("/calendar")
+    public String calendar() {
+        return "tester/calendar";
     }
 
 

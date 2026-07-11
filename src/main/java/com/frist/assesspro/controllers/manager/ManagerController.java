@@ -43,11 +43,9 @@ public class ManagerController {
     public String dashboard(Model model, Principal principal) {
         String username = principal.getName();
         List<ProjectDTO> projects = managerService.getManagerProjects(username);
-        List<EventDTO> lastEvents = eventService.getLastEvents(5);
         List<TesterAttemptDTO> recentAttempts = managerService.getRecentAttemptsForManager(username, 5);
 
         model.addAttribute("projects", projects);
-        model.addAttribute("lastEvents", lastEvents);
         model.addAttribute("recentAttempts", recentAttempts);
         return "manager/dashboard";
     }

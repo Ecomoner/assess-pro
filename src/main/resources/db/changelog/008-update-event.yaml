@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1783783886667-2
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: event_date
+                  type: DATE
+            tableName: events
+  - changeSet:
+      id: 1783783886667-3
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - sql:
+            sql: UPDATE events SET created_at = NOW() WHERE created_at IS NULL
+        - addNotNullConstraint:
+            tableName: events
+            columnName: created_at
+            columnDataType: timestamp
+  - changeSet:
+      id: 1783783886667-5
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - sql:
+            sql: UPDATE events SET event_date = COALESCE(event_date, created_at::date)
+        - addNotNullConstraint:
+            tableName: events
+            columnName: event_date
+            columnDataType: date
+  - changeSet:
+      id: 1783783886667-1
+      author: Вадим
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropNotNullConstraint:
+            columnDataType: clob
+            columnName: description
+            tableName: events
+

@@ -6,15 +6,19 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
 @Table(name = "events")
 @AllArgsConstructor
 @NoArgsConstructor
-@Cacheable
+@Builder
 public class Event {
 
     @Id
@@ -35,4 +39,15 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_event", nullable = false)
     private User createdByEvent;
+
+    @Column(name = "event_date", nullable = false)
+    private LocalDate eventDate;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

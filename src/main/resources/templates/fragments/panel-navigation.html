@@ -102,6 +102,12 @@
                     </a>
                 </li>
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
+                    <a class="nav-link rounded-pill px-3" th:href="@{/tester/calendar}">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        <span class="d-inline">Календарь</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">
                     <a class="nav-link rounded-pill px-3" th:href="@{/tester/history}">
                         <i class="bi bi-clock-history me-1"></i>
                         <span class="d-inline">История</span>

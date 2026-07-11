@@ -4,6 +4,7 @@ package com.frist.assesspro.service;
 import com.frist.assesspro.dto.EventDTO;
 import com.frist.assesspro.entity.Event;
 import com.frist.assesspro.entity.User;
+import com.frist.assesspro.mapper.EventMapper;
 import com.frist.assesspro.repository.EventRepository;
 import com.frist.assesspro.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,85 +26,53 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventMapper eventMapper;
 
-    /**
-     * Создание события.
-     */
-    @Transactional
-    public Event createEvent(EventDTO eventDTO, String creatorUsername) {
-
-        User creator = userRepository.findByUsername(creatorUsername)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + creatorUsername));
-
-        log.info("Пользователь {} создает новое событие", creatorUsername);
-
-        if (eventRepository.existsByName(eventDTO.getName())) {
-            throw new RuntimeException("Событие с названием '" + eventDTO.getName() + "' уже существует");
-        }
-
-        if (eventDTO.getDescription() == null) {
-            throw new IllegalArgumentException("Описание событие не может быть пустым");
-        }
-        Event event = new Event();
-        event.setName(eventDTO.getName());
-        event.setCreatedByEvent(creator);
-        event.setDescription(eventDTO.getDescription());
-
-        Event savedEvent = eventRepository.save(event);
-
-        return savedEvent;
-    }
-
-    /**
-     * Редактирование события.
-     */
-    @Transactional
-    public Event editEvent(Long id,EventDTO eventDTO){
-
-        Event event = eventRepository.findById(id)
-                .orElseThrow(()->new RuntimeException("Событии с таким ID нет"));
-
-        event.setName(eventDTO.getName());
-        event.setDescription(eventDTO.getDescription());
-
-        Event editedEvent = eventRepository.save(event);
-
-        return editedEvent;
-    }
-
-    /**
-     * Удаление события.
-     */
-    @Transactional
-    public void deleteEvent(Long id){
-        Event event = eventRepository.findById(id)
-                .orElseThrow(()->new RuntimeException("Событии с таким ID нет"));
-
-        eventRepository.delete(event);
-    }
-
-    @Transactional(readOnly=true )
-    public Page<EventDTO> getAllEvents(Pageable pageable) {
-        return eventRepository.findAllEventDTOs(pageable);
-    }
-
-    public List<EventDTO> getLastEvents(int limit) {
-        return eventRepository.findTop5ByOrderByIdDesc()
+    // Получить события для календаря (за период)
+    @Transactional(readOnly = true)
+    public List<EventDTO> getEventsForCalendar(LocalDate start, LocalDate end) {
+        return eventRepository.findByEventDateBetween(start, end)
                 .stream()
-                .map(this::convertToDTO)
+                .map(eventMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    public EventDTO convertToDTO(Event e) {
-        EventDTO dto = new EventDTO();
-        dto.setId(e.getId());
-        dto.setName(e.getName());
-        dto.setDescription(e.getDescription());
-        return dto;
+    // Создать событие
+    @Transactional
+    public EventDTO createEvent(EventDTO dto, User creator) {
+        Event event = Event.builder()
+                .name(dto.getTitle())
+                .description(dto.getDescription())
+                .eventDate(dto.getStart())
+                .createdByEvent(creator)
+                .build();
+        event = eventRepository.save(event);
+        return eventMapper.toDto(event);
     }
 
-    @Transactional(readOnly= true )
-    public Optional<Event> getEventById(Long id) {
-        return eventRepository.findById(id);
+    // Обновить событие
+    @Transactional
+    public EventDTO updateEvent(Long id, EventDTO dto) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Событие не найдено"));
+        event.setName(dto.getTitle());
+        event.setDescription(dto.getDescription());
+        event.setEventDate(dto.getStart());
+        event = eventRepository.save(event);
+        return eventMapper.toDto(event);
+    }
+
+    // Удалить событие
+    @Transactional
+    public void deleteEvent(Long id) {
+        eventRepository.deleteById(id);
+    }
+
+    // Получить одно событие
+    @Transactional(readOnly = true)
+    public EventDTO getEvent(Long id) {
+        return eventRepository.findById(id)
+                .map(eventMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Событие не найдено"));
     }
 }

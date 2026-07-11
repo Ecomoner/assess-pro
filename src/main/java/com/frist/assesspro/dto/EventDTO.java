@@ -8,19 +8,19 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class EventDTO {
 
     private Long id;
-
-    @NotBlank(message = "Название события обязательно")
-    @Size(min = 2, max = 100, message = "Название должно быть от 2 до 100 символов")
-    private String name;
-
-    @NotBlank(message = "Описание события обязательно")
-    @Size(max = 1000, message = "Описание не должно превышать 1000 символов")
+    private String title;       // для FullCalendar
     private String description;
+    private LocalDate start;    // для FullCalendar (дата)
+    private String url;         // ссылка на детали
+    private String color;       // цвет (можно задавать)
+    private String createdByName;
 
 }

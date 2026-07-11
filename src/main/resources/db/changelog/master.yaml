@@ -15,4 +15,6 @@ databaseChangeLog:
       file: db/changelog/006-create-sections-and-materials.yaml
   - include:
       file: db/changelog/007-create-notifications-table.yaml
+  - include:
+      file: db/changelog/008-update-event.yaml
 
