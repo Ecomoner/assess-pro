@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 public class ManagerTesterController {
 
     private final ManagerService  managerService;
-    private final EventService eventService;
     private final TesterStatisticsService  testerStatisticsService;
 
     @GetMapping("/tester/{testerUsername}/full-statistics")

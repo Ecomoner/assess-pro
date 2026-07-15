@@ -158,4 +158,17 @@ public class CreatorMaterialController {
         }
         return "redirect:/creator/materials";
     }
+
+    @PostMapping("/sections/{sectionId}/video/upload")
+    public String uploadVideo(@PathVariable Long sectionId,
+                              @RequestParam("file") MultipartFile file,
+                              RedirectAttributes ra) {
+        try {
+            materialService.uploadVideoToSection(sectionId, file);
+            ra.addFlashAttribute("successMessage", "Видео загружено");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMessage", "Ошибка загрузки: " + e.getMessage());
+        }
+        return "redirect:/creator/materials";
+    }
 }

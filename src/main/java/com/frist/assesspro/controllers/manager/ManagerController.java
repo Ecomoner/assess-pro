@@ -90,4 +90,10 @@ public class ManagerController {
         return ResponseEntity.ok(Map.of("requestId", requestId, "message", "Полный отчёт по тестировщику готовится..."));
     }
 
+    @GetMapping("/calendar")
+    public String calendar() {
+        return "manager/calendar";
+    }
+
+
 }

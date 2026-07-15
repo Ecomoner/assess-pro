@@ -33,6 +33,15 @@ public class NotificationService {
     public NotificationDTO createNotification(User recipient, String message,
                                               Notification.NotificationType type,
                                               Long relatedEntityId) {
+
+        boolean alreadyExists = notificationRepository.existsByUserIdAndTypeAndRelatedEntityId(
+                recipient.getId(), type, relatedEntityId);
+        if (alreadyExists) {
+            log.warn("Попытка создать дублирующее уведомление для пользователя {} (тип {}, relatedEntityId {})",
+                    recipient.getUsername(), type, relatedEntityId);
+            return null;
+        }
+
         Notification notification = Notification.builder()
                 .user(recipient)
                 .message(message)

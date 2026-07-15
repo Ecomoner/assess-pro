@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/tester/events")
-@PreAuthorize("hasRole('TESTER')")
+@PreAuthorize("hasAnyRole('TESTER','MANAGER')")
 @RequiredArgsConstructor
 public class EventPageController {
 

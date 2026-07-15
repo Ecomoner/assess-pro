@@ -19,5 +19,8 @@ public class MaterialDTO {
     private String contentType;
     private Long fileSize;
     private LocalDateTime uploadedAt;
+    private String type;
+    private int orderIndex;
+    private boolean hasVideo;
 
 }

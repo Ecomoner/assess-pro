@@ -32,18 +32,38 @@
             <div th:each="section : ${sections}" th:id="${section.id}" class="section mb-5">
                 <h2 th:text="${section.title}"></h2>
                 <div th:if="${section.description}" th:utext="${section.description}" class="mb-3"></div>
-                <!-- PDF просмотр -->
-                <div th:if="${section.hasPdf}">
-                    <div class="card border-0 shadow-sm">
+
+                <!-- Все материалы секции (видео и PDF) -->
+                <div th:each="material : ${section.materials}" class="mb-3">
+                    <!-- Видеофайл (VIDEO_FILE) -->
+                    <div th:if="${material.type == 'VIDEO_FILE'}" class="card border-0 shadow-sm">
                         <div class="card-header bg-white py-2">
-                            <h5 class="mb-0"><i class="bi bi-file-pdf text-danger me-2"></i>Материал</h5>
                         </div>
                         <div class="card-body p-0">
-                            <div class="pdf-container" th:attr="data-pdf-url=@{/materials/pdf/{id}(id=${section.materials[0].id})}"></div>
+                            <video controls style="width: 100%; max-height: 500px;">
+                                <source th:src="@{/materials/video/{id}(id=${material.id})}"
+                                        th:type="${material.contentType}">
+                                Ваш браузер не поддерживает видео.
+                            </video>
+                        </div>
+                    </div>
+
+                    <!-- PDF -->
+                    <div th:if="${material.type == 'PDF'}" class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-2">
+                            <h5 class="mb-0">
+                                <i class="bi bi-file-pdf text-danger me-2"></i>Материал
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="pdf-container"
+                                 th:attr="data-pdf-url=@{/materials/pdf/{id}(id=${material.id})}">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- Привязанные тесты -->
+
+                <!-- Привязанные тесты (без изменений) -->
                 <div th:if="${!section.tests.isEmpty()}" class="mt-3">
                     <h5>Связанные тесты:</h5>
                     <ul>

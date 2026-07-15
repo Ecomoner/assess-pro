@@ -81,6 +81,12 @@
                         <span class="d-inline">Материалы</span>
                     </a>
                 </li>
+                <li class="nav-item" th:if="${role == 'ROLE_MANAGER'}">
+                    <a class="nav-link rounded-pill px-3" th:href="@{/manager/calendar}">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        <span class="d-inline">Календарь</span>
+                    </a>
+                </li>
 
                 <!-- Тестировщик -->
                 <li class="nav-item" th:if="${role == 'ROLE_TESTER'}">

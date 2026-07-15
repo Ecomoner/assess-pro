@@ -17,4 +17,5 @@ databaseChangeLog:
       file: db/changelog/007-create-notifications-table.yaml
   - include:
       file: db/changelog/008-update-event.yaml
-
+  - include:
+      file: db/changelog/009-update-material.yaml

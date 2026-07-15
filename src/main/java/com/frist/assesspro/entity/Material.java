@@ -37,11 +37,24 @@ public class Material {
     @Column(name = "object_key", nullable = false)
     private String objectKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private MaterialType type = MaterialType.PDF;
+
+    @Column(name = "order_index", nullable = false)
+    @Builder.Default
+    private int orderIndex = 0;
+
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private LocalDateTime uploadedAt;
 
     @PrePersist
     public void prePersist() {
         this.uploadedAt = LocalDateTime.now();
+    }
+
+    public enum MaterialType {
+        PDF,VIDEO_FILE
     }
 }

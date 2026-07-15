@@ -6,6 +6,7 @@ import com.frist.assesspro.dto.material.SectionDTO;
 import com.frist.assesspro.entity.Material;
 import com.frist.assesspro.entity.Section;
 import com.frist.assesspro.entity.Test;
+import com.frist.assesspro.mapper.MaterialMapper;
 import com.frist.assesspro.mapper.SectionMapper;
 import com.frist.assesspro.repository.MaterialRepository;
 import com.frist.assesspro.repository.SectionRepository;
@@ -33,6 +34,7 @@ public class MaterialService {
     private final MinioClient minioClient;
     private final MinioProperties minioProperties;
     private final SectionMapper sectionMapper;
+    private final MaterialMapper materialMapper;
 
     // --------------------------------------------------
     // 1. Получение секций
@@ -282,5 +284,61 @@ public class MaterialService {
         } catch (Exception e) {
             log.error("Ошибка удаления объекта MinIO: {}", objectKey, e);
         }
+    }
+
+    /**
+     * Добавить видео
+     */
+
+    @Transactional
+    public MaterialDTO uploadVideoToSection(Long sectionId, MultipartFile file) throws Exception {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Файл пуст");
+        }
+        if (file.getSize() > 500_000_000) { // 500 МБ
+            throw new IllegalArgumentException("Размер файла превышает 500 МБ");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("video/")) {
+            throw new IllegalArgumentException("Разрешены только видеофайлы");
+        }
+
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new RuntimeException("Секция не найдена"));
+
+        ensureBucketExists();
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String objectKey = UUID.randomUUID().toString() + extension;
+
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket(minioProperties.getBucketName())
+                        .object(objectKey)
+                        .stream(file.getInputStream(), file.getSize(), (long)-1)
+                        .contentType(contentType)
+                        .build()
+        );
+
+        Material material = Material.builder()
+                .section(section)
+                .fileName(originalFilename != null ? originalFilename : "video.mp4")
+                .contentType(contentType)
+                .fileSize(file.getSize())
+                .objectKey(objectKey)
+                .type(Material.MaterialType.VIDEO_FILE)
+                .orderIndex(getNextOrderIndex(sectionId))
+                .build();
+        material = materialRepository.save(material);
+        return materialMapper.toDto(material);
+    }
+
+    // Приватный метод для получения следующего orderIndex
+    private int getNextOrderIndex(Long sectionId) {
+        return materialRepository.findMaxOrderIndexBySectionId(sectionId).orElse(0) + 1;
     }
 }

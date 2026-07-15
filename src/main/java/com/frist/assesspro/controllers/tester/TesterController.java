@@ -51,11 +51,9 @@ public class TesterController {
     private final TestAttemptRepository testAttemptRepository;
     private final MetricsService metricsService;
     private final UserService userService;
-    private final EventService eventService;
     private final TesterStatisticsService testerStatisticsService;
     private final TestService testService;
     private final TestRepository testRepository;
-    private final UserAnswerRepository userAnswerRepository;
 
     @ModelAttribute("currentUri")
     public String getCurrentUri(HttpServletRequest request) {

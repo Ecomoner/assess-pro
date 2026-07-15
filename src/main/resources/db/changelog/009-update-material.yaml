@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-video-support
+      author: Вадим
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: materials
+                columnName: type
+      changes:
+        - addColumn:
+            tableName: materials
+            columns:
+              - column:
+                  name: type
+                  type: VARCHAR(10)
+                  defaultValue: 'PDF'
+              - column:
+                  name: order_index
+                  type: INT
+                  defaultValue: 0
+        - sql:
+            sql: UPDATE materials SET type = 'PDF' WHERE type IS NULL
+        - sql:
+            sql: ALTER TABLE materials DROP CONSTRAINT IF EXISTS chk_material_type
+        - sql:
+            sql: ALTER TABLE materials ADD CONSTRAINT chk_material_type CHECK (type IN ('PDF', 'VIDEO_FILE'))

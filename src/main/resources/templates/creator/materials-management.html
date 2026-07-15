@@ -108,6 +108,15 @@
                             <i class="bi bi-link-45deg"></i> Привязать тест
                         </button>
                     </div>
+                    <form th:action="@{/creator/materials/sections/{id}/video/upload(id=${section.id})}"
+                          method="post" enctype="multipart/form-data" class="d-inline">
+                        <input type="file" name="file" accept="video/*" style="display: none;"
+                               onchange="this.form.submit()" id="videoFileInput${section.id}">
+                        <button type="button" class="btn btn-sm btn-outline-success"
+                                onclick="document.getElementById('videoFileInput${section.id}').click()">
+                            <i class="bi bi-film"></i> Загрузить видео
+                        </button>
+                    </form>
                 </div>
             </div>
 
