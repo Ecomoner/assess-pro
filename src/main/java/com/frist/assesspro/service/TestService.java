@@ -105,6 +105,8 @@ public class TestService {
             retake.setTimeLimitMinutes(test.getTimeLimitMinutes());
             retake.setIsPublished(false);
             retake.setRetake(true);
+            retake.setPassThresholdPercent(test.getPassThresholdPercent());
+            retake.setReTestOnFail(true);
             retake = testRepository.save(retake);
             test.setRetakeTest(retake);
             testRepository.save(test);
@@ -216,6 +218,8 @@ public class TestService {
             retake.setTimeLimitMinutes(existingTest.getTimeLimitMinutes());
             retake.setIsPublished(false);
             retake.setRetake(true);
+            retake.setPassThresholdPercent(existingTest.getPassThresholdPercent());
+            retake.setReTestOnFail(true);
             retake = testRepository.save(retake);
             existingTest.setRetakeTest(retake);
             testRepository.save(existingTest);
