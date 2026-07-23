@@ -28,18 +28,6 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
 
     List<TestAttempt> findByUserId(Long userId);
 
-    @Query("SELECT new com.frist.assesspro.dto.test.TestHistoryDTO(" +
-            "ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore, " +
-            "COUNT(q.id)) " +
-            "FROM TestAttempt ta " +
-            "JOIN ta.test t " +
-            "LEFT JOIN t.questions q " +
-            "WHERE ta.user.id = :userId " +
-            "GROUP BY ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore " +
-            "ORDER BY ta.startTime DESC")
-    Page<TestHistoryDTO> findTestHistoryDTOsByUserId(@Param("userId") Long userId, Pageable pageable);
-
-
     @Query("SELECT COUNT(ta) FROM TestAttempt ta WHERE ta.user.id = :userId")
     long countByUserId(@Param("userId") Long userId);
 
@@ -172,4 +160,16 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     List<TestAttempt> findByTestIdAndUserIds(@Param("testId") Long testId, @Param("userIds") Set<Long> userIds);
 
     boolean existsByUserIdAndStatus(Long userId, TestAttempt.AttemptStatus status);
+
+    @Query("SELECT new com.frist.assesspro.dto.test.TestHistoryDTO(" +
+            "ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore, " +
+            "COUNT(q.id)) " +
+            "FROM TestAttempt ta " +
+            "JOIN ta.test t " +
+            "LEFT JOIN t.questions q " +
+            "WHERE ta.user.id = :userId " +
+            "GROUP BY ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore " +
+            "ORDER BY ta.startTime DESC")
+    Page<TestHistoryDTO> findTestHistoryDTOsByUserId(@Param("userId") Long userId, Pageable pageable);
+
 }

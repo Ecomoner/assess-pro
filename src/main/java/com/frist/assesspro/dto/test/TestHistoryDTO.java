@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class TestHistoryDTO {
     private Long attemptId;
@@ -35,6 +34,7 @@ public class TestHistoryDTO {
         this.totalScore = totalScore;
         this.maxPossibleScore = maxPossibleScore;
     }
+
 
     public Integer getMaxPossibleScoreInteger() {
         return maxPossibleScore != null ? maxPossibleScore.intValue() : 0;

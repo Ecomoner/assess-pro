@@ -11,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -493,6 +490,20 @@ public class TestPassingService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("startTime").descending());
         Page<TestHistoryDTO> historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
+
+        if (status != null && !status.isEmpty()) {
+            try {
+                TestAttempt.AttemptStatus attemptStatus = TestAttempt.AttemptStatus.valueOf(status);
+                List<TestHistoryDTO> filtered = historyPage.getContent().stream()
+                        .filter(dto -> dto.getStatus() == attemptStatus)
+                        .collect(Collectors.toList());
+                historyPage = new PageImpl<>(filtered, pageable, filtered.size());
+            } catch (IllegalArgumentException e) {
+                // Если передан некорректный статус – возвращаем все
+                historyPage = testAttemptRepository.findTestHistoryDTOsByUserId(user.getId(), pageable);
+            }
+        }
+
 
 // Собираем ID только незавершённых попыток
         List<Long> inProgressIds = historyPage.getContent().stream()

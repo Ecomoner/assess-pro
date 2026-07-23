@@ -63,7 +63,6 @@ public class CreatorController {
     private final DashboardService dashboardService;
     private final UserService userService;
     private final UserRepository userRepository;
-    private final EventRepository eventRepository;
     private final AsyncPdfExportService asyncPdfExportService;
     private final TestMapper testMapper;
 
@@ -236,6 +235,8 @@ public class CreatorController {
             @PathVariable Long id,
             @Valid @ModelAttribute("test") TestDTO testDTO,
             BindingResult bindingResult,
+            @RequestParam(required = false) String availableFrom,
+            @RequestParam(required = false) String availableTo,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
 
@@ -252,6 +253,18 @@ public class CreatorController {
             return "redirect:/creator/tests/edit/" + id;
         }
 
+        // Парсим даты из строк
+        if (availableFrom != null && !availableFrom.isBlank()) {
+            testDTO.setAvailableFrom(LocalDateTime.parse(availableFrom));
+        } else {
+            testDTO.setAvailableFrom(null);
+        }
+        if (availableTo != null && !availableTo.isBlank()) {
+            testDTO.setAvailableTo(LocalDateTime.parse(availableTo));
+        } else {
+            testDTO.setAvailableTo(null);
+        }
+
         try {
             // Конвертируем DTO в UpdateDTO
             TestUpdateDTO updateDTO = new TestUpdateDTO();
@@ -261,6 +274,8 @@ public class CreatorController {
             updateDTO.setRetryCooldownHours(testDTO.getRetryCooldownHours());
             updateDTO.setRetryCooldownDays(testDTO.getRetryCooldownDays());
             updateDTO.setCategoryId(testDTO.getCategoryId());
+            updateDTO.setAvailableFrom(testDTO.getAvailableFrom());
+            updateDTO.setAvailableTo(testDTO.getAvailableTo());
 
             Test updatedTest = testService.updateTest(id, updateDTO, userDetails.getUsername());
 

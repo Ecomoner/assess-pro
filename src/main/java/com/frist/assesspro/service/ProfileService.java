@@ -68,6 +68,7 @@ public class ProfileService {
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
         dto.setMiddleName(user.getMiddleName());
+        dto.setEmail(user.getEmail());
 
         return dto;
     }

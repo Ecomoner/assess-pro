@@ -91,6 +91,8 @@ public class TestService {
         }
         test.setPassThresholdPercent(testDTO.getPassThresholdPercent());
         test.setReTestOnFail(testDTO.getReTestOnFail());
+        test.setAvailableFrom(testDTO.getAvailableFrom());
+        test.setAvailableTo(testDTO.getAvailableTo());
 
 
         Test savedTest = testRepository.save(test);
@@ -199,6 +201,8 @@ public class TestService {
 
         existingTest.setPassThresholdPercent(updateDTO.getPassThresholdPercent());
         existingTest.setReTestOnFail(updateDTO.getReTestOnFail());
+        existingTest.setAvailableFrom(updateDTO.getAvailableFrom());
+        existingTest.setAvailableTo(updateDTO.getAvailableTo());
 
         if (updateDTO.getCategoryId() != null) {
             Category category = categoryRepository.findById(updateDTO.getCategoryId())

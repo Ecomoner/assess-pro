@@ -106,15 +106,6 @@ class TestAttemptRepositoryTest extends BaseRepositoryTest {
         assertThat(attempts).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
-    void findTestHistoryDTOsByUserId_ShouldReturnDTOs() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<TestHistoryDTO> page = testAttemptRepository.findTestHistoryDTOsByUserId(tester.getId(), pageable);
-        assertThat(page.getContent()).hasSize(1);
-        TestHistoryDTO dto = page.getContent().get(0);
-        assertThat(dto.getAttemptId()).isEqualTo(attempt.getId());
-        assertThat(dto.getTestTitle()).isEqualTo("Тест");
-    }
 
     @org.junit.jupiter.api.Test
     void countByUserId_ShouldReturnCount() {

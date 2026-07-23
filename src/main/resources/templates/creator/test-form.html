@@ -117,16 +117,16 @@
                             <div class="col-md-6 mb-2 mb-md-0">
                                 <label class="form-label fw-semibold small">Доступен с</label>
                                 <input type="datetime-local" class="form-control form-control-sm"
-                                       th:field="*{availableFrom}"
+                                       name="availableFrom"
+                                       th:attr="value=${test.availableFrom != null ? #temporals.format(test.availableFrom, 'yyyy-MM-dd') + 'T' + #temporals.format(test.availableFrom, 'HH:mm') : ''}"
                                        placeholder="Оставьте пустым, если ограничение не нужно">
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('availableFrom')}" th:errors="*{availableFrom}"></div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold small">Доступен по</label>
                                 <input type="datetime-local" class="form-control form-control-sm"
-                                       th:field="*{availableTo}"
+                                       name="availableTo"
+                                       th:attr="value=${test.availableTo != null ? #temporals.format(test.availableTo, 'yyyy-MM-dd') + 'T' + #temporals.format(test.availableTo, 'HH:mm') : ''}"
                                        placeholder="Оставьте пустым, если ограничение не нужно">
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('availableTo')}" th:errors="*{availableTo}"></div>
                             </div>
                         </div>
                         <div th:if="${action == 'edit'}" class="mb-3">
