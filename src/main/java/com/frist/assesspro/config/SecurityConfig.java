@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/creator/**").hasAnyRole("CREATOR", "ADMIN")
                         .requestMatchers("/export/**").hasAnyRole("CREATOR", "ADMIN","MANAGER")
                         .requestMatchers("/manager/**").hasRole("MANAGER")
-                        .requestMatchers("/tester/events/**").hasRole("MANAGER")
+                        .requestMatchers("/tester/events/**").hasAnyRole("MANAGER","TESTER")
                         .requestMatchers("/tester/**").hasAnyRole("TESTER", "ADMIN")
                         .requestMatchers("/admin/**", "/swagger-ui/**", "/swagger-ui.html",
                                 "/api-docs/**", "/v3/api-docs/**").hasRole("ADMIN")
