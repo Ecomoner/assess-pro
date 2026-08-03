@@ -265,6 +265,10 @@ public class CreatorController {
             testDTO.setAvailableTo(null);
         }
 
+        if (testDTO.getReTestOnFail() == null) {
+            testDTO.setReTestOnFail(false);
+        }
+
         try {
             // Конвертируем DTO в UpdateDTO
             TestUpdateDTO updateDTO = new TestUpdateDTO();
@@ -275,6 +279,7 @@ public class CreatorController {
             updateDTO.setRetryCooldownDays(testDTO.getRetryCooldownDays());
             updateDTO.setCategoryId(testDTO.getCategoryId());
             updateDTO.setAvailableFrom(testDTO.getAvailableFrom());
+            updateDTO.setReTestOnFail(testDTO.getReTestOnFail());
             updateDTO.setAvailableTo(testDTO.getAvailableTo());
 
             Test updatedTest = testService.updateTest(id, updateDTO, userDetails.getUsername());
