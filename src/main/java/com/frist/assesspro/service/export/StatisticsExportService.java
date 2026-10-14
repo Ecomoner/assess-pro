@@ -3,6 +3,7 @@ package com.frist.assesspro.service.export;
 import com.frist.assesspro.dto.statistics.TesterAttemptDTO;
 import com.frist.assesspro.dto.statistics.TesterDetailedAnswersDTO;
 import com.frist.assesspro.entity.Test;
+import com.frist.assesspro.pdf.PdfFontProvider;
 import com.frist.assesspro.service.TestService;
 import com.frist.assesspro.service.TesterStatisticsService;
 import com.itextpdf.io.font.FontProgram;
@@ -44,41 +45,12 @@ public class StatisticsExportService {
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     private static final DateTimeFormatter DATE_ONLY_FORMATTER =
             DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
-
-    private static final String FONT_PATH = "/fonts/arial.ttf";
-
+    private final PdfFontProvider pdfFontProvider;
 
     private static final int MAX_EXPORT_SIZE = 1000;
 
 
     private static final int PAGE_SIZE = 100;
-
-    /**
-     * Загрузка шрифта с поддержкой кириллицы
-     */
-    private PdfFont loadFont() {
-        try (InputStream fontStream = getClass().getResourceAsStream(FONT_PATH)) {
-            if (fontStream != null) {
-                log.info("Загружен шрифт из ресурсов: {}", FONT_PATH);
-                byte[] fontBytes = fontStream.readAllBytes();
-                FontProgram fontProgram = FontProgramFactory.createFont(fontBytes);
-                return PdfFontFactory.createFont(fontProgram, PdfEncodings.IDENTITY_H);
-            } else {
-                log.warn("Шрифт не найден в ресурсах: {}", FONT_PATH);
-            }
-        } catch (Exception e) {
-            log.warn("Не удалось загрузить шрифт из ресурсов: {}", e.getMessage());
-        }
-
-        try {
-            log.info("Используем встроенный шрифт Helvetica");
-            return PdfFontFactory.createFont();
-        } catch (Exception e) {
-            log.error("Не удалось загрузить даже стандартный шрифт", e);
-            throw new RuntimeException("Не удалось загрузить шрифт для PDF", e);
-        }
-    }
 
     /**
      * Генерация PDF отчета по тесту
@@ -96,7 +68,7 @@ public class StatisticsExportService {
             Document document = new Document(pdfDoc);
 
             // Загружаем шрифт
-            PdfFont font = loadFont();
+            PdfFont font = pdfFontProvider.getFont();
             document.setFont(font);
 
             // Заголовок

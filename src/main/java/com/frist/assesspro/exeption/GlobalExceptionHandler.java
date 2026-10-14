@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -77,16 +76,15 @@ public class GlobalExceptionHandler {
             Model model,
             HttpServletRequest request) {
 
+
         log.error("Неожиданная ошибка при запросе: {}", request.getRequestURI(), ex);
 
-        // Безопасное сообщение для пользователя
         model.addAttribute("errorCode", "500");
         model.addAttribute("errorMessage", "Внутренняя ошибка сервера. Пожалуйста, попробуйте позже.");
 
-        // Дополнительная информация только для админов
-        if (request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_CREATOR")) {
-            model.addAttribute("errorDetails", ex.getMessage());
-            model.addAttribute("stackTrace", Arrays.toString(ex.getStackTrace()));
+
+        if (request.isUserInRole("ROLE_ADMIN")) {
+            model.addAttribute("errorDetails", ex.getClass().getSimpleName() + ": " + ex.getMessage());
         }
 
         return "error/general";
@@ -98,8 +96,5 @@ public class GlobalExceptionHandler {
         return "redirect:/tester/tests";
     }
 
-    private boolean isAdmin(HttpServletRequest request) {
-        return request.isUserInRole("ROLE_ADMIN");
-    }
 
 }

@@ -4,6 +4,7 @@ import com.frist.assesspro.dto.statistics.ProjectAggregatedStatsDTO;
 import com.frist.assesspro.dto.statistics.TesterProjectStatsDTO;
 import com.frist.assesspro.dto.statistics.TesterProjectStatsProjection;
 import com.frist.assesspro.dto.test.TestHistoryDTO;
+import com.frist.assesspro.entity.Notification;
 import com.frist.assesspro.entity.TestAttempt;
 import com.frist.assesspro.entity.User;
 import jakarta.persistence.LockModeType;
@@ -16,8 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Repository
 public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> {
@@ -112,7 +115,7 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
     @Query(value = "SELECT " +
             "COALESCE(AVG(total_score), 0), " +
             "COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 60), 0) " +
-            "FROM assess_pro_db.test_attempts " +
+            "FROM test_attempts " +
             "WHERE status = 'COMPLETED' AND end_time IS NOT NULL AND start_time IS NOT NULL",
             nativeQuery = true)
     List<Object[]> findAverageScoreAndTotalMinutes();
@@ -171,5 +174,15 @@ public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> 
             "GROUP BY ta.id, t.id, t.title, ta.startTime, ta.endTime, ta.status, ta.totalScore " +
             "ORDER BY ta.startTime DESC")
     Page<TestHistoryDTO> findTestHistoryDTOsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT ta.id, ta.test.id FROM TestAttempt ta WHERE ta.id IN :ids")
+    List<Object[]> findRawTestIdsByAttemptIds(@Param("ids") Set<Long> ids);
+
+    default Map<Long, Long> findTestIdsByAttemptIds(Set<Long> ids) {
+        return findRawTestIdsByAttemptIds(ids).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]));
+    }
 
 }

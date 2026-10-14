@@ -3,8 +3,10 @@ package com.frist.assesspro.service;
 
 import com.frist.assesspro.dto.TestDTO;
 import com.frist.assesspro.dto.material.TestLinkDTO;
+import com.frist.assesspro.dto.notification.NotificationCreatedEvent;
 import com.frist.assesspro.dto.test.*;
 import com.frist.assesspro.entity.*;
+import com.frist.assesspro.mapper.NotificationMapper;
 import com.frist.assesspro.mapper.TestMapper;
 import com.frist.assesspro.repository.*;
 import com.frist.assesspro.repository.specification.TestSpecifications;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +45,7 @@ public class TestService {
     /**
      * Создание нового теста
      */
+    @CacheEvict(value = "publishedTests", allEntries = true)
     @Transactional
     public Test createTest(TestDTO testDTO, String username) {
 
@@ -57,9 +61,7 @@ public class TestService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        boolean titleExists = testRepository.findByCreatedBy(user).stream()
-                .anyMatch(t -> t.getTitle().equalsIgnoreCase(title));
-        if (titleExists) {
+        if (testRepository.existsByCreatedByAndTitleIgnoreCase(user, title)) {
             throw new IllegalArgumentException("Тест с таким названием уже существует");
         }
 
@@ -71,7 +73,6 @@ public class TestService {
 
         test.setTimeLimitMinutes(testDTO.getTimeLimitMinutes() != null ?
                 Math.min(testDTO.getTimeLimitMinutes(), 300) : 0);
-
 
         if (testDTO.getRetryCooldownDays() != null && testDTO.getRetryCooldownDays() > 0) {
             test.setRetryCooldownDays(Math.min(testDTO.getRetryCooldownDays(), 14));
@@ -94,11 +95,11 @@ public class TestService {
         test.setAvailableFrom(testDTO.getAvailableFrom());
         test.setAvailableTo(testDTO.getAvailableTo());
 
-
         Test savedTest = testRepository.save(test);
 
         if (test.getPassThresholdPercent() != null && test.getPassThresholdPercent() > 0
-                && test.getReTestOnFail() != null && test.getReTestOnFail()) {
+                && Boolean.TRUE.equals(test.getReTestOnFail())) {
+
             Test retake = new Test();
             retake.setTitle(test.getTitle() + " (пересдача)");
             retake.setDescription("Пересдача для теста \"" + test.getTitle() + "\"");
@@ -110,9 +111,10 @@ public class TestService {
             retake.setPassThresholdPercent(test.getPassThresholdPercent());
             retake.setReTestOnFail(true);
             retake = testRepository.save(retake);
+
             test.setRetakeTest(retake);
-            testRepository.save(test);
         }
+
         log.info("Создан тест: {} с ограничением на повтор: {}",
                 savedTest.getTitle(), savedTest.getRetryCooldownDisplay());
 
@@ -138,16 +140,19 @@ public class TestService {
                 .and(TestSpecifications.byTitleContaining(search))
                 .and(TestSpecifications.byCategoryId(categoryId));
 
-        List<Long> testIds = testRepository.findAll(spec)
-                .stream()
-                .map(Test::getId)
-                .collect(Collectors.toList());
+        Page<Test> page = testRepository.findAll(spec, pageable);
 
-        if (testIds.isEmpty()) {
+        if (page.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        return testRepository.findTestDTOsByIds(testIds, pageable);
+        List<Long> testIds = page.getContent().stream()
+                .map(Test::getId)
+                .collect(Collectors.toList());
+
+        List<TestDTO> dtos = testRepository.findTestDTOsByIds(testIds);
+
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
 
     @Transactional(readOnly = true)
@@ -290,6 +295,7 @@ public class TestService {
     /**
      * Удаление теста
      */
+    @CacheEvict(value = "publishedTests", allEntries = true)
     @Transactional
     public void deleteTest(Long testId, String username) {
         log.info("Удаление теста ID: {} пользователем: {}", testId, username);
@@ -332,61 +338,52 @@ public class TestService {
      */
     @Transactional(readOnly = true)
     public Optional<TestTakingDTO> getTestForPreview(Long testId, String creatorUsername) {
-        // 1. Получаем основную информацию о тесте
-        TestPreviewDTO testPreview = testRepository.findTestPreviewDTO(testId)
-                .orElse(null);
-
+        TestPreviewDTO testPreview = testRepository.findTestPreviewDTO(testId).orElse(null);
         if (testPreview == null) {
             return Optional.empty();
         }
 
-        // 2. Проверяем права создателя
         if (!testPreview.getCreatorUsername().equals(creatorUsername)) {
             throw new RuntimeException("Нет прав для просмотра этого теста");
         }
 
-        // 3. Получаем все вопросы теста
         List<QuestionPreviewDTO> questions = testRepository.findQuestionPreviewDTOs(testId);
 
-        // 4. Для каждого вопроса загружаем ответы
-        for (QuestionPreviewDTO question : questions) {
-            List<AnswerPreviewDTO> answers = testRepository.findAnswerPreviewDTOs(question.getId());
-            question.setAnswerOptions(answers);
-        }
+        Map<Long, List<AnswerPreviewDTO>> answersByQuestion = testRepository
+                .findAnswerPreviewDTOsByTestId(testId)
+                .stream()
+                .collect(Collectors.groupingBy(AnswerPreviewDTO::getQuestionId));
+
+        questions.forEach(q -> q.setAnswerOptions(
+                answersByQuestion.getOrDefault(q.getId(), List.of())
+        ));
 
         testPreview.setQuestions(questions);
 
-        // 5. Конвертируем в TestTakingDTO для отображения
-        TestTakingDTO dto = new TestTakingDTO();
-        dto.setTestId(testPreview.getId());
-        dto.setTestTitle(testPreview.getTitle());
-        dto.setTimeLimitMinutes(testPreview.getTimeLimitMinutes());
-
-        // 6. Преобразуем вопросы
         List<QuestionForTakingDTO> questionDTOs = questions.stream()
                 .map(q -> {
-                    QuestionForTakingDTO questionDTO = new QuestionForTakingDTO();
-                    questionDTO.setId(q.getId());
-                    questionDTO.setText(q.getText());
-                    questionDTO.setOrderIndex(q.getOrderIndex());
-
-                    List<QuestionForTakingDTO.AnswerOptionForTakingDTO> answerDTOs =
+                    QuestionForTakingDTO dto = new QuestionForTakingDTO();
+                    dto.setId(q.getId());
+                    dto.setText(q.getText());
+                    dto.setOrderIndex(q.getOrderIndex());
+                    dto.setAnswerOptions(
                             q.getAnswerOptions().stream()
                                     .map(a -> {
-                                        QuestionForTakingDTO.AnswerOptionForTakingDTO answerDTO =
-                                                new QuestionForTakingDTO.AnswerOptionForTakingDTO();
+                                        var answerDTO = new QuestionForTakingDTO.AnswerOptionForTakingDTO();
                                         answerDTO.setId(a.getId());
                                         answerDTO.setText(a.getText() + (a.getIsCorrect() ? " ✓" : ""));
                                         return answerDTO;
                                     })
-                                    .collect(Collectors.toList());
-
-                    questionDTO.setAnswerOptions(answerDTOs);
-                    return questionDTO;
+                                    .toList()
+                    );
+                    return dto;
                 })
-                .sorted(Comparator.comparing(QuestionForTakingDTO::getOrderIndex))
-                .collect(Collectors.toList());
+                .toList();
 
+        TestTakingDTO dto = new TestTakingDTO();
+        dto.setTestId(testPreview.getId());
+        dto.setTestTitle(testPreview.getTitle());
+        dto.setTimeLimitMinutes(testPreview.getTimeLimitMinutes());
         dto.setQuestions(questionDTOs);
         dto.setTotalQuestions(questionDTOs.size());
 
@@ -572,12 +569,12 @@ public class TestService {
     }
 
     private void notifyTestPublished(Test test) {
-        List<User> testers = userRepository.findAllByRoleAndIsActive("ROLE_TESTER",true);
-        for (User user : testers) {
-            notificationService.createNotification(
-                    user,"Доступен новый тест: " + test.getTitle(),
-                    Notification.NotificationType.TEST_PUBLISHED,test.getId()
-            );
-        }
+        List<User> testers = userRepository.findAllByRoleAndIsActive("ROLE_TESTER", true);
+        notificationService.createNotificationsBatch(
+                testers,
+                "Доступен новый тест: " + test.getTitle(),
+                Notification.NotificationType.TEST_PUBLISHED,
+                test.getId()
+        );
     }
 }

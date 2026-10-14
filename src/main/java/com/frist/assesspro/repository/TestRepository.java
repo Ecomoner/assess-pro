@@ -53,8 +53,8 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
     @Query("SELECT COUNT(t) FROM Test t WHERE t.createdBy = :creator AND t.isPublished = true")
     long countPublishedByCreator(@Param("creator") User creator);
 
-    @Query(value = "SELECT COUNT(q.id) FROM assess_pro_db.questions q " +
-            "JOIN assess_pro_db.tests t ON q.test_id = t.id " +
+    @Query(value = "SELECT COUNT(q.id) FROM questions q " +
+            "JOIN tests t ON q.test_id = t.id " +
             "WHERE t.created_by = :creatorId",
             nativeQuery = true)
     Long countQuestionsByCreatorId(@Param("creatorId") Long creatorId);
@@ -96,6 +96,13 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "ORDER BY a.id")
     List<AnswerPreviewDTO> findAnswerPreviewDTOs(@Param("questionId") Long questionId);
 
+    @Query("SELECT new com.frist.assesspro.dto.test.AnswerPreviewDTO(" +
+            "a.id, a.text, a.isCorrect,a.question.id) " +
+            "FROM AnswerOption a " +
+            "WHERE a.question.test.id = :testId " +
+            "ORDER BY a.question.orderIndex, a.id")
+    List<AnswerPreviewDTO> findAnswerPreviewDTOsByTestId(@Param("testId") Long testId);
+
     @Query("SELECT new com.frist.assesspro.dto.TestDTO(" +
             "t.id, t.title, t.description, t.isPublished, " +
             "COUNT(q.id), t.createdAt, t.timeLimitMinutes, " +
@@ -108,7 +115,7 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
             "GROUP BY t.id, t.title, t.description, t.isPublished, t.createdAt, " +
             "t.timeLimitMinutes, t.category.id, t.category.name, t.createdBy.id, t.createdBy.username " +
             "ORDER BY t.createdAt DESC")
-    Page<TestDTO> findTestDTOsByIds(@Param("testIds") List<Long> testIds, Pageable pageable);
+    List<TestDTO> findTestDTOsByIds(@Param("testIds") List<Long> testIds);
 
     @Query("SELECT new com.frist.assesspro.dto.TestDTO(" +
             "t.id, t.title, t.description, t.isPublished, " +
@@ -247,4 +254,6 @@ public interface TestRepository extends JpaRepository<Test, Long>, JpaSpecificat
 
     @Query("SELECT t FROM Test t WHERE t.isPublished = true ")
     List<Test> findAllPublishedTests();
+
+    boolean existsByCreatedByAndTitleIgnoreCase(User createdBy, String title);
 }
