@@ -1,113 +1,130 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header('Список тестировщиков')}">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern('Список тестировщиков')}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container-fluid py-3 py-md-4 bg-light">
-    <div class="container px-2 px-md-3">
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 mb-md-4 gap-2">
-            <div>
-                <h1 class="h3 h2-md mb-1">
-                    <i class="bi bi-people text-success me-2"></i>
-                    Список тестировщиков
-                </h1>
-                <p class="text-muted small mb-0">Всего: <strong th:text="${totalItems}">0</strong></p>
-            </div>
+
+<div class="ap-page ap-shell">
+
+    <div class="ap-overlay" id="apOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/sidebar :: sidebar('CREATOR', 'testers')}"></aside>
+
+    <main class="ap-main">
+
+        <!-- Action bar: поиск уходит GET-ом в /creator/testers (параметр search) -->
+        <div th:replace="~{fragments/appbar :: appbar('Поиск по имени или логину...', '/creator/testers', 'search')}"></div>
+
+        <!-- Page head -->
+        <div class="ap-page-head">
+            <h1>Тестировщики</h1>
+            <p>
+                Всего: <span class="ap-mono" th:text="${totalItems} ?: 0">0</span>
+            </p>
         </div>
-        <div class="card border-0 shadow-sm mb-3 mb-md-4">
-            <div class="card-body p-3 p-md-4">
-                <form th:action="@{/creator/testers}" method="get" class="row g-2 g-md-3">
-                    <div class="col-12 col-md-6">
-                        <label class="form-label small fw-semibold d-block d-md-none">Поиск</label>
-                        <input type="text" class="form-control form-control-sm" name="search" th:value="${search}"
-                               placeholder="Поиск по имени или логину...">
-                    </div>
-                    <div class="col-6 col-md-2">
-                        <label class="form-label small fw-semibold d-block d-md-none">Размер</label>
-                        <select class="form-select form-select-sm" name="size">
-                            <option value="10" th:selected="${pageSize == 10}">10</option>
-                            <option value="20" th:selected="${pageSize == 20}">20</option>
-                            <option value="50" th:selected="${pageSize == 50}">50</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-dark w-100 btn-sm">
-                            <i class="bi bi-filter me-1"></i>Применить
-                        </button>
-                    </div>
-                    <div class="col-6 col-md-2 d-flex align-items-end">
-                        <a th:href="@{/creator/testers}" class="btn btn-outline-secondary w-100 btn-sm">
-                            <i class="bi bi-arrow-repeat me-1"></i>Сброс
+
+        <!-- Тулбар: размер страницы и сортировка.
+             search сохраняется скрытым полем, чтобы не сбросить фильтр из appbar. -->
+        <div class="ap-toolbar">
+
+            <form th:action="@{/creator/testers}" method="get" class="ap-cluster">
+                <input type="hidden" name="search" th:value="${search} ?: ''">
+
+                <label class="ap-xs ap-muted" for="testerPageSize">На странице</label>
+                <select class="ap-select" id="testerPageSize" name="size" style="width:auto">
+                    <option value="10" th:selected="${pageSize == 10}">10</option>
+                    <option value="20" th:selected="${pageSize == 20}">20</option>
+                    <option value="50" th:selected="${pageSize == 50}">50</option>
+                </select>
+
+                <label class="ap-xs ap-muted" for="testerSort">Сортировка</label>
+                <select class="ap-select" id="testerSort" name="sort" style="width:auto">
+                    <option value="createdAt" th:selected="${sort == 'createdAt'}">По дате регистрации</option>
+                    <option value="username" th:selected="${sort == 'username'}">По логину</option>
+                    <option value="lastName" th:selected="${sort == 'lastName'}">По фамилии</option>
+                </select>
+
+                <button type="submit" class="ap-btn ap-btn-outline ap-btn-sm">
+                    <svg th:replace="~{fragments/icons :: i-filter}"></svg>
+                    Применить
+                </button>
+            </form>
+
+            <a th:if="${search != null and !#strings.isEmpty(search)}"
+               th:href="@{/creator/testers}" class="ap-btn ap-btn-ghost ap-btn-sm">
+                <svg th:replace="~{fragments/icons :: i-refresh}"></svg>
+                Сбросить поиск
+            </a>
+
+        </div>
+
+        <!-- Таблица -->
+        <div class="ap-table-card ap-stack-mobile">
+
+            <table>
+                <thead>
+                <tr>
+                    <th scope="col">ФИО</th>
+                    <th scope="col">Логин</th>
+                    <th scope="col">Профиль</th>
+                    <th scope="col">Дата рег.</th>
+                    <th scope="col">Статус</th>
+                    <th scope="col" class="ap-td-actions">Действия</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="tester : ${testers}">
+
+                    <td data-label="ФИО">
+                        <span class="ap-cell-title" th:text="${tester.fullName} ?: '—'">Иванов И.И.</span>
+                    </td>
+
+                    <td data-label="Логин">
+                        <span class="ap-cell-sub ap-mono" th:text="${tester.username}">ivanov</span>
+                    </td>
+
+                    <td data-label="Профиль">
+                        <span class="ap-tag"
+                              th:classappend="${tester.profileComplete} ? ' ap-ok' : ' ap-warn'"
+                              th:text="${tester.profileComplete} ? 'Заполнен' : 'Не заполнен'">Заполнен</span>
+                    </td>
+
+                    <td data-label="Дата рег." class="ap-date"
+                        th:text="${tester.createdAt != null ? #temporals.format(tester.createdAt, 'dd.MM.yy') : '—'}">01.01.24</td>
+
+                    <td data-label="Статус">
+                        <span class="ap-tag"
+                              th:classappend="${tester.isActive} ? ' ap-ok' : ' ap-neutral'"
+                              th:text="${tester.isActive} ? 'Активен' : 'Отключён'">Активен</span>
+                    </td>
+
+                    <td data-label="Действия" class="ap-td-actions">
+                        <a th:href="@{/creator/testers/{id}/statistics(id=${tester.id})}"
+                           class="ap-row-link" title="Статистика тестировщика">
+                            Статистика →
                         </a>
-                    </div>
-                </form>
-            </div>
+                    </td>
+
+                </tr>
+
+                <tr th:if="${testers == null or testers.isEmpty()}">
+                    <td colspan="6" class="ap-empty-row">
+                        Тестировщики не найдены
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div th:replace="~{fragments/pager :: pager(${currentPage}, ${totalPages}, '/creator/testers', ${search}, null, ${pageSize})}"></div>
+
         </div>
-        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show py-2">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            <span class="small" th:text="${successMessage}">Успех</span>
-            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
-        </div>
-        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <span class="small" th:text="${errorMessage}">Ошибка</span>
-            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
-        </div>
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                        <tr>
-                            <th>ФИО</th>
-                            <th class="d-none d-lg-table-cell">Профиль</th>
-                            <th class="d-none d-sm-table-cell">Дата рег.</th>
-                            <th>Статус</th>
-                            <th class="text-end">Действия</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="tester : ${testers}">
-                            <td th:text="${tester.fullName} ?: '-'">Иванов И.И.</td>
-                            <td class="d-none d-lg-table-cell">
-                                <span class="badge" th:classappend="${tester.profileComplete} ? 'bg-success' : 'bg-warning'"
-                                      th:text="${tester.profileComplete} ? 'Да' : 'Нет'">Да</span>
-                            </td>
-                            <td class="d-none d-sm-table-cell" th:text="${#temporals.format(tester.createdAt, 'dd.MM.yy')}">01.01.24</td>
-                            <td>
-                                <span class="badge" th:classappend="${tester.isActive} ? 'bg-success' : 'bg-danger'"
-                                      th:text="${tester.isActive} ? 'Активен' : 'Неакт'">Активен</span>
-                            </td>
-                            <td class="text-end">
-                                <a th:href="@{'/creator/testers/' + ${tester.id} + '/statistics'}"
-                                   class="btn btn-sm btn-outline-dark" title="Статистика">
-                                    <i class="bi bi-bar-chart"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr th:if="${testers.isEmpty()}">
-                            <td colspan="7" class="text-center py-5">
-                                <i class="bi bi-people display-1 text-muted d-block mb-3"></i>
-                                <h5 class="text-muted h6 h5-md">Тестировщики не найдены</h5>
-                                <p class="text-muted small mb-0">По вашему запросу ничего не найдено</p>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card-footer bg-white border-0 py-3">
-                <div th:replace="~{fragments/pagination :: pagination(
-                    currentPage=${currentPage},
-                    totalPages=${totalPages},
-                    pageSize=${pageSize},
-                    baseUrl='/creator/testers'
-                )}"></div>
-            </div>
-        </div>
-    </div>
+
+    </main>
+
 </div>
-<div th:replace="~{fragments/footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 </body>
 </html>

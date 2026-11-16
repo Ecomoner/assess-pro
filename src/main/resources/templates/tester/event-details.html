@@ -1,40 +1,56 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header('Событие')}">
-</head>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern('Событие')}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container py-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/tester/calendar}">Календарь</a></li>
-            <li class="breadcrumb-item active" th:text="${event.title}">Событие</li>
-        </ol>
-    </nav>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h2 class="card-title" th:text="${event.title}"></h2>
-            <p class="text-muted">
-                <i class="bi bi-calendar-event me-2"></i>
-                <span th:text="${#temporals.format(event.start, 'dd.MM.yyyy')}">01.01.2026</span>
-            </p>
-            <hr>
-            <div th:if="${event.description}">
-                <h5>Описание</h5>
-                <p class="card-text" th:text="${event.description}"></p>
+<div class="ap-page ap-shell">
+
+    <div class="ap-overlay" id="apOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/sidebar :: sidebar('TESTER', 'calendar')}"></aside>
+
+    <main class="ap-main">
+
+        <!-- Action bar -->
+        <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+
+        <!-- Назад в календарь -->
+        <nav class="ap-crumbs" aria-label="Хлебные крошки">
+            <a th:href="@{/tester/calendar}">← Календарь</a>
+            <span class="sep">/</span>
+            <span class="cur" th:text="${event.title}">Событие</span>
+        </nav>
+
+        <div class="ap-card">
+            <div class="ap-card-head">
+                <h3 th:text="${event.title}">Название события</h3>
+                <span class="ap-tag ap-neutral" th:if="${event.start != null}"
+                      th:text="${#temporals.format(event.start, 'dd.MM.yyyy')}">01.01.2026</span>
             </div>
-            <div th:unless="${event.description}">
-                <p class="text-muted">Описание отсутствует</p>
+
+            <div class="ap-card-body" style="padding-top:14px">
+
+                <div th:if="${event.description}">
+                    <div class="ap-label">Описание</div>
+                    <p class="ap-small" style="margin-top:6px" th:text="${event.description}">Описание события</p>
+                </div>
+                <p class="ap-small ap-muted" th:unless="${event.description}">Описание отсутствует</p>
+
+                <hr>
+
+                <p class="ap-xs ap-muted">
+                    Создал: <span th:text="${event.createdByName}">Иванов И.И.</span>
+                </p>
+
             </div>
-            <hr>
-            <p class="text-muted small">
-                Создал: <span th:text="${event.createdByName}">Иванов И.И.</span>
-            </p>
         </div>
-    </div>
+
+    </main>
+
 </div>
-<div th:replace="~{fragments/footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 </body>
 </html>

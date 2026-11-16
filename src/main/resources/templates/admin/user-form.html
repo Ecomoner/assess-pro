@@ -1,170 +1,304 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header(${action == 'create' ? 'Создание пользователя' : 'Редактирование пользователя'})}">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern(${action == 'create' ? 'Создание пользователя' : 'Редактирование пользователя'})}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container py-3 py-md-4">
-    <div class="row">
-        <div class="col-12 mb-3 mb-md-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb flex-wrap">
-                    <li class="breadcrumb-item"><a th:href="@{/admin/users}" class="text-decoration-none">Пользователи</a></li>
-                    <li class="breadcrumb-item active" th:text="${action == 'create' ? 'Создание' : 'Редактирование'}">
-                        Создание
-                    </li>
-                </ol>
-            </nav>
-            <h1 class="h3 h2-md mb-0" th:text="${action == 'create' ? 'Создание нового пользователя' : 'Редактирование пользователя'}">
+
+<div class="ap-page ap-shell">
+
+    <div class="ap-overlay" id="apOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/sidebar :: sidebar('ADMIN', 'users')}"></aside>
+
+    <main class="ap-main">
+
+        <!-- Action bar -->
+        <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+
+        <!-- Хлебные крошки -->
+        <nav class="ap-crumbs" aria-label="Хлебные крошки">
+            <a th:href="@{/admin/users}">Пользователи</a>
+            <span class="sep">/</span>
+            <span class="cur" th:text="${action == 'create' ? 'Создание' : 'Редактирование'}">Создание</span>
+        </nav>
+
+        <!-- Page head -->
+        <div class="ap-page-head">
+            <h1 th:text="${action == 'create' ? 'Создание нового пользователя' : 'Редактирование пользователя'}">
                 Создание пользователя
             </h1>
+            <p>Заполните учётные данные, роль и статус учётной записи.</p>
         </div>
-    </div>
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
-            <div class="card shadow border-0">
-                <div class="card-body p-3 p-md-4">
-                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <span th:text="${errorMessage}">Ошибка</span>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+        <div th:if="${errorMessage}" class="ap-alert"
+             style="background:#fef2f2;color:#b91c1c;border-color:#fecaca">
+            <svg th:replace="~{fragments/icons :: i-alert}"></svg>
+            <span th:text="${errorMessage}">Ошибка</span>
+        </div>
+
+        <!-- Форма -->
+        <div class="ap-card">
+
+            <div class="ap-card-head">
+                <h3>Данные пользователя</h3>
+            </div>
+
+            <div class="ap-card-body" style="padding-top:20px;padding-bottom:22px">
+
+                <form th:action="@{${action == 'create' ? '/admin/users/new' : '/admin/users/update/' + user.id}}"
+                      th:object="${user}"
+                      method="post"
+                      class="needs-validation"
+                      novalidate
+                      data-action="${action}">
+
+                    <input type="hidden" th:if="${user.id != null}" th:field="*{id}">
+
+                    <!-- Глобальные ошибки валидации DTO (@AssertTrue — пароли не совпадают) -->
+                    <div th:if="${#fields.hasGlobalErrors()}" class="ap-alert"
+                         style="background:#fef2f2;color:#b91c1c;border-color:#fecaca;margin-bottom:18px">
+                        <svg th:replace="~{fragments/icons :: i-alert}"></svg>
+                        <div>
+                            <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">Ошибка</div>
+                        </div>
                     </div>
-                    <form th:action="@{${action == 'create' ? '/admin/users/new' : '/admin/users/update/' + user.id}}"
-                          th:object="${user}"
-                          method="post"
-                          class="needs-validation"
-                          novalidate
-                          data-action="${action}">
-                        <input type="hidden" th:if="${user.id != null}" th:field="*{id}" />
-                        <div class="mb-2 mb-md-3">
-                            <label for="username" class="form-label fw-semibold small">Логин *</label>
-                            <input type="text" class="form-control form-control-sm form-control-md-normal"
-                                   th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'"
-                                   id="username" th:field="*{username}"
+
+                    <div class="ap-form-grid">
+
+                        <!-- Логин -->
+                        <div class="ap-field"
+                             th:classappend="${#fields.hasErrors('username')} ? ' is-invalid'">
+                            <label class="ap-label" for="username">Логин <span class="req">*</span></label>
+                            <input type="text" class="ap-input" id="username" th:field="*{username}"
                                    th:readonly="${action == 'edit'}" required>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Ошибка</div>
-                            <small class="text-muted d-block small">Только буквы, цифры и подчеркивания</small>
+                            <div class="ap-err" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Ошибка</div>
+                            <span class="ap-hint">Только буквы, цифры и подчеркивания</span>
                         </div>
-                        <div th:if="${action == 'create'}">
-                            <div class="mb-2 mb-md-3">
-                                <label for="password-create" class="form-label fw-semibold small">Пароль *</label>
-                                <input type="password" class="form-control form-control-sm form-control-md-normal"
-                                       th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
-                                       id="password-create" name="password" th:value="*{password}" required>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Ошибка</div>
-                                <small class="text-muted d-block small">Минимум 6 символов, буква и цифра</small>
-                            </div>
-                            <div class="mb-2 mb-md-3">
-                                <label for="password-confirm-create" class="form-label fw-semibold small">Подтверждение пароля *</label>
-                                <input type="password" class="form-control form-control-sm form-control-md-normal" id="password-confirm-create" th:field="*{passwordConfirm}" required>
-                                <div class="invalid-feedback">Пароли не совпадают</div>
-                            </div>
+
+                        <!-- Роль -->
+                        <div class="ap-field"
+                             th:classappend="${#fields.hasErrors('role')} ? ' is-invalid'">
+                            <label class="ap-label" for="role">Роль <span class="req">*</span></label>
+                            <select class="ap-select" id="role" name="role" required>
+                                <option value="">Выберите роль</option>
+                                <option value="ROLE_ADMIN" th:selected="${user.role == 'ROLE_ADMIN'}">Администратор</option>
+                                <option value="ROLE_CREATOR" th:selected="${user.role == 'ROLE_CREATOR'}">Создатель</option>
+                                <option value="ROLE_TESTER" th:selected="${user.role == 'ROLE_TESTER'}">Тестировщик</option>
+                                <option value="ROLE_MANAGER" th:selected="${user.role == 'ROLE_MANAGER'}">Менеджер</option>
+                            </select>
+                            <div class="ap-err" th:if="${#fields.hasErrors('role')}" th:errors="*{role}">Ошибка</div>
                         </div>
-                        <div th:if="${action == 'edit'}">
-                            <div class="mb-2 mb-md-3">
-                                <label for="password-edit" class="form-label fw-semibold small">Новый пароль</label>
-                                <input type="password" class="form-control form-control-sm form-control-md-normal" id="password-edit" name="password" th:value="*{password}" placeholder="Оставьте пустым">
-                                <small class="text-muted d-block small">Заполните только для смены</small>
+
+                        <!-- Пароль (создание) -->
+                        <th:block th:if="${action == 'create'}">
+                            <div class="ap-field"
+                                 th:classappend="${#fields.hasErrors('password')} ? ' is-invalid'">
+                                <label class="ap-label" for="password-create">Пароль <span class="req">*</span></label>
+                                <input type="password" class="ap-input" id="password-create"
+                                       name="password" required>
+                                <div class="ap-err" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Ошибка</div>
+                                <span class="ap-hint">Минимум 6 символов, буква и цифра</span>
                             </div>
-                            <div class="mb-2 mb-md-3" id="confirm-password-block" style="display: none;">
-                                <label for="password-confirm-edit" class="form-label fw-semibold small">Подтверждение пароля</label>
-                                <input type="password" class="form-control form-control-sm form-control-md-normal" id="password-confirm-edit" th:field="*{passwordConfirm}">
-                                <div class="invalid-feedback">Пароли не совпадают</div>
+
+                            <div class="ap-field">
+                                <label class="ap-label" for="password-confirm-create">Подтверждение пароля <span class="req">*</span></label>
+                                <input type="password" class="ap-input" id="password-confirm-create"
+                                       name="passwordConfirm" required>
+                                <span class="ap-err" data-client-err hidden>Пароли не совпадают</span>
                             </div>
+                        </th:block>
+
+                        <!-- Пароль (редактирование) -->
+                        <th:block th:if="${action == 'edit'}">
+                            <div class="ap-field">
+                                <label class="ap-label" for="password-edit">Новый пароль</label>
+                                <input type="password" class="ap-input" id="password-edit"
+                                       name="password" placeholder="Оставьте пустым">
+                                <span class="ap-hint">Заполните только для смены</span>
+                            </div>
+
+                            <div class="ap-field" id="confirm-password-block" style="display:none">
+                                <label class="ap-label" for="password-confirm-edit">Подтверждение пароля</label>
+                                <input type="password" class="ap-input" id="password-confirm-edit"
+                                       name="passwordConfirm">
+                                <span class="ap-err" data-client-err hidden>Пароли не совпадают</span>
+                            </div>
+                        </th:block>
+
+                        <!-- Фамилия -->
+                        <div class="ap-field"
+                             th:classappend="${#fields.hasErrors('lastName')} ? ' is-invalid'">
+                            <label class="ap-label" for="lastName">Фамилия <span class="req">*</span></label>
+                            <input type="text" class="ap-input" id="lastName" th:field="*{lastName}" required>
+                            <div class="ap-err" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}">Ошибка</div>
                         </div>
-                        <div class="row g-2">
-                            <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                <label for="lastName" class="form-label fw-semibold small">Фамилия *</label>
-                                <input type="text" class="form-control form-control-sm"
-                                       th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'"
-                                       id="lastName" th:field="*{lastName}" required>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}">Ошибка</div>
-                            </div>
-                            <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                <label for="firstName" class="form-label fw-semibold small">Имя *</label>
-                                <input type="text" class="form-control form-control-sm"
-                                       th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'"
-                                       id="firstName" th:field="*{firstName}" required>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}">Ошибка</div>
-                            </div>
-                            <div class="col-12 col-md-4">
-                                <label for="middleName" class="form-label fw-semibold small">Отчество</label>
-                                <input type="text" class="form-control form-control-sm"
-                                       id="middleName" th:field="*{middleName}">
-                            </div>
+
+                        <!-- Имя -->
+                        <div class="ap-field"
+                             th:classappend="${#fields.hasErrors('firstName')} ? ' is-invalid'">
+                            <label class="ap-label" for="firstName">Имя <span class="req">*</span></label>
+                            <input type="text" class="ap-input" id="firstName" th:field="*{firstName}" required>
+                            <div class="ap-err" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}">Ошибка</div>
                         </div>
-                        <div class="row g-2 mt-2">
-                            <div class="col-12 col-md-6 mb-2 mb-md-0">
-                                <label for="roleSelect" class="form-label fw-semibold small">Роль *</label>
-                                <select class="form-select form-select-sm"
-                                        th:classappend="${#fields.hasErrors('role')} ? 'is-invalid'"
-                                        id="roleSelect" th:field="*{role}" required>
-                                    <option value="">Выберите роль</option>
-                                    <option value="ROLE_ADMIN">Администратор</option>
-                                    <option value="ROLE_CREATOR">Создатель</option>
-                                    <option value="ROLE_TESTER">Тестировщик</option>
-                                    <option value="ROLE_MANAGER">Менеджер</option>
-                                </select>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('role')}" th:errors="*{role}">Ошибка</div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div id="projectBlock" style="display: none;">
-                                    <label class="form-label fw-semibold small">Проект *</label>
-                                    <select name="projectId" id="projectSelect" class="form-select">
-                                        <option value="">Выберите проект</option>
-                                        <option th:each="proj : ${allProjects}"
-                                                th:value="${proj.id}"
-                                                th:text="${proj.name}"
-                                                th:selected="${user.projectId == proj.id}"></option>
-                                    </select>
-                                </div>
-                            </div>
+
+                        <!-- Отчество -->
+                        <div class="ap-field">
+                            <label class="ap-label" for="middleName">Отчество</label>
+                            <input type="text" class="ap-input" id="middleName" th:field="*{middleName}">
                         </div>
-                        <div class="row g-2 mt-2">
-                            <div class="col-12 col-md-6">
-                                <label class="form-label fw-semibold small d-block">Статус</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="active" th:field="*{isActive}">
-                                    <label class="form-check-label small" for="active">Активен</label>
-                                </div>
-                            </div>
+
+                        <!-- Проект (только для тестировщика) -->
+                        <div class="ap-field" id="projectBlock" style="display:none">
+                            <label class="ap-label" for="projectSelect">Проект <span class="req">*</span></label>
+                            <select class="ap-select" name="projectId" id="projectSelect">
+                                <option value="">Выберите проект</option>
+                                <option th:each="proj : ${allProjects}"
+                                        th:value="${proj.id}"
+                                        th:text="${proj.name}"
+                                        th:selected="${user.projectId == proj.id}"></option>
+                            </select>
                         </div>
-                        <hr class="my-3">
-                        <div class="d-flex flex-column flex-sm-row gap-2">
-                            <button type="submit" class="btn btn-dark px-4 py-2 w-100 w-sm-auto">
-                                <i class="bi bi-check-circle me-2"></i>
-                                <span th:text="${action == 'create'} ? 'Создать' : 'Сохранить'">Сохранить</span>
-                            </button>
-                            <a th:href="@{/admin/users}" class="btn btn-outline-secondary px-4 py-2 w-100 w-sm-auto">
-                                <i class="bi bi-x-circle me-2"></i>Отмена
-                            </a>
+
+                        <!-- Статус -->
+                        <div class="ap-field ap-span-2">
+                            <span class="ap-label">Статус</span>
+                            <label class="ap-switch">
+                                <input type="checkbox" id="active" th:field="*{isActive}">
+                                <span class="ap-switch-track"></span>
+                                <span>Активен</span>
+                            </label>
                         </div>
-                    </form>
-                </div>
+
+                    </div>
+
+                    <hr style="margin:22px 0">
+
+                    <div class="ap-cluster">
+                        <button type="submit" class="ap-btn ap-btn-dark">
+                            <svg th:replace="~{fragments/icons :: i-check}"></svg>
+                            <span th:text="${action == 'create'} ? 'Создать' : 'Сохранить'">Сохранить</span>
+                        </button>
+                        <a th:href="@{/admin/users}" class="ap-btn ap-btn-outline">
+                            <svg th:replace="~{fragments/icons :: i-x}"></svg>
+                            Отмена
+                        </a>
+                    </div>
+
+                </form>
+
             </div>
         </div>
-    </div>
+
+    </main>
+
 </div>
-<div th:replace="~{fragments/footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/js/user-form-validation.js"></script>
+
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
+<script th:src="@{/js/user-form-validation.js}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var roleSelect = document.getElementById('roleSelect');
+    // Показ поля «Проект» только для роли ROLE_TESTER.
+    // Обработчик навешан на форму, а не на document:DOMContentLoaded,
+    // чтобы не зависеть от порядка загрузки скриптов.
+    (function () {
+        var roleSelect = document.getElementById('roleSelect')
+            || document.querySelector('select[name="role"]');
         var projectBlock = document.getElementById('projectBlock');
-        var projectSelect = document.getElementById('projectSelect');
+        var projectSelect = document.getElementById('projectSelect')
+            || document.querySelector('select[name="projectId"]');
+
+        if (!roleSelect || !projectBlock || !projectSelect) return;
 
         function toggleProject() {
-            if (!roleSelect || !projectBlock || !projectSelect) return;
             var isTester = roleSelect.value === 'ROLE_TESTER';
-            projectBlock.style.display = isTester ? 'block' : 'none';
+            projectBlock.style.display = isTester ? 'flex' : 'none';
             projectSelect.required = isTester;
         }
 
-        if (roleSelect) {
-            roleSelect.addEventListener('change', toggleProject);
-            toggleProject();
+        roleSelect.addEventListener('change', toggleProject);
+        toggleProject();
+    })();
+
+    // Пароли: user-form-validation.js помечает несовпадение классом is-invalid
+    // на самом input. Переносим подсветку на .ap-field и показываем .ap-err.
+    (function () {
+        var pairs = [
+            { confirm: 'password-confirm-create', password: 'password-create' },
+            { confirm: 'password-confirm-edit', password: 'password-edit' }
+        ];
+
+        function check() {
+            pairs.forEach(function (pair) {
+                var confirm = document.getElementById(pair.confirm);
+                if (!confirm) return;
+                var group = confirm.closest('.ap-field');
+                if (!group) return;
+                var err = group.querySelector('[data-client-err]');
+                var password = document.getElementById(pair.password);
+                var bad = confirm.classList.contains('is-invalid')
+                    || (password && confirm.value !== '' && password.value !== confirm.value);
+
+                group.classList.toggle('is-invalid', !!bad);
+                if (err) err.hidden = !bad;
+            });
         }
-    });
+
+        var form = document.querySelector('form.needs-validation');
+        if (form) {
+            form.addEventListener('submit', function () {
+                // user-form-validation.js обрабатывает submit первым
+                setTimeout(check, 0);
+            }, false);
+        }
+
+        pairs.forEach(function (pair) {
+            var confirm = document.getElementById(pair.confirm);
+            if (confirm) confirm.addEventListener('input', check);
+        });
+
+        check();
+    })();
+
+    // Режим редактирования: пустое поле «Новый пароль» не отправляем.
+    // UserManagementDTO.password помечен @Size(min = 6), а пустая строка
+    // не проходит эту проверку — без отключения поля любое сохранение
+    // формы падало бы с ошибкой «минимум 6 символов».
+    (function () {
+        var form = document.querySelector('form.needs-validation');
+        var passwordEdit = document.getElementById('password-edit');
+        var confirmEdit = document.getElementById('password-confirm-edit');
+
+        if (!form || !passwordEdit) return;
+
+        form.addEventListener('submit', function () {
+            if (passwordEdit.value.trim() !== '') return;
+
+            passwordEdit.disabled = true;
+            if (confirmEdit) confirmEdit.disabled = true;
+
+            // Если отправка не состоится (форма не прошла валидацию),
+            // возвращаем поля в рабочее состояние.
+            setTimeout(function () {
+                passwordEdit.disabled = false;
+                if (confirmEdit) confirmEdit.disabled = false;
+            }, 0);
+        }, false);
+    })();
+
+    // Форма объявлена с novalidate (так требует user-form-validation.js),
+    // поэтому браузер сам не показывает подсказки о незаполненных полях.
+    // После их проверки явно запрашиваем встроенные сообщения (reportValidity),
+    // иначе нажатие «Создать» с пустым логином выглядело бы как «ничего не произошло».
+    (function () {
+        var form = document.querySelector('form.needs-validation');
+        if (!form) return;
+
+        form.addEventListener('submit', function () {
+            setTimeout(function () {
+                if (!form.checkValidity()) form.reportValidity();
+            }, 0);
+        }, false);
+    })();
 </script>
 </body>
 </html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================
+     sidebar(role, active)
+     role   — TESTER | CREATOR | MANAGER | ADMIN
+     active — ключ текущего пункта: dashboard | tests | categories |
+              testers | events | materials | regulations | profile |
+              catalog | history | calendar | users | projects | statistics
+
+     Использование:
+       <aside th:replace="~{fragments/sidebar :: sidebar('CREATOR','tests')}"></aside>
+     ========================================================== -->
+<aside th:fragment="sidebar(role, active)" class="ap-side" id="apSide"
+       th:with="
+         uname=${#authentication != null ? #authentication.name : 'AP'},
+         initials=${#strings.length(uname) > 1 ? #strings.toUpperCase(#strings.substring(uname, 0, 2)) : #strings.toUpperCase(uname)}">
+
+    <button class="ap-side-close" id="apSideClose" type="button" aria-label="Закрыть меню">
+        <svg viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="currentColor" stroke-linecap="round">
+            <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+    </button>
+
+    <a class="ap-brand" th:href="@{/dashboard}">
+        <span class="ap-brand-mark">A</span>
+        AssessPro
+    </a>
+
+    <!-- ======================================================
+         Режим «оглавление» страницы материалов.
+         Появляется, только если страница положила список разделов
+         в переменную sidebarSections (через th:with перед вызовом
+         этого фрагмента). В обычном режиме блок скрыт CSS-ом.
+         ====================================================== -->
+    <div class="ap-side-focus" th:if="${sidebarSections != null}">
+
+        <button type="button" class="ap-side-back" id="apSideBack">
+            <svg viewBox="0 0 24 24" stroke-width="2.5" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Назад
+        </button>
+
+        <button type="button" class="ap-nav-item ap-active" id="apMaterialsTop">
+            <svg th:replace="~{fragments/icons :: i-materials}"></svg>
+            Материалы
+        </button>
+
+        <div class="ap-nav-group ap-side-sections">
+            <div class="ap-nav-label">Разделы</div>
+
+            <button th:each="s, iter : ${sidebarSections}"
+                    type="button"
+                    class="ap-nav-item ap-nav-sub"
+                    th:classappend="${iter.first} ? ' ap-active'"
+                    th:attr="data-section=${s.id}"
+                    th:text="${s.title}">Раздел</button>
+        </div>
+
+    </div>
+
+    <!-- Обычная навигация по приложению -->
+    <div class="ap-side-full">
+
+    <!-- =================== TESTER =================== -->
+    <th:block th:if="${role == 'TESTER'}">
+        <div class="ap-nav-group">
+            <div class="ap-nav-label">Основное</div>
+
+            <a class="ap-nav-item" th:classappend="${active == 'dashboard'} ? ' ap-active'"
+               th:href="@{/tester/dashboard}">
+                <svg th:replace="~{fragments/icons :: i-dashboard}"></svg>
+                Обзор
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'catalog'} ? ' ap-active'"
+               th:href="@{/tester/catalog}">
+                <svg th:replace="~{fragments/icons :: i-catalog}"></svg>
+                Каталог
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'calendar'} ? ' ap-active'"
+               th:href="@{/tester/calendar}">
+                <svg th:replace="~{fragments/icons :: i-calendar}"></svg>
+                Календарь
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'history'} ? ' ap-active'"
+               th:href="@{/tester/history}">
+                <svg th:replace="~{fragments/icons :: i-history}"></svg>
+                История
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'materials'} ? ' ap-active'"
+               th:if="${hasActiveAttempt == null or !hasActiveAttempt}"
+               th:href="@{/materials}">
+                <svg th:replace="~{fragments/icons :: i-materials}"></svg>
+                Материалы
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'regulations'} ? ' ap-active'"
+               th:href="@{/navigation/regulations}">
+                <svg th:replace="~{fragments/icons :: i-regulations}"></svg>
+                Регламент
+            </a>
+        </div>
+    </th:block>
+
+    <!-- =================== CREATOR =================== -->
+    <th:block th:if="${role == 'CREATOR'}">
+        <div class="ap-nav-group">
+            <div class="ap-nav-label">Контент</div>
+
+            <a class="ap-nav-item" th:classappend="${active == 'dashboard'} ? ' ap-active'"
+               th:href="@{/creator/dashboard}">
+                <svg th:replace="~{fragments/icons :: i-dashboard}"></svg>
+                Обзор
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'tests'} ? ' ap-active'"
+               th:href="@{/creator/tests}">
+                <svg th:replace="~{fragments/icons :: i-tests}"></svg>
+                Тесты
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'categories'} ? ' ap-active'"
+               th:href="@{/creator/categories}">
+                <svg th:replace="~{fragments/icons :: i-categories}"></svg>
+                Категории
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'materials'} ? ' ap-active'"
+               th:href="@{/creator/materials}">
+                <svg th:replace="~{fragments/icons :: i-materials}"></svg>
+                Материалы
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'events'} ? ' ap-active'"
+               th:href="@{/creator/events}">
+                <svg th:replace="~{fragments/icons :: i-events}"></svg>
+                События
+            </a>
+        </div>
+
+        <div class="ap-nav-group">
+            <div class="ap-nav-label">Аналитика</div>
+
+            <a class="ap-nav-item" th:classappend="${active == 'testers'} ? ' ap-active'"
+               th:href="@{/creator/testers}">
+                <svg th:replace="~{fragments/icons :: i-users}"></svg>
+                Тестировщики
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'regulations'} ? ' ap-active'"
+               th:href="@{/navigation/regulations}">
+                <svg th:replace="~{fragments/icons :: i-regulations}"></svg>
+                Регламент
+            </a>
+        </div>
+    </th:block>
+
+    <!-- =================== MANAGER =================== -->
+    <th:block th:if="${role == 'MANAGER'}">
+        <div class="ap-nav-group">
+            <div class="ap-nav-label">Проект</div>
+
+            <a class="ap-nav-item" th:classappend="${active == 'dashboard'} ? ' ap-active'"
+               th:href="@{/manager/dashboard}">
+                <svg th:replace="~{fragments/icons :: i-dashboard}"></svg>
+                Обзор
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'statistics'} ? ' ap-active'"
+               th:href="@{/manager/dashboard}">
+                <svg th:replace="~{fragments/icons :: i-statistics}"></svg>
+                Статистика
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'calendar'} ? ' ap-active'"
+               th:href="@{/manager/calendar}">
+                <svg th:replace="~{fragments/icons :: i-calendar}"></svg>
+                Календарь
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'materials'} ? ' ap-active'"
+               th:href="@{/materials}">
+                <svg th:replace="~{fragments/icons :: i-materials}"></svg>
+                Материалы
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'regulations'} ? ' ap-active'"
+               th:href="@{/navigation/regulations}">
+                <svg th:replace="~{fragments/icons :: i-regulations}"></svg>
+                Регламент
+            </a>
+        </div>
+    </th:block>
+
+    <!-- =================== ADMIN =================== -->
+    <th:block th:if="${role == 'ADMIN'}">
+        <div class="ap-nav-group">
+            <div class="ap-nav-label">Администрирование</div>
+
+            <a class="ap-nav-item" th:classappend="${active == 'dashboard'} ? ' ap-active'"
+               th:href="@{/admin/dashboard}">
+                <svg th:replace="~{fragments/icons :: i-dashboard}"></svg>
+                Обзор
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'users'} ? ' ap-active'"
+               th:href="@{/admin/users}">
+                <svg th:replace="~{fragments/icons :: i-users}"></svg>
+                Пользователи
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'projects'} ? ' ap-active'"
+               th:href="@{/admin/projects}">
+                <svg th:replace="~{fragments/icons :: i-projects}"></svg>
+                Проекты
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'statistics'} ? ' ap-active'"
+               th:href="@{/admin/statistics}">
+                <svg th:replace="~{fragments/icons :: i-statistics}"></svg>
+                Статистика
+            </a>
+        </div>
+
+        <div class="ap-nav-group">
+            <div class="ap-nav-label">Общее</div>
+
+            <a class="ap-nav-item" th:classappend="${active == 'materials'} ? ' ap-active'"
+               th:href="@{/materials}">
+                <svg th:replace="~{fragments/icons :: i-materials}"></svg>
+                Материалы
+            </a>
+            <a class="ap-nav-item" th:classappend="${active == 'regulations'} ? ' ap-active'"
+               th:href="@{/navigation/regulations}">
+                <svg th:replace="~{fragments/icons :: i-regulations}"></svg>
+                Регламент
+            </a>
+        </div>
+    </th:block>
+
+    <!-- =================== АККАУНТ =================== -->
+    <div class="ap-nav-group">
+        <div class="ap-nav-label">Аккаунт</div>
+        <a class="ap-nav-item" th:classappend="${active == 'profile'} ? ' ap-active'"
+           th:href="@{/profile/edit}">
+            <svg th:replace="~{fragments/icons :: i-user}"></svg>
+            Профиль
+        </a>
+    </div>
+
+    </div><!-- /.ap-side-full -->
+
+    <div class="ap-side-footer">
+        <div class="ap-user">
+            <div class="ap-avatar" th:text="${initials}">AP</div>
+            <div class="ap-grow ap-truncate">
+                <div class="ap-user-name ap-truncate" th:text="${uname}">Пользователь</div>
+                <div class="ap-user-role" th:text="${role}">TESTER</div>
+            </div>
+            <form th:action="@{/logout}" method="post" style="margin-left:auto;display:flex">
+                <input th:if="${_csrf != null}" type="hidden"
+                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="ap-btn ap-btn-icon ap-btn-sm" title="Выйти" aria-label="Выйти">
+                    <svg th:replace="~{fragments/icons :: i-logout}"></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</aside>
+
+</body>
+</html>

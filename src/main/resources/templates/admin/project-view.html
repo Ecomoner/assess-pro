@@ -1,112 +1,198 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header('Проект: ' + ${project.name})}">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern(${'Проект: ' + project.name})}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container py-3">
-    <!-- Хлебные крошки -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb flex-wrap">
-            <li class="breadcrumb-item"><a th:href="@{/admin/projects}" class="text-decoration-none">Проекты</a></li>
-            <li class="breadcrumb-item active" th:text="${project.name}"></li>
-        </ol>
-    </nav>
 
-    <!-- Сообщения -->
-    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+<div class="ap-page ap-shell">
 
-    <div class="row">
-        <!-- Карточка проекта -->
-        <div class="col-12 col-lg-6 mb-4">
-            <div class="card shadow border-0">
-                <div class="card-body">
-                    <h5 class="card-title" th:text="${project.name}"></h5>
-                    <p class="text-muted" th:text="${project.description}"></p>
-                    <p>Активен: <span th:classappend="${project.active ? 'badge bg-success' : 'badge bg-secondary'}" th:text="${project.active ? 'Да' : 'Нет'}"></span></p>
+    <div class="ap-overlay" id="apOverlay"></div>
 
-                    <!-- Менеджер -->
-                    <div class="mb-3">
-                        <label class="fw-bold">Менеджер:</label>
-                        <span th:if="${project.manager != null}" th:text="${project.manager.fullName} + ' (' + ${project.manager.username} + ')'"></span>
-                        <span th:if="${project.manager == null}" class="text-muted">Не назначен</span>
-                        <button class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#assignManagerModal">Изменить</button>
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/sidebar :: sidebar('ADMIN', 'projects')}"></aside>
+
+    <main class="ap-main">
+
+        <!-- Action bar -->
+        <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+
+        <!-- Хлебные крошки -->
+        <nav class="ap-crumbs" aria-label="Хлебные крошки">
+            <a th:href="@{/admin/projects}">Проекты</a>
+            <span class="sep">/</span>
+            <span class="cur" th:text="${project.name}">Проект</span>
+        </nav>
+
+        <!-- Page head -->
+        <div class="ap-page-head">
+            <h1 th:text="${project.name}">Проект</h1>
+            <p th:if="${project.description != null and !#strings.isEmpty(project.description)}"
+               th:text="${project.description}">Описание проекта</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div th:if="${successMessage}" class="ap-alert"
+             style="background:#f0fdf4;color:#166534;border-color:#dcfce7">
+            <svg th:replace="~{fragments/icons :: i-check}"></svg>
+            <span th:text="${successMessage}">Успех</span>
+        </div>
+        <div th:if="${errorMessage}" class="ap-alert"
+             style="background:#fef2f2;color:#b91c1c;border-color:#fecaca">
+            <svg th:replace="~{fragments/icons :: i-alert}"></svg>
+            <span th:text="${errorMessage}">Ошибка</span>
+        </div>
+
+        <!-- Статус и действия -->
+        <div class="ap-cluster" style="margin-bottom:20px">
+            <span class="ap-tag ap-ok" th:if="${project.active}">
+                <span class="ap-dot-sm"></span>Активен
+            </span>
+            <span class="ap-tag ap-neutral" th:unless="${project.active}">
+                <span class="ap-dot-sm"></span>Неактивен
+            </span>
+
+            <a th:href="@{/admin/projects/edit/{id}(id=${project.id})}" class="ap-btn ap-btn-outline ap-btn-sm">
+                <svg th:replace="~{fragments/icons :: i-edit}"></svg>
+                Редактировать проект
+            </a>
+        </div>
+
+        <div class="ap-cols">
+
+            <!-- О проекте -->
+            <div class="ap-card">
+                <div class="ap-card-head">
+                    <h3>О проекте</h3>
+                </div>
+                <div class="ap-card-body" style="padding-top:18px;padding-bottom:20px">
+                    <dl style="margin:0;display:grid;grid-template-columns:160px 1fr;gap:14px 18px">
+
+                        <dt class="ap-muted ap-small">Название</dt>
+                        <dd style="margin:0" th:text="${project.name}">Проект</dd>
+
+                        <dt class="ap-muted ap-small">Статус</dt>
+                        <dd style="margin:0" th:text="${project.active} ? 'Активен' : 'Неактивен'">Активен</dd>
+
+                        <dt class="ap-muted ap-small">Менеджер</dt>
+                        <dd style="margin:0">
+                            <span th:if="${project.manager != null}"
+                                  th:text="${project.manager.fullName + ' (' + project.manager.username + ')'}">Менеджер</span>
+                            <span th:if="${project.manager == null}" class="ap-muted">Не назначен</span>
+                        </dd>
+
+                        <dt class="ap-muted ap-small">Тестировщиков</dt>
+                        <dd style="margin:0" th:text="${project.testers != null ? project.testers.size() : 0}">0</dd>
+
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Назначение менеджера -->
+            <div class="ap-card">
+                <div class="ap-card-head">
+                    <h3>Назначить менеджера</h3>
+                </div>
+                <div class="ap-card-body" style="padding-top:18px;padding-bottom:20px">
+
+                    <form th:action="@{/admin/projects/view/{id}/assign-manager(id=${project.id})}" method="post">
+                        <div class="ap-field">
+                            <label class="ap-label" for="managerId">Менеджер</label>
+                            <select class="ap-select" id="managerId" name="managerId" required>
+                                <option value="">Выберите менеджера</option>
+                                <option th:each="m : ${managers}"
+                                        th:value="${m.id}"
+                                        th:text="${m.fullName + ' (' + m.username + ')'}"
+                                        th:selected="${project.manager != null and project.manager.id == m.id}"></option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="ap-btn ap-btn-dark ap-btn-block" style="margin-top:14px">
+                            <svg th:replace="~{fragments/icons :: i-check}"></svg>
+                            Назначить
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Тестировщики проекта -->
+        <div class="ap-card" style="margin-bottom:20px">
+
+            <div class="ap-card-head">
+                <h3>
+                    Тестировщики
+                    <span class="ap-tag ap-neutral"
+                          th:text="${project.testers != null ? project.testers.size() : 0}">0</span>
+                </h3>
+            </div>
+
+            <div class="ap-card-body" style="padding-top:18px;padding-bottom:20px">
+
+                <!-- Добавление тестировщиков -->
+                <form th:action="@{/admin/projects/view/{id}/add-testers(id=${project.id})}"
+                      method="post" class="ap-cluster" style="align-items:flex-start;margin-bottom:10px">
+
+                    <div class="ap-field" style="flex:1 1 260px">
+                        <label class="ap-label" for="testersId">Добавить тестировщиков</label>
+                        <select class="ap-select" id="testersId" name="testersId" multiple required
+                                style="min-height:160px;background-image:none;padding-right:13px">
+                            <option th:each="t : ${testers}"
+                                    th:value="${t.id}"
+                                    th:text="${t.fullName + ' (' + t.username + ')'}"></option>
+                        </select>
+                        <span class="ap-hint">Удерживайте Ctrl (⌘) для выбора нескольких</span>
                     </div>
+
+                    <button type="submit" class="ap-btn ap-btn-dark" style="margin-top:24px">
+                        <svg th:replace="~{fragments/icons :: i-plus}"></svg>
+                        Добавить
+                    </button>
+
+                </form>
+
+                <!-- Текущий состав -->
+                <div th:if="${project.testers == null or #lists.isEmpty(project.testers)}"
+                     class="ap-empty" style="margin-top:14px">
+                    <svg th:replace="~{fragments/icons :: i-info}"></svg>
+                    <div>В проекте пока нет тестировщиков.</div>
                 </div>
+
+                <div th:if="${project.testers != null and !#lists.isEmpty(project.testers)}" style="margin-top:6px">
+
+                    <div class="ap-row" th:each="tester : ${project.testers}">
+                        <div class="ap-grow">
+                            <div class="ap-title" th:text="${tester.fullName}">Тестировщик</div>
+                            <div class="ap-meta" th:text="${tester.username}">username</div>
+                        </div>
+
+                        <form th:action="@{/admin/projects/view/{id}/remove-tester(id=${project.id})}" method="post">
+                            <input type="hidden" name="testerId" th:value="${tester.id}">
+                            <button type="submit" class="ap-btn ap-btn-outline ap-btn-sm"
+                                    title="Убрать из проекта" aria-label="Убрать из проекта">
+                                <svg th:replace="~{fragments/icons :: i-x}"></svg>
+                                Убрать
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+
             </div>
         </div>
 
-        <!-- Список тестеров -->
-        <div class="col-12 col-lg-6 mb-4">
-            <div class="card shadow border-0">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Тестеры (<span th:text="${project.testers.size()}"></span>)</h5>
-                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addTestersModal">Добавить</button>
-                </div>
-                <div class="card-body p-0">
-                    <ul class="list-group list-group-flush" th:if="${!project.testers.isEmpty()}">
-                        <li class="list-group-item d-flex justify-content-between align-items-center" th:each="tester : ${project.testers}">
-                            <span th:text="${tester.fullName} + ' (' + ${tester.username} + ')'"></span>
-                            <form th:action="@{/admin/projects/view/{id}/remove-tester(id=${project.id})}" method="post" class="m-0">
-                                <input type="hidden" name="userId" th:value="${tester.id}">
-                                <button class="btn btn-sm btn-outline-danger" title="Убрать из проекта">✕</button>
-                            </form>
-                        </li>
-                    </ul>
-                    <div th:if="${project.testers.isEmpty()}" class="p-3 text-muted">Нет тестеров</div>
-                </div>
-            </div>
+        <div class="ap-cluster">
+            <a th:href="@{/admin/projects}" class="ap-btn ap-btn-ghost">
+                <svg th:replace="~{fragments/icons :: i-chevron-left}"></svg>
+                К списку проектов
+            </a>
         </div>
-    </div>
+
+    </main>
+
 </div>
 
-<!-- Модальное окно: Назначение менеджера -->
-<div class="modal fade" id="assignManagerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form th:action="@{/admin/projects/view/{id}/assign-manager(id=${project.id})}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Назначить менеджера</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <select name="managerId" class="form-select" required>
-                        <option value="">Выберите менеджера</option>
-                        <option th:each="m : ${managers}" th:value="${m.id}" th:text="${m.fullName} + ' (' + ${m.username} + ')'"></option>
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-dark">Назначить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно: Добавление тестеров -->
-<div class="modal fade" id="addTestersModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form th:action="@{/admin/projects/view/{id}/add-testers(id=${project.id})}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Добавить тестеров</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <select name="testersId" multiple class="form-select" size="10" required>
-                        <option th:each="t : ${testers}" th:value="${t.id}" th:text="${t.fullName} + ' (' + ${t.username} + ')'"></option>
-                    </select>
-                    <small class="text-muted">Удерживайте Ctrl для выбора нескольких</small>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-dark">Добавить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div th:replace="~{fragments/footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 </body>
 </html>

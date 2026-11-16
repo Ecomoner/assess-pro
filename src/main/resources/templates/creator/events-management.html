@@ -1,59 +1,129 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header('Управление событиями')}">
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet">
-    <style>
-        #calendar {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-    </style>
-</head>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern('Управление событиями')}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container py-4">
-    <h2 class="mb-4">Управление событиями</h2>
-    <div id="calendar"></div>
-</div>
 
-<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventModalLabel">Событие</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- CSS FullCalendar. head заменён фрагментом headerModern целиком,
+     поэтому таблица стилей подключается здесь: link rel=stylesheet
+     в body разрешён HTML5 и применяется браузером. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css">
+
+<div class="ap-page ap-shell">
+
+    <div class="ap-overlay" id="apOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/sidebar :: sidebar('CREATOR', 'events')}"></aside>
+
+    <main class="ap-main">
+
+        <!-- Action bar -->
+        <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+
+        <!-- Заголовок страницы -->
+        <div class="ap-page-head">
+            <h1>Управление событиями</h1>
+            <p>Нажмите на день в календаре, чтобы создать событие, или на событие — чтобы изменить его.</p>
+        </div>
+
+        <!-- Календарь -->
+        <div class="ap-card">
+            <div class="ap-card-head">
+                <h3>Календарь событий</h3>
+                <span class="ap-small ap-muted">Месяц</span>
             </div>
-            <div class="modal-body">
-                <form id="eventForm">
-                    <input type="hidden" id="eventId">
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Название</label>
-                        <input type="text" class="form-control" id="title" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="start" class="form-label">Дата</label>
-                        <input type="date" class="form-control" id="start" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Описание</label>
-                        <textarea class="form-control" id="description" rows="3"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;">Удалить</button>
-                <button type="button" class="btn btn-primary" id="saveBtn">Сохранить</button>
+
+            <div class="ap-card-body" style="padding:16px 20px 20px">
+                <div id="calendar" style="min-height:600px;max-width:900px;margin:0 auto"></div>
             </div>
         </div>
-    </div>
+
+        <!-- Форма события: нативный <dialog> вместо старой модалки.
+             id eventForm / eventId / title / start / description / saveBtn /
+             deleteBtn / eventModalLabel сохранены — их использует скрипт ниже. -->
+        <dialog class="ap-dialog" id="eventModal">
+            <form id="eventForm">
+                <div class="ap-dialog-head" id="eventModalLabel">Событие</div>
+
+                <div class="ap-dialog-body">
+                    <input type="hidden" id="eventId">
+
+                    <div class="ap-stack-sm">
+                        <label class="ap-label" for="title">Название<span class="req">*</span></label>
+                        <input type="text" class="ap-input" id="title" required maxlength="100">
+
+                        <label class="ap-label" for="start">Дата<span class="req">*</span></label>
+                        <input type="date" class="ap-input" id="start" required>
+
+                        <label class="ap-label" for="description">Описание</label>
+                        <textarea class="ap-textarea" id="description" rows="3"></textarea>
+
+                        <p class="ap-err" id="eventFormError" hidden></p>
+
+                        <!-- Подтверждение удаления внутри диалога -->
+                        <div id="deleteConfirm" hidden
+                             style="border:1px solid #fee2e2;background:#fef2f2;border-radius:12px;padding:12px 14px">
+                            <p class="ap-small" style="color:#b91c1c;margin-bottom:10px">
+                                Событие будет удалено безвозвратно.
+                            </p>
+                            <div class="ap-cluster">
+                                <button type="button" class="ap-btn ap-btn-outline ap-btn-sm"
+                                        id="deleteConfirmCancel">Отмена</button>
+                                <button type="button" class="ap-btn ap-btn-danger ap-btn-sm"
+                                        id="deleteConfirmBtn">Удалить безвозвратно</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ap-dialog-foot">
+                    <button type="button" class="ap-btn ap-btn-outline" data-dialog-close>Закрыть</button>
+                    <button type="button" class="ap-btn ap-btn-danger" id="deleteBtn"
+                            style="display:none">Удалить</button>
+                    <button type="button" class="ap-btn ap-btn-dark" id="saveBtn">Сохранить</button>
+                </div>
+            </form>
+        </dialog>
+
+    </main>
+
 </div>
 
-<div th:replace="~{fragments/footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
-<script th:inline="javascript">
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
+
+        var dialogEl = document.getElementById('eventModal');
+        var errorEl = document.getElementById('eventFormError');
+        var deleteConfirm = document.getElementById('deleteConfirm');
+        var deleteBtn = document.getElementById('deleteBtn');
+
+        function showDialog() {
+            if (typeof dialogEl.showModal === 'function') { dialogEl.showModal(); }
+            else { dialogEl.setAttribute('open', ''); }
+        }
+
+        function hideDialog() {
+            if (typeof dialogEl.close === 'function') { dialogEl.close(); }
+            else { dialogEl.removeAttribute('open'); }
+        }
+
+        function showError(message) {
+            errorEl.textContent = message;
+            errorEl.hidden = false;
+        }
+
+        function clearError() {
+            errorEl.textContent = '';
+            errorEl.hidden = true;
+        }
+
+        function setDeleteVisible(on) {
+            deleteBtn.style.display = on ? 'inline-flex' : 'none';
+        }
+
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -66,10 +136,11 @@
                 document.getElementById('title').value = '';
                 document.getElementById('start').value = info.startStr;
                 document.getElementById('description').value = '';
-                document.getElementById('deleteBtn').style.display = 'none';
+                setDeleteVisible(false);
+                deleteConfirm.hidden = true;
+                clearError();
                 document.getElementById('eventModalLabel').textContent = 'Новое событие';
-                var modal = new bootstrap.Modal(document.getElementById('eventModal'));
-                modal.show();
+                showDialog();
                 calendar.unselect();
             },
             eventClick: function(info) {
@@ -78,10 +149,11 @@
                 document.getElementById('title').value = event.title;
                 document.getElementById('start').value = event.startStr;
                 document.getElementById('description').value = event.extendedProps.description || '';
-                document.getElementById('deleteBtn').style.display = 'inline-block';
+                setDeleteVisible(true);
+                deleteConfirm.hidden = true;
+                clearError();
                 document.getElementById('eventModalLabel').textContent = 'Редактировать событие';
-                var modal = new bootstrap.Modal(document.getElementById('eventModal'));
-                modal.show();
+                showDialog();
                 info.jsEvent.preventDefault();
             },
             eventTimeFormat: {
@@ -93,16 +165,25 @@
         });
         calendar.render();
 
-        document.getElementById('saveBtn').addEventListener('click', function() {
+        // Закрытие по кнопке и по клику на подложку
+        dialogEl.querySelectorAll('[data-dialog-close]').forEach(function (b) {
+            b.addEventListener('click', hideDialog);
+        });
+        dialogEl.addEventListener('click', function (e) {
+            if (e.target === dialogEl) { hideDialog(); }
+        });
+
+        function saveEvent() {
             var id = document.getElementById('eventId').value;
             var title = document.getElementById('title').value;
             var start = document.getElementById('start').value;
             var description = document.getElementById('description').value;
 
             if (!title || !start) {
-                alert('Название и дата обязательны');
+                showError('Название и дата обязательны');
                 return;
             }
+            clearError();
 
             var data = { title: title, start: start, description: description };
             var url = '/api/events';
@@ -116,20 +197,40 @@
             }).then(function(response) {
                 if (response.ok) {
                     calendar.refetchEvents();
-                    bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+                    hideDialog();
                 } else {
-                    alert('Ошибка сохранения');
+                    showError('Ошибка сохранения');
                 }
+            }).catch(function() {
+                showError('Ошибка сохранения');
             });
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', saveEvent);
+
+        // Enter в полях формы не должен перезагружать страницу
+        document.getElementById('eventForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            saveEvent();
         });
 
-        document.getElementById('deleteBtn').addEventListener('click', function() {
-            if (!confirm('Удалить событие?')) return;
+        // Удаление: сначала подтверждение внутри диалога, затем DELETE
+        deleteBtn.addEventListener('click', function () {
+            deleteConfirm.hidden = false;
+        });
+
+        document.getElementById('deleteConfirmCancel').addEventListener('click', function () {
+            deleteConfirm.hidden = true;
+        });
+
+        document.getElementById('deleteConfirmBtn').addEventListener('click', function () {
             var id = document.getElementById('eventId').value;
+            if (!id) return;
             fetch('/api/events/' + id, { method: 'DELETE' }).then(function(response) {
                 if (response.ok) {
-                    calendar.getEventById(id).remove();
-                    bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+                    var existing = calendar.getEventById(id);
+                    if (existing) { existing.remove(); }
+                    hideDialog();
                 }
             });
         });

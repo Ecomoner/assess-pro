@@ -1,0 +1,2043 @@
+/* ==========================================================
+   AssessPro UI — современная дизайн-система
+   Используется только на новых страницах, не пересекается
+   со старым assesspro.css
+   ========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --ap-bg: #fafafa;
+    --ap-surface: #ffffff;
+    --ap-fg: #0f0f0f;
+    --ap-muted: #71717a;
+    --ap-muted-2: #6b6b76;
+    --ap-line: #ececec;
+    --ap-line-strong: #d4d4d8;
+    --ap-success: #16a34a;
+    --ap-danger: #dc2626;
+    --ap-radius: 20px;
+    --ap-radius-sm: 12px;
+    --ap-tap: 44px;
+}
+
+/* Сброс для новых страниц */
+.ap-page, .ap-page * { box-sizing: border-box; }
+.ap-page {
+    margin: 0;
+    background: var(--ap-bg);
+    color: var(--ap-fg);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+}
+
+/* Зерно поверх всего */
+.ap-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: .035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.ap-page a { color: inherit; text-decoration: none; }
+.ap-page button { font-family: inherit; cursor: pointer; }
+
+/* ==========================================================
+   SHELL
+   ========================================================== */
+.ap-shell {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+}
+
+/* ==========================================================
+   SIDEBAR
+   ========================================================== */
+.ap-side {
+    border-right: 1px solid var(--ap-line);
+    padding: 24px 16px;
+    background: rgba(255, 255, 255, .6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.ap-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    font-size: 16px;
+    padding: 8px 12px;
+    margin-bottom: 24px;
+    color: var(--ap-fg);
+}
+.ap-brand-mark {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    background: var(--ap-fg);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.ap-nav-group { margin-bottom: 20px; }
+.ap-nav-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--ap-muted-2);
+    padding: 8px 12px;
+    font-weight: 600;
+}
+
+.ap-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    color: var(--ap-muted);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all .15s;
+    margin-bottom: 2px;
+}
+.ap-nav-item:hover {
+    background: rgba(15, 15, 15, .04);
+    color: var(--ap-fg);
+}
+.ap-nav-item.ap-active {
+    background: var(--ap-fg);
+    color: #fff;
+}
+.ap-nav-item svg {
+    width: 16px;
+    height: 16px;
+    opacity: .75;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+}
+.ap-nav-item.ap-active svg { opacity: 1; }
+
+.ap-nav-badge {
+    margin-left: auto;
+    font-size: 11px;
+    background: rgba(15, 15, 15, .08);
+    color: var(--ap-fg);
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+.ap-nav-item.ap-active .ap-nav-badge {
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+}
+
+.ap-side-footer {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid var(--ap-line);
+}
+.ap-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+.ap-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1c1c1c, #444);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.ap-user-name { font-weight: 600; letter-spacing: -.01em; }
+.ap-user-role { color: var(--ap-muted); font-size: 12px; }
+
+/* Кнопка закрытия sidebar */
+.ap-side-close {
+    display: none;
+    position: absolute;
+    top: 16px;
+    right: 14px;
+    width: 32px; height: 32px;
+    border: none;
+    background: rgba(15, 15, 15, .05);
+    border-radius: 8px;
+    color: var(--ap-fg);
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+}
+.ap-side-close:hover { background: rgba(15, 15, 15, .1); }
+.ap-side-close svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+
+/* ==========================================================
+   РЕЖИМ «ОГЛАВЛЕНИЕ» (страница материалов)
+   Сайдбар показывает не переходы по приложению, а разделы
+   изучаемого материала. Переключается кнопкой «Назад».
+   Блок .ap-side-focus появляется на странице, которая передала
+   список разделов в переменную sidebarSections.
+   ========================================================== */
+.ap-side-focus { display: none; }
+
+.ap-side.ap-focus-mode .ap-side-focus {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-height: 0;
+}
+.ap-side.ap-focus-mode .ap-side-full { display: none; }
+
+/* Обычная навигация: не даёт длинному списку выдавить футер */
+.ap-side-full {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+/* Кнопка «Назад» — возвращает обычную навигацию */
+.ap-side-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--ap-line);
+    border-radius: 10px;
+    background: var(--ap-surface);
+    color: var(--ap-muted);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+}
+.ap-side-back:hover { border-color: var(--ap-fg); color: var(--ap-fg); }
+.ap-side-back svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* Подпункты-разделы */
+.ap-side-sections {
+    margin-top: 12px;
+    margin-bottom: 0;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.ap-nav-item.ap-nav-sub {
+    width: 100%;
+    text-align: left;
+    padding-left: 26px;
+    font-size: 13px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--ap-muted);
+    position: relative;
+}
+.ap-nav-item.ap-nav-sub::before {
+    content: "";
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    margin-top: -2.5px;
+    border-radius: 50%;
+    background: var(--ap-line-strong);
+    transition: background .15s;
+}
+.ap-nav-item.ap-nav-sub:hover { background: rgba(15, 15, 15, .04); color: var(--ap-fg); }
+.ap-nav-item.ap-nav-sub.ap-active {
+    background: rgba(15, 15, 15, .06);
+    color: var(--ap-fg);
+    font-weight: 600;
+}
+.ap-nav-item.ap-nav-sub.ap-active::before { background: var(--ap-fg); }
+
+/* Overlay */
+.ap-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .4);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index: 99;
+    opacity: 0;
+    transition: opacity .25s;
+}
+.ap-overlay.ap-show { opacity: 1; pointer-events: auto; }
+
+/* ==========================================================
+   MAIN
+   ========================================================== */
+.ap-main {
+    padding: 28px 32px calc(80px + env(safe-area-inset-bottom));
+    max-width: 1280px;
+    width: 100%;
+}
+
+/* Action bar */
+.ap-action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    gap: 16px;
+}
+
+.ap-menu-toggle {
+    display: none;
+    width: 38px; height: 38px;
+    border: 1px solid var(--ap-line);
+    background: var(--ap-surface);
+    border-radius: 10px;
+    color: var(--ap-fg);
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    flex-shrink: 0;
+}
+.ap-menu-toggle:hover { border-color: var(--ap-fg); }
+.ap-menu-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+
+.ap-search { flex: 1; max-width: 420px; position: relative; }
+.ap-search input {
+    width: 100%;
+    padding: 11px 14px 11px 40px;
+    border: 1px solid var(--ap-line);
+    background: var(--ap-surface);
+    border-radius: 12px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--ap-fg);
+    outline: none;
+    transition: all .2s;
+}
+.ap-search input:focus {
+    border-color: var(--ap-fg);
+    box-shadow: 0 0 0 4px rgba(15, 15, 15, .05);
+}
+.ap-search svg {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    color: var(--ap-muted);
+    stroke: currentColor; fill: none;
+}
+
+.ap-action-icons { display: flex; gap: 8px; }
+.ap-icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--ap-line);
+    background: var(--ap-surface);
+    display: grid;
+    place-items: center;
+    color: var(--ap-muted);
+    transition: all .15s;
+    position: relative;
+}
+.ap-icon-btn:hover { border-color: var(--ap-fg); color: var(--ap-fg); }
+.ap-icon-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+.ap-dot {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ap-fg);
+    border: 2px solid var(--ap-surface);
+}
+
+/* Page head */
+.ap-page-head { margin-bottom: 24px; }
+.ap-page-head h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1.15;
+}
+.ap-page-head p {
+    color: var(--ap-muted);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+/* ==========================================================
+   ACTIVE BANNER
+   ========================================================== */
+.ap-active-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-line);
+    border-left: 3px solid var(--ap-fg);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    transition: all .2s;
+}
+.ap-active-banner:hover {
+    box-shadow: 0 8px 20px -12px rgba(15, 15, 15, .12);
+}
+.ap-active-banner .ap-ico {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--ap-fg);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+.ap-active-banner .ap-ico svg { width: 16px; height: 16px; fill: currentColor; }
+.ap-active-banner .ap-body { flex: 1; min-width: 0; }
+.ap-active-banner .ap-body .t {
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -.01em;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ap-active-banner .ap-body .s { font-size: 12px; color: var(--ap-muted); }
+.ap-active-banner .ap-bar {
+    width: 100px; height: 5px;
+    background: var(--ap-line);
+    border-radius: 999px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.ap-active-banner .ap-bar i {
+    display: block;
+    height: 100%;
+    background: var(--ap-fg);
+    border-radius: 999px;
+}
+
+/* Совместимость: .ap-btn-dark можно применять и отдельно, и вместе с .ap-btn.
+   Полный набор размеров — здесь, чтобы оба варианта давали одинаковую кнопку. */
+.ap-btn-dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    min-height: 40px;
+    background: var(--ap-fg);
+    color: #fff;
+    border: 1px solid var(--ap-fg);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity .18s;
+}
+.ap-btn-dark svg { width: 15px; height: 15px; stroke: currentColor; fill: none; flex-shrink: 0; }
+.ap-btn-dark:hover { opacity: .86; color: #fff; }
+
+/* ==========================================================
+   KPI
+   ========================================================== */
+.ap-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+}
+.ap-kpi {
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-line);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all .25s;
+}
+.ap-kpi:hover {
+    border-color: var(--ap-line-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 28px -20px rgba(15, 15, 15, .18);
+}
+.ap-kpi .ap-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+.ap-kpi .ap-lbl {
+    font-size: 11px;
+    color: var(--ap-muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-weight: 600;
+}
+.ap-kpi .ap-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(15, 15, 15, .04);
+    display: grid;
+    place-items: center;
+    color: var(--ap-fg);
+}
+.ap-kpi .ap-icon svg { width: 13px; height: 13px; stroke: currentColor; fill: none; }
+.ap-kpi .ap-val {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.ap-kpi .ap-val small {
+    font-size: 17px;
+    color: var(--ap-muted-2);
+    font-weight: 500;
+}
+.ap-kpi .ap-delta {
+    font-size: 12px;
+    color: var(--ap-muted);
+    margin-top: 10px;
+}
+.ap-kpi .ap-delta .up { color: var(--ap-success); font-weight: 600; }
+.ap-kpi.ap-accent {
+    background: linear-gradient(155deg, #1c1c1c 0%, #0a0a0a 100%);
+    color: #fff;
+    border-color: #0a0a0a;
+}
+.ap-kpi.ap-accent .ap-lbl,
+.ap-kpi.ap-accent .ap-val small,
+.ap-kpi.ap-accent .ap-delta { color: #a1a1aa; }
+.ap-kpi.ap-accent .ap-icon { background: rgba(255, 255, 255, .08); color: #fff; }
+
+/* ==========================================================
+   КАРТОЧКИ / СПИСКИ / ТАБЛИЦЫ
+   ========================================================== */
+.ap-cols {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.ap-card {
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-line);
+    border-radius: var(--ap-radius);
+    overflow: hidden;
+}
+.ap-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--ap-line);
+}
+.ap-card-head h3 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    margin: 0;
+}
+.ap-card-head a {
+    font-size: 13px;
+    color: var(--ap-muted);
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    transition: all .2s;
+}
+.ap-card-head a:hover { color: var(--ap-fg); gap: 10px; }
+.ap-card-body { padding: 8px 22px 18px; }
+
+.ap-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--ap-line);
+    align-items: center;
+    transition: all .15s;
+}
+.ap-row:last-child { border-bottom: none; }
+.ap-row:hover { transform: translateX(3px); color: inherit; }
+.ap-row .ap-title {
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -.01em;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+/* Иконка внутри заголовка строки: без явного размера <svg> из
+   fragments/icons.html растягивается до дефолтных 300x150. */
+.ap-row .ap-title svg { width: 16px; height: 16px; flex-shrink: 0; }
+.ap-row .ap-meta svg { width: 14px; height: 14px; flex-shrink: 0; }
+.ap-row .ap-meta {
+    font-size: 12px;
+    color: var(--ap-muted);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.ap-row .ap-arrow { color: var(--ap-muted-2); transition: all .2s; }
+.ap-row:hover .ap-arrow { color: var(--ap-fg); }
+
+.ap-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(15, 15, 15, .05);
+    color: var(--ap-fg);
+    font-weight: 600;
+}
+.ap-tag.ap-new { background: var(--ap-fg); color: #fff; }
+
+/* Активность */
+.ap-activity { padding: 0 22px; }
+.ap-act-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--ap-line);
+    font-size: 13px;
+    align-items: flex-start;
+}
+.ap-act-item:last-child { border-bottom: none; }
+.ap-act-ico {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(15, 15, 15, .05);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    color: var(--ap-fg);
+}
+.ap-act-ico.ap-dark { background: var(--ap-fg); color: #fff; }
+.ap-act-ico svg { width: 12px; height: 12px; stroke: currentColor; fill: none; }
+.ap-act-item .ap-body { flex: 1; min-width: 0; }
+.ap-act-item .ap-body .t {
+    font-weight: 500;
+    margin-bottom: 3px;
+    line-height: 1.4;
+}
+.ap-act-item .ap-body .s { font-size: 11px; color: var(--ap-muted-2); }
+.ap-act-item .ap-time {
+    font-size: 11px;
+    color: var(--ap-muted-2);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Таблица */
+.ap-table-card {
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-line);
+    border-radius: var(--ap-radius);
+    overflow: hidden;
+}
+.ap-table-card table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 0;
+}
+.ap-table-card th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ap-muted);
+    font-weight: 600;
+    padding: 14px 22px;
+    background: rgba(15, 15, 15, .015);
+    border-bottom: 1px solid var(--ap-line);
+}
+.ap-table-card td {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--ap-line);
+    vertical-align: middle;
+    background: transparent;
+}
+.ap-table-card tr:last-child td { border-bottom: none; }
+.ap-table-card tbody tr { transition: background .15s; }
+.ap-table-card tbody tr:hover { background: rgba(15, 15, 15, .02); }
+.ap-table-card .ap-test-name { font-weight: 500; }
+.ap-table-card .ap-date {
+    color: var(--ap-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+}
+.ap-score-cell { display: flex; align-items: center; gap: 12px; }
+.ap-score-bar {
+    width: 60px; height: 5px;
+    border-radius: 999px;
+    background: var(--ap-line);
+    overflow: hidden;
+}
+.ap-score-bar i {
+    display: block;
+    height: 100%;
+    background: var(--ap-fg);
+    border-radius: 999px;
+    transition: width .6s cubic-bezier(.4, 0, .2, 1);
+}
+.ap-score-num {
+    font-weight: 700;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+}
+.ap-score-pct { font-size: 12px; color: var(--ap-muted); }
+.ap-row-link {
+    color: var(--ap-muted);
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .2s;
+}
+.ap-row-link:hover { color: var(--ap-fg); gap: 10px; }
+
+/* ==========================================================
+   АДАПТИВ
+   ========================================================== */
+@media (max-width: 1000px) {
+    .ap-kpis { grid-template-columns: repeat(2, 1fr); }
+    .ap-cols { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+    .ap-shell { grid-template-columns: 1fr; }
+    .ap-side {
+        position: fixed;
+        left: -280px;
+        width: 260px;
+        padding-top: 56px;
+        transition: left .3s cubic-bezier(.4, 0, .2, 1);
+    }
+    .ap-side.ap-open {
+        left: 0;
+        box-shadow: 0 0 60px rgba(0, 0, 0, .15);
+    }
+    .ap-side-close { display: flex; }
+    .ap-menu-toggle { display: flex; }
+    .ap-overlay { display: block; pointer-events: none; }
+    .ap-main { padding: 20px 16px calc(60px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 640px) {
+    .ap-action-bar { flex-wrap: wrap; margin-bottom: 20px; }
+    .ap-search { max-width: 100%; order: 2; flex: 1 1 100%; }
+
+    .ap-page-head h1 { font-size: 22px; }
+
+    .ap-kpis {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+    .ap-kpi { padding: 16px; }
+    .ap-kpi .ap-val { font-size: 26px; }
+    .ap-kpi .ap-icon { width: 24px; height: 24px; }
+    .ap-kpi .ap-delta { font-size: 11px; margin-top: 8px; }
+
+    .ap-cols { gap: 12px; margin-bottom: 24px; }
+    .ap-card-head { padding: 14px 16px; }
+    .ap-card-body { padding: 6px 16px 12px; }
+    .ap-activity { padding: 0 16px; }
+
+    .ap-active-banner { flex-wrap: wrap; padding: 12px 14px; gap: 10px; }
+    .ap-active-banner .ap-bar { display: none; }
+    .ap-active-banner .ap-btn-dark {
+        order: 3;
+        flex: 1 1 100%;
+        justify-content: center;
+        min-height: var(--ap-tap);
+    }
+
+    /* Мобильные карточки из строк.
+       Скоуплено классом .ap-stack-5: только таблицы с ровно 5 колонками
+       (дата, название, значение, длительность, действие).
+       Остальные таблицы используют .ap-table-card.ap-stack-mobile
+       с подписями из data-label — иначе здесь терялась бы 4-я колонка. */
+    .ap-table-card.ap-stack-5 { border: none; background: transparent; border-radius: 0; }
+    .ap-table-card.ap-stack-5 table,
+    .ap-table-card.ap-stack-5 thead,
+    .ap-table-card.ap-stack-5 tbody,
+    .ap-table-card.ap-stack-5 tr,
+    .ap-table-card.ap-stack-5 td { display: block; width: 100%; }
+    .ap-table-card.ap-stack-5 thead { display: none; }
+    .ap-table-card.ap-stack-5 tbody tr {
+        background: var(--ap-surface);
+        border: 1px solid var(--ap-line);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 10px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px 14px;
+    }
+    .ap-table-card.ap-stack-5 tbody tr:last-child { margin-bottom: 0; }
+    .ap-table-card.ap-stack-5 tbody tr:hover { background: var(--ap-surface); }
+    .ap-table-card.ap-stack-5 td { padding: 0; border: none; display: block; }
+    .ap-table-card.ap-stack-5 td:nth-child(1) { grid-column: 1; grid-row: 1; font-size: 12px; color: var(--ap-muted); align-self: center; }
+    .ap-table-card.ap-stack-5 td:nth-child(5) { grid-column: 2; grid-row: 1; text-align: right !important; align-self: center; }
+    .ap-table-card.ap-stack-5 td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; font-size: 15px; font-weight: 600; letter-spacing: -.01em; padding-bottom: 4px; }
+    .ap-table-card.ap-stack-5 td:nth-child(3) { grid-column: 1 / -1; grid-row: 3; padding-top: 4px; }
+    .ap-table-card.ap-stack-5 td:nth-child(4) { display: none; }
+    .ap-score-bar { width: 80px; height: 6px; }
+}
+
+/* Safe area. Должно идти ПОСЛЕ правил .ap-main в медиазапросах,
+   иначе desktop-отступ 32px затирается на всех ширинах. */
+@supports (padding: max(0px)) {
+    @media (min-width: 901px) {
+        .ap-main {
+            padding-left: max(32px, env(safe-area-inset-left));
+            padding-right: max(32px, env(safe-area-inset-right));
+        }
+    }
+    @media (max-width: 900px) {
+        .ap-main {
+            padding-left: max(16px, env(safe-area-inset-left));
+            padding-right: max(16px, env(safe-area-inset-right));
+        }
+    }
+}
+
+/* ==========================================================
+   ДОПОЛНЕНИЯ: alert / section / active cards / empty
+   ========================================================== */
+
+/* Алерт */
+.ap-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 24px;
+    border: 1px solid transparent;
+}
+.ap-alert svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+}
+.ap-alert-warn {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fef3c7;
+}
+.ap-alert-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fee2e2;
+}
+.ap-alert-ok {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #dcfce7;
+}
+
+/* Section */
+.ap-section { margin-bottom: 40px; }
+.ap-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+}
+.ap-section-head h2 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    margin: 0;
+}
+.ap-section-head a {
+    font-size: 13px;
+    color: var(--ap-muted);
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    transition: all .2s;
+}
+.ap-section-head a:hover { color: var(--ap-fg); gap: 10px; }
+
+/* Активные карточки */
+.ap-active-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+.ap-active-card {
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-line);
+    border-radius: var(--ap-radius);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+}
+.ap-active-card:hover {
+    border-color: var(--ap-line-strong);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 36px -24px rgba(15, 15, 15, .18);
+}
+.ap-active-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+}
+.ap-active-title {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    line-height: 1.3;
+}
+.ap-active-ring {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+}
+.ap-active-pct {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.ap-active-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ap-muted);
+}
+.ap-active-meta svg { stroke: currentColor; fill: none; opacity: .7; }
+.ap-btn-full {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+    min-height: var(--ap-tap);
+    border-radius: 11px;
+    font-size: 14px;
+}
+
+/* Пустое состояние */
+.ap-empty {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 22px;
+    background: var(--ap-surface);
+    border: 1px dashed var(--ap-line-strong);
+    border-radius: 16px;
+    font-size: 14px;
+    color: var(--ap-muted);
+}
+.ap-empty svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+    opacity: .6;
+}
+.ap-empty a {
+    color: var(--ap-fg);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* Пустая строка в таблице */
+.ap-empty-row {
+    text-align: center;
+    padding: 32px 22px !important;
+    color: var(--ap-muted);
+    font-size: 14px;
+}
+
+/* Mobile: активные карточки в одну колонку */
+@media (max-width: 640px) {
+    .ap-active-list { grid-template-columns: 1fr; }
+    .ap-active-card { padding: 18px; }
+    .ap-section { margin-bottom: 28px; }
+    .ap-section-head h2 { font-size: 15px; }
+}
+
+/* ==========================================================
+   KIT: примитивы и раскладки
+   Влито из утверждённого референса docs/ui-references/kit.css
+   ========================================================== */
+
+/* ----------------------------------------------------------
+   Сброс типографики.
+   Bootstrap грузится на новых страницах ради JS-компонентов,
+   и его reboot задаёт свои margin/размеры заголовкам.
+   :where() даёт нулевую специфичность, поэтому этот сброс
+   не перебивает .ap-page-head h1, .ap-card-head h3 и т.п.
+   ---------------------------------------------------------- */
+:where(.ap-page) h1,
+:where(.ap-page) h2,
+:where(.ap-page) h3,
+:where(.ap-page) h4,
+:where(.ap-page) h5,
+:where(.ap-page) h6 {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.25;
+}
+:where(.ap-page) p { margin: 0; }
+:where(.ap-page) ul,
+:where(.ap-page) ol { margin: 0; padding-left: 1.15em; }
+:where(.ap-page) table { margin: 0; border-color: var(--ap-line); }
+:where(.ap-page) img { max-width: 100%; height: auto; }
+:where(.ap-page) hr {
+    border: none;
+    border-top: 1px solid var(--ap-line);
+    margin: 16px 0;
+}
+
+/* ----------------------------------------------------------
+   Утилиты раскладки
+   ---------------------------------------------------------- */
+.ap-stack { display: flex; flex-direction: column; gap: 16px; }
+.ap-stack-sm { display: flex; flex-direction: column; gap: 8px; }
+.ap-between { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ap-cluster { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ap-grow { flex: 1; min-width: 0; }
+.ap-muted { color: var(--ap-muted); }
+.ap-small { font-size: 13px; }
+.ap-xs { font-size: 12px; }
+.ap-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-mono { font-variant-numeric: tabular-nums; }
+
+/* Скрыто визуально, но доступно скринридерам.
+   Не display:none — тогда текст пропал бы и для них. */
+.ap-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ----------------------------------------------------------
+   Кнопки
+   ---------------------------------------------------------- */
+.ap-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    min-height: 40px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ap-fg);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+    line-height: 1;
+    cursor: pointer;
+    transition: all .18s cubic-bezier(.4, 0, .2, 1);
+    white-space: nowrap;
+    text-decoration: none;
+}
+.ap-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; flex-shrink: 0; }
+.ap-btn:focus-visible { outline: 2px solid var(--ap-fg); outline-offset: 2px; }
+
+.ap-btn-dark { background: var(--ap-fg); color: #fff; border-color: var(--ap-fg); }
+.ap-btn-dark:hover { opacity: .86; color: #fff; }
+
+.ap-btn-outline { background: var(--ap-surface); color: var(--ap-fg); border-color: #c4c4cc; }
+.ap-btn-outline:hover { border-color: var(--ap-fg); background: var(--ap-surface); }
+
+.ap-btn-ghost { background: transparent; color: var(--ap-muted); border-color: transparent; }
+.ap-btn-ghost:hover { background: rgba(15, 15, 15, .05); color: var(--ap-fg); }
+
+.ap-btn-danger { background: var(--ap-danger); color: #fff; border-color: var(--ap-danger); }
+.ap-btn-danger:hover { opacity: .86; color: #fff; }
+
+/* ----------------------------------------------------------
+   Кнопка-ссылка: <a class="ap-btn ...">
+
+   Правило .ap-page a { color: inherit } специфичнее (0,1,1), чем
+   .ap-btn-dark { color: #fff } (0,1,0), поэтому ссылка-кнопка получала
+   color: inherit — то есть чёрный текст на чёрном фоне. Надпись
+   становилась видна только при наведении, когда срабатывал
+   .ap-btn-dark:hover (0,2,0). У <button> проблемы не было.
+
+   Приводим цвет кнопок-ссылок к тому же виду, что и у <button>.
+   ---------------------------------------------------------- */
+.ap-page a.ap-btn-dark { color: #fff; }
+.ap-page a.ap-btn-outline { color: var(--ap-fg); }
+.ap-page a.ap-btn-ghost { color: var(--ap-muted); }
+.ap-page a.ap-btn-danger { color: #fff; }
+.ap-page a.ap-btn-icon { color: var(--ap-muted); }
+
+.ap-page a.ap-btn-ghost:hover { color: var(--ap-fg); }
+.ap-page a.ap-btn-icon:hover { color: var(--ap-fg); }
+
+.ap-btn-sm { padding: 7px 13px; min-height: 32px; font-size: 13px; border-radius: 8px; }
+.ap-btn-sm svg { width: 13px; height: 13px; }
+
+.ap-btn-icon {
+    padding: 0;
+    width: 36px;
+    min-height: 36px;
+    border-color: var(--ap-line);
+    background: var(--ap-surface);
+    color: var(--ap-muted);
+}
+.ap-btn-icon:hover { border-color: var(--ap-fg); color: var(--ap-fg); }
+.ap-btn-icon.ap-btn-sm { width: 30px; min-height: 30px; }
+
+.ap-btn-block { width: 100%; }
+
+.ap-btn[disabled], .ap-btn.is-disabled { opacity: .45; pointer-events: none; }
+
+/* ----------------------------------------------------------
+   Поля ввода
+   ---------------------------------------------------------- */
+.ap-field { display: flex; flex-direction: column; gap: 6px; }
+.ap-label { font-size: 13px; font-weight: 500; color: var(--ap-fg); letter-spacing: -.01em; }
+.ap-label .req { color: var(--ap-danger); margin-left: 2px; }
+
+.ap-input,
+.ap-textarea,
+.ap-select {
+    width: 100%;
+    padding: 10px 13px;
+    min-height: 40px;
+    border: 1px solid var(--ap-line);
+    border-radius: 10px;
+    background: var(--ap-surface);
+    color: var(--ap-fg);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.45;
+    outline: none;
+    transition: border-color .18s, box-shadow .18s;
+}
+.ap-textarea { min-height: 96px; resize: vertical; }
+.ap-select {
+    appearance: none;
+    padding-right: 36px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    background-size: 15px;
+    cursor: pointer;
+}
+
+.ap-input::placeholder,
+.ap-textarea::placeholder { color: var(--ap-muted-2); }
+
+.ap-input:focus,
+.ap-textarea:focus,
+.ap-select:focus { border-color: var(--ap-fg); box-shadow: 0 0 0 4px rgba(15, 15, 15, .05); }
+
+.ap-input:disabled,
+.ap-textarea:disabled,
+.ap-select:disabled { background: #f7f7f8; color: var(--ap-muted); cursor: not-allowed; }
+
+.ap-hint { font-size: 12px; color: var(--ap-muted); }
+.ap-err { font-size: 12px; color: var(--ap-danger); font-weight: 500; }
+
+.ap-field.is-invalid .ap-input,
+.ap-field.is-invalid .ap-textarea,
+.ap-field.is-invalid .ap-select { border-color: var(--ap-danger); }
+.ap-field.is-invalid .ap-input:focus { box-shadow: 0 0 0 4px rgba(220, 38, 38, .08); }
+
+.ap-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.ap-form-grid .ap-span-2 { grid-column: 1 / -1; }
+
+.ap-input-wrap { position: relative; }
+.ap-input-wrap .ap-input { padding-left: 38px; }
+.ap-input-wrap > svg {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    stroke: var(--ap-muted);
+    fill: none;
+    pointer-events: none;
+}
+
+/* ----------------------------------------------------------
+   Чекбоксы / радио / варианты ответа
+   ---------------------------------------------------------- */
+.ap-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+.ap-check input {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--ap-line-strong);
+    border-radius: 5px;
+    background: var(--ap-surface);
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    transition: all .15s;
+}
+.ap-check input[type="radio"] { border-radius: 50%; }
+.ap-check input:checked { background: var(--ap-fg); border-color: var(--ap-fg); }
+.ap-check input:checked::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 11px;
+}
+.ap-check input[type="checkbox"]:checked::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+.ap-check input[type="radio"]:checked::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Ccircle cx='12' cy='12' r='5'/%3E%3C/svg%3E");
+}
+
+.ap-opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--ap-line);
+    border-radius: 14px;
+    background: var(--ap-surface);
+    cursor: pointer;
+    transition: all .18s cubic-bezier(.4, 0, .2, 1);
+    position: relative;
+}
+.ap-opt:hover { border-color: var(--ap-line-strong); background: #fcfcfc; }
+.ap-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.ap-opt .ap-opt-mark {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--ap-line-strong);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    margin-top: 1px;
+    transition: all .18s;
+    background: var(--ap-surface);
+}
+.ap-opt .ap-opt-mark::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background .18s;
+}
+.ap-opt .ap-opt-text { font-size: 14px; line-height: 1.5; }
+.ap-opt input:checked ~ .ap-opt-mark { border-color: var(--ap-fg); background: var(--ap-fg); }
+.ap-opt input:checked ~ .ap-opt-mark::after { background: #fff; }
+.ap-opt:has(input:checked) { border-color: var(--ap-fg); box-shadow: 0 0 0 3px rgba(15, 15, 15, .04); background: var(--ap-surface); }
+.ap-opt input:focus-visible ~ .ap-opt-mark { box-shadow: 0 0 0 4px rgba(15, 15, 15, .1); }
+.ap-opt.is-correct { border-color: var(--ap-success); }
+.ap-opt.is-correct .ap-opt-mark { border-color: var(--ap-success); background: var(--ap-success); }
+.ap-opt.is-wrong { border-color: var(--ap-danger); }
+.ap-opt.is-wrong .ap-opt-mark { border-color: var(--ap-danger); background: var(--ap-danger); }
+
+.ap-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
+.ap-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.ap-switch-track {
+    width: 40px;
+    height: 23px;
+    border-radius: 999px;
+    background: var(--ap-line-strong);
+    position: relative;
+    transition: background .2s;
+    flex-shrink: 0;
+}
+.ap-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+    transition: transform .2s cubic-bezier(.4, 0, .2, 1);
+}
+.ap-switch input:checked ~ .ap-switch-track { background: var(--ap-fg); }
+.ap-switch input:checked ~ .ap-switch-track::after { transform: translateX(17px); }
+
+/* ----------------------------------------------------------
+   Теги / статусы
+   ---------------------------------------------------------- */
+.ap-tag { display: inline-flex; align-items: center; gap: 5px; }
+.ap-tag.ap-ok { background: rgba(22, 163, 74, .1); color: #15803d; }
+.ap-tag.ap-warn { background: rgba(217, 119, 6, .12); color: #b45309; }
+.ap-tag.ap-bad { background: rgba(220, 38, 38, .1); color: #b91c1c; }
+.ap-tag.ap-neutral { background: rgba(15, 15, 15, .05); color: var(--ap-muted); }
+.ap-tag.ap-dark { background: var(--ap-fg); color: #fff; }
+.ap-tag .ap-dot-sm { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* ----------------------------------------------------------
+   Хлебные крошки
+   ---------------------------------------------------------- */
+.ap-crumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ap-muted);
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.ap-crumbs a { color: var(--ap-muted); transition: color .15s; }
+.ap-crumbs a:hover { color: var(--ap-fg); }
+.ap-crumbs .sep { color: var(--ap-muted-2); }
+.ap-crumbs .cur { color: var(--ap-fg); font-weight: 500; }
+
+/* ----------------------------------------------------------
+   Табы
+   ---------------------------------------------------------- */
+.ap-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--ap-line);
+    margin-bottom: 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.ap-tabs::-webkit-scrollbar { display: none; }
+.ap-tab {
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ap-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+.ap-tab:hover { color: var(--ap-fg); }
+.ap-tab.is-active { color: var(--ap-fg); border-bottom-color: var(--ap-fg); }
+.ap-tab .ap-tab-count { font-size: 11px; font-weight: 600; background: rgba(15, 15, 15, .06); padding: 1px 6px; border-radius: 999px; }
+
+/* ----------------------------------------------------------
+   Сегментированный фильтр
+   ---------------------------------------------------------- */
+.ap-seg { display: inline-flex; padding: 3px; background: rgba(15, 15, 15, .04); border-radius: 10px; gap: 2px; }
+.ap-seg a, .ap-seg button {
+    padding: 6px 13px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ap-muted);
+    transition: all .15s;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.ap-seg a:hover, .ap-seg button:hover { color: var(--ap-fg); }
+.ap-seg .is-active { background: var(--ap-surface); color: var(--ap-fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .07); }
+
+.ap-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.ap-toolbar .ap-search { max-width: 300px; }
+
+/* ----------------------------------------------------------
+   Пагинация
+   ---------------------------------------------------------- */
+.ap-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 22px;
+    border-top: 1px solid var(--ap-line);
+    font-size: 13px;
+    color: var(--ap-muted);
+    flex-wrap: wrap;
+}
+.ap-pager-list { display: flex; gap: 4px; align-items: center; }
+.ap-pager-list a, .ap-pager-list span {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ap-muted);
+    transition: all .15s;
+    font-variant-numeric: tabular-nums;
+}
+.ap-pager-list a:hover { background: rgba(15, 15, 15, .05); color: var(--ap-fg); }
+.ap-pager-list .is-active { background: var(--ap-fg); color: #fff; }
+.ap-pager-list .is-disabled { opacity: .35; pointer-events: none; }
+
+/* ----------------------------------------------------------
+   Таблица: расширения
+   ---------------------------------------------------------- */
+.ap-table-card thead th.ap-th-sort { cursor: pointer; user-select: none; }
+.ap-table-card thead th.ap-th-sort:hover { color: var(--ap-fg); }
+.ap-table-card thead th.ap-th-sort::after { content: "\2195"; font-size: 10px; opacity: .4; margin-left: 5px; }
+.ap-table-card td.ap-td-actions { text-align: right; white-space: nowrap; }
+.ap-table-card td.ap-td-actions .ap-btn + .ap-btn { margin-left: 4px; }
+.ap-table-card td.ap-td-num { font-variant-numeric: tabular-nums; }
+.ap-table-card .ap-cell-title { font-weight: 500; letter-spacing: -.01em; }
+.ap-table-card .ap-cell-sub { font-size: 12px; color: var(--ap-muted); margin-top: 2px; }
+
+@media (max-width: 640px) {
+    .ap-table-card.ap-stack-mobile tbody tr { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .ap-table-card.ap-stack-mobile td {
+        display: grid;
+        grid-template-columns: 96px 1fr;
+        gap: 10px;
+        align-items: baseline;
+        text-align: left !important;
+    }
+    .ap-table-card.ap-stack-mobile td::before {
+        content: attr(data-label);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--ap-muted-2);
+        font-weight: 600;
+    }
+    .ap-table-card.ap-stack-mobile td.ap-td-actions { padding-top: 4px; }
+    .ap-table-card.ap-stack-mobile td.ap-td-actions::before { content: none; }
+}
+
+/* ----------------------------------------------------------
+   Диалог (нативный <dialog>)
+   ---------------------------------------------------------- */
+.ap-dialog {
+    border: none;
+    padding: 0;
+    border-radius: var(--ap-radius);
+    background: var(--ap-surface);
+    box-shadow: 0 32px 64px -24px rgba(0, 0, 0, .28);
+    max-width: 460px;
+    width: calc(100% - 32px);
+    color: var(--ap-fg);
+}
+.ap-dialog::backdrop { background: rgba(15, 15, 15, .45); backdrop-filter: blur(3px); }
+.ap-dialog-head { padding: 22px 24px 0; font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
+.ap-dialog-body { padding: 10px 24px 22px; font-size: 14px; color: var(--ap-muted); line-height: 1.55; }
+.ap-dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--ap-line);
+    background: #fcfcfc;
+    border-radius: 0 0 var(--ap-radius) var(--ap-radius);
+}
+
+/* ----------------------------------------------------------
+   Тост
+   ---------------------------------------------------------- */
+.ap-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--ap-fg);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 16px 32px -16px rgba(0, 0, 0, .4);
+}
+.ap-toast svg { width: 15px; height: 15px; stroke: currentColor; fill: none; flex-shrink: 0; }
+.ap-toast-stack {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 340px;
+}
+
+/* ----------------------------------------------------------
+   Загрузка файла
+   ---------------------------------------------------------- */
+.ap-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 24px;
+    border: 1.5px dashed var(--ap-line-strong);
+    border-radius: 16px;
+    background: #fcfcfc;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+}
+.ap-drop:hover { border-color: var(--ap-fg); background: var(--ap-surface); }
+.ap-drop svg { width: 26px; height: 26px; stroke: var(--ap-muted); fill: none; }
+.ap-drop .t { font-size: 14px; font-weight: 500; }
+.ap-drop .s { font-size: 12px; color: var(--ap-muted); }
+
+/* ----------------------------------------------------------
+   Скелетон
+   ---------------------------------------------------------- */
+.ap-skel {
+    background: linear-gradient(90deg, #f0f0f1 25%, #f7f7f8 37%, #f0f0f1 63%);
+    background-size: 400% 100%;
+    animation: ap-shimmer 1.4s ease infinite;
+    border-radius: 8px;
+    height: 14px;
+}
+@keyframes ap-shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ap-skel { animation: none; }
+}
+
+/* ----------------------------------------------------------
+   Метрики и графики
+   ---------------------------------------------------------- */
+.ap-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--ap-line);
+    border: 1px solid var(--ap-line);
+    border-radius: 16px;
+    overflow: hidden;
+}
+.ap-metric { background: var(--ap-surface); padding: 18px 20px; }
+.ap-metric .l { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ap-muted); font-weight: 600; }
+.ap-metric .v { font-size: 24px; font-weight: 700; letter-spacing: -.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.ap-metric .v small { font-size: 13px; color: var(--ap-muted-2); font-weight: 500; }
+
+.ap-chart { width: 100%; height: 260px; display: block; }
+.ap-chart-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ap-muted); padding: 0 22px 18px; }
+.ap-chart-legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; margin-right: 6px; }
+
+.ap-meter { height: 6px; background: var(--ap-line); border-radius: 999px; overflow: hidden; width: 100%; }
+.ap-meter i { display: block; height: 100%; background: var(--ap-fg); border-radius: 999px; }
+.ap-meter.ap-ok i { background: var(--ap-success); }
+.ap-meter.ap-bad i { background: var(--ap-danger); }
+
+/* ----------------------------------------------------------
+   Hero-блок результата
+   ---------------------------------------------------------- */
+.ap-hero {
+    background: linear-gradient(155deg, #1c1c1c 0%, #0a0a0a 100%);
+    color: #fff;
+    border-radius: var(--ap-radius);
+    padding: 40px 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.ap-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, .1), transparent 65%);
+    pointer-events: none;
+}
+.ap-hero .ap-hero-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    color: #a1a1aa;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+.ap-hero .ap-hero-score {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -.05em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.ap-hero .ap-hero-score small { font-size: 26px; color: #71717a; font-weight: 600; }
+.ap-hero .ap-hero-sub { color: #a1a1aa; font-size: 14px; margin-top: 10px; }
+
+/* ----------------------------------------------------------
+   Экран входа / публичная раскладка
+   ---------------------------------------------------------- */
+.ap-auth { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; background: var(--ap-bg); }
+.ap-auth-side {
+    background: linear-gradient(155deg, #1c1c1c 0%, #0a0a0a 100%);
+    color: #fff;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+.ap-auth-side::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, .12), transparent 55%);
+    pointer-events: none;
+}
+.ap-auth-side .ap-quote { font-size: 26px; font-weight: 700; letter-spacing: -.03em; line-height: 1.25; max-width: 420px; }
+.ap-auth-side .ap-quote-sub { color: #a1a1aa; font-size: 14px; margin-top: 14px; max-width: 380px; line-height: 1.6; }
+.ap-auth-side .ap-auth-facts { display: flex; gap: 28px; position: relative; }
+.ap-auth-side .ap-auth-facts .v { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+.ap-auth-side .ap-auth-facts .l { font-size: 12px; color: #71717a; margin-top: 2px; }
+
+.ap-auth-main { display: grid; place-items: center; padding: 40px 24px; }
+.ap-auth-card { width: 100%; max-width: 360px; }
+.ap-auth-card h1 { font-size: 26px; font-weight: 700; letter-spacing: -.03em; margin-bottom: 6px; }
+.ap-auth-card .ap-auth-sub { color: var(--ap-muted); font-size: 14px; margin-bottom: 28px; }
+.ap-auth-foot { text-align: center; font-size: 12px; color: var(--ap-muted-2); margin-top: 24px; }
+
+.ap-public-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--ap-line);
+    background: rgba(255, 255, 255, .8);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+.ap-public-nav { display: flex; gap: 4px; align-items: center; }
+.ap-public-nav a {
+    padding: 8px 13px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ap-muted);
+    transition: all .15s;
+}
+.ap-public-nav a:hover { background: rgba(15, 15, 15, .05); color: var(--ap-fg); }
+.ap-public-body { max-width: 1080px; margin: 0 auto; padding: 40px 32px 80px; }
+
+/* ----------------------------------------------------------
+   Просмотр материалов
+   ---------------------------------------------------------- */
+.ap-viewer { background: var(--ap-surface); border: 1px solid var(--ap-line); border-radius: var(--ap-radius); overflow: hidden; }
+.ap-viewer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--ap-line);
+}
+.ap-viewer-stage {
+    background: #1a1a1a;
+    min-height: 480px;
+    display: grid;
+    place-items: center;
+    color: #a1a1aa;
+    font-size: 13px;
+}
+.ap-viewer-stage video, .ap-viewer-stage canvas { max-width: 100%; display: block; }
+
+/* ----------------------------------------------------------
+   Всплывающая панель (уведомления)
+   ---------------------------------------------------------- */
+.ap-pop { position: relative; }
+.ap-pop > summary {
+    list-style: none;
+    cursor: pointer;
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--ap-line);
+    border-radius: 10px;
+    background: var(--ap-surface);
+    display: grid;
+    place-items: center;
+    color: var(--ap-muted);
+    transition: all .15s;
+}
+.ap-pop > summary::-webkit-details-marker { display: none; }
+.ap-pop > summary:hover { border-color: var(--ap-fg); color: var(--ap-fg); }
+.ap-pop > summary svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+.ap-pop[open] > summary { border-color: var(--ap-fg); color: var(--ap-fg); }
+.ap-pop-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--ap-danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--ap-bg);
+    font-variant-numeric: tabular-nums;
+}
+.ap-pop-count[hidden] { display: none; }
+.ap-pop-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 330px;
+    max-height: 420px;
+    overflow-y: auto;
+    background: var(--ap-surface);
+    border: 1px solid var(--ap-line);
+    border-radius: 14px;
+    box-shadow: 0 24px 48px -20px rgba(15, 15, 15, .22);
+    z-index: 200;
+}
+.ap-pop-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--ap-line);
+    font-size: 13px;
+    font-weight: 600;
+}
+.ap-pop-head button {
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--ap-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 6px;
+}
+.ap-pop-head button:hover { color: var(--ap-fg); background: rgba(15, 15, 15, .05); }
+.ap-notif {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ap-line);
+    font-size: 13px;
+    line-height: 1.45;
+    transition: background .15s;
+}
+.ap-notif:last-child { border-bottom: none; }
+.ap-notif:hover { background: rgba(15, 15, 15, .02); }
+.ap-notif .ap-notif-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ap-fg);
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+.ap-notif .ap-notif-body { flex: 1; min-width: 0; }
+.ap-notif .ap-notif-text { display: block; }
+.ap-notif .ap-notif-time { font-size: 11px; color: var(--ap-muted-2); margin-top: 3px; }
+.ap-pop-empty { padding: 28px 16px; text-align: center; font-size: 13px; color: var(--ap-muted); }
+
+/* ----------------------------------------------------------
+   Адаптив KIT
+   ---------------------------------------------------------- */
+@media (max-width: 900px) {
+    .ap-auth { grid-template-columns: 1fr; }
+    .ap-auth-side { display: none; }
+    .ap-public-top { padding: 14px 16px; }
+    .ap-public-body { padding: 24px 16px 60px; }
+}
+
+@media (max-width: 640px) {
+    .ap-form-grid { grid-template-columns: 1fr; }
+    .ap-toolbar { align-items: stretch; }
+    .ap-toolbar .ap-search { max-width: 100%; }
+    .ap-hero { padding: 28px 20px; }
+    .ap-hero .ap-hero-score { font-size: 48px; }
+    .ap-metric { padding: 14px 16px; }
+    .ap-metric .v { font-size: 20px; }
+    .ap-pager { justify-content: center; }
+    .ap-dialog-foot { flex-direction: column-reverse; }
+    .ap-dialog-foot .ap-btn { width: 100%; }
+    .ap-opt { padding: 14px; }
+    .ap-pop-panel { width: calc(100vw - 32px); right: -8px; }
+}
+
+/* ==========================================================
+   МЕДИА (материалы для изучения)
+   Просмотр без подписей и без кнопок скачивания: файл
+   показывается напрямую, никакой обвязки вокруг него нет.
+   ========================================================== */
+.ap-media {
+    border: 1px solid var(--ap-line);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--ap-surface);
+}
+.ap-media + .ap-media { margin-top: 16px; }
+
+.ap-media-doc {
+    background: #f7f7f8;
+    padding: 16px;
+}
+.ap-media-doc .pdf-container { width: 100%; }
+.ap-media-doc .pdf-container canvas {
+    display: block;
+    margin: 10px auto;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px -4px rgba(0, 0, 0, .18);
+}
+
+.ap-media-video { background: #0f0f0f; }
+.ap-media-video video {
+    display: block;
+    width: 100%;
+    max-height: 70vh;
+    background: #0f0f0f;
+}
+
+/* Ссылки на связанные тесты — без заголовка, отделены линией */
+.ap-media-tests {
+    border-top: 1px solid var(--ap-line);
+    margin-top: 18px;
+    padding-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Переключатель разделов на странице материалов */
+.ap-sections-tabs { margin-bottom: 20px; }
+.ap-section-view { animation: ap-fade-in .25s ease both; }
+
+@keyframes ap-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ap-section-view { animation: none; }
+}
+
+@media (max-width: 640px) {
+    .ap-media-doc { padding: 8px; }
+    .ap-media + .ap-media { margin-top: 12px; }
+}
+
+/* ==========================================================
+   ИКОНКИ: защитный размер
+   Фрагменты из fragments/icons.html не несут width/height.
+   Без правила-подстраховки браузер рисует <svg> размером 300x150 —
+   именно так «огромные иконки» появлялись в неохваченных контейнерах.
+
+   Специфичность :where() равна нулю, поэтому ЛЮБОЕ контекстное
+   правило (.ap-btn svg, .ap-nav-item svg, .ap-kpi .ap-icon svg, ...)
+   важнее этого, в каком бы порядке они ни шли.
+   :not([width]) исключает SVG с явными размерами — например
+   кольцо прогресса в дашборде.
+   ========================================================== */
+:where(.ap-page svg:not([width])) {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================
+   КАЛЕНДАРЬ (FullCalendar 6)
+   FullCalendar нельзя переверстать разметкой — он генерирует DOM сам.
+   Поэтому подгоняем его через официальные CSS-переменные темы
+   и точечные правила для тех узлов, у которых переменных нет.
+   ========================================================== */
+.ap-calendar {
+    --fc-border-color: var(--ap-line);
+    --fc-page-bg-color: var(--ap-surface);
+    --fc-neutral-bg-color: #f7f7f8;
+    --fc-neutral-text-color: var(--ap-muted);
+    --fc-today-bg-color: rgba(15, 15, 15, .045);
+    --fc-now-indicator-color: var(--ap-fg);
+    --fc-event-bg-color: var(--ap-fg);
+    --fc-event-border-color: var(--ap-fg);
+    --fc-event-text-color: #fff;
+    --fc-button-bg-color: var(--ap-surface);
+    --fc-button-border-color: #c4c4cc;
+    --fc-button-text-color: var(--ap-fg);
+    --fc-button-hover-bg-color: #f4f4f5;
+    --fc-button-hover-border-color: var(--ap-fg);
+    --fc-button-active-bg-color: var(--ap-fg);
+    --fc-button-active-border-color: var(--ap-fg);
+    --fc-button-active-text-color: #fff;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+}
+
+/* Заголовок «Сентябрь 2026» */
+.ap-calendar .fc-toolbar-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    color: var(--ap-fg);
+    text-transform: capitalize;
+}
+
+.ap-calendar .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 18px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Кнопки навигации и переключатели вида */
+.ap-calendar .fc-button {
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    line-height: 1.2;
+    box-shadow: none !important;
+    transition: all .15s;
+    text-transform: none;
+}
+.ap-calendar .fc-button:hover { box-shadow: none !important; }
+.ap-calendar .fc-button-primary:not(:disabled).fc-button-active,
+.ap-calendar .fc-button-primary:not(:disabled):active {
+    background: var(--ap-fg);
+    border-color: var(--ap-fg);
+    color: #fff;
+}
+.ap-calendar .fc-button .fc-icon { font-size: 1em; }
+
+/* Сетка */
+.ap-calendar .fc-theme-standard td,
+.ap-calendar .fc-theme-standard th { border-color: var(--ap-line); }
+.ap-calendar .fc-scrollgrid { border-radius: 12px; overflow: hidden; }
+.ap-calendar .fc-scrollgrid table { margin: 0; }
+
+/* Шапка дней недели */
+.ap-calendar .fc-col-header-cell {
+    background: rgba(15, 15, 15, .02);
+    padding: 9px 0;
+}
+.ap-calendar .fc-col-header-cell-cushion {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ap-muted);
+    padding: 0;
+    text-decoration: none;
+}
+
+/* Числа дней */
+.ap-calendar .fc-daygrid-day-number {
+    font-size: 12px;
+    color: var(--ap-muted);
+    font-variant-numeric: tabular-nums;
+    padding: 7px 9px;
+    text-decoration: none;
+}
+.ap-calendar .fc-day-today .fc-daygrid-day-number {
+    color: var(--ap-fg);
+    font-weight: 700;
+}
+.ap-calendar .fc-day-today { background: var(--fc-today-bg-color) !important; }
+
+/* События */
+.ap-calendar .fc-event {
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 3px;
+    cursor: pointer;
+    border-width: 0;
+}
+.ap-calendar .fc-event-title { font-weight: 500; }
+.ap-calendar .fc-daygrid-event { margin-top: 2px; }
+
+/* «+N ещё» */
+.ap-calendar .fc-daygrid-more-link {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ap-muted);
+}
+.ap-calendar .fc-daygrid-more-link:hover { color: var(--ap-fg); }
+
+/* Всплывающая подсказка FullCalendar */
+.ap-calendar .fc-toolbar-chunk { display: flex; align-items: center; gap: 6px; }
+
+@media (max-width: 640px) {
+    .ap-calendar .fc-toolbar-title { font-size: 15px; }
+    .ap-calendar .fc-button { padding: 6px 10px; font-size: 12px; }
+    .ap-calendar .fc-col-header-cell-cushion { font-size: 10px; letter-spacing: .05em; }
+    .ap-calendar .fc-daygrid-day-number { font-size: 11px; padding: 5px 6px; }
+}

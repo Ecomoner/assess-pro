@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================
+     pager(currentPage, totalPages, baseUrl, searchTerm, status, pageSize)
+
+     currentPage — текущая страница, с 0
+     totalPages  — всего страниц
+     baseUrl     — путь без query, например '/tester/history'
+     searchTerm  — значение фильтра поиска или null
+     status      — значение фильтра статуса или null
+     pageSize    — размер страницы или null
+
+     Окно из 5 страниц вокруг текущей. Все значения экранируются
+     через #uris.escapeQueryParam, поэтому подстановка пользовательского
+     поиска в href безопасна.
+
+     Использование:
+       <div th:replace="~{fragments/pager :: pager(${currentPage}, ${totalPages},
+            '/tester/history', null, ${selectedStatus}, ${pageSize})}"></div>
+     ========================================================== -->
+<nav th:fragment="pager(currentPage, totalPages, baseUrl, searchTerm, status, pageSize)"
+     class="ap-pager"
+     th:if="${totalPages != null and totalPages > 1}"
+     th:with="
+        cur=${currentPage != null ? currentPage : 0},
+        from=${cur - 2 < 0 ? 0 : cur - 2},
+        to=${cur + 2 > totalPages - 1 ? totalPages - 1 : cur + 2},
+        qs=${(searchTerm != null and !#strings.isEmpty(searchTerm) ? '&search=' + #uris.escapeQueryParam(searchTerm) : '')
+           + (status != null and !#strings.isEmpty(status) ? '&status=' + #uris.escapeQueryParam(status) : '')
+           + (pageSize != null ? '&size=' + pageSize : '')}"
+     aria-label="Пагинация">
+
+    <span th:text="'Страница ' + (${cur} + 1) + ' из ' + ${totalPages}">Страница 1 из 1</span>
+
+    <div class="ap-pager-list">
+
+        <a th:if="${cur > 0}"
+           th:href="${baseUrl + '?page=' + (cur - 1) + qs}"
+           aria-label="Предыдущая страница">←</a>
+        <span th:unless="${cur > 0}" class="is-disabled" aria-hidden="true">←</span>
+
+        <a th:if="${from > 0}" th:href="${baseUrl + '?page=0' + qs}">1</a>
+        <span th:if="${from > 1}" aria-hidden="true">…</span>
+
+        <th:block th:each="i : ${#numbers.sequence(from, to)}">
+            <span th:if="${i == cur}" class="is-active" th:text="${i + 1}"
+                  aria-current="page">1</span>
+            <a th:unless="${i == cur}" th:href="${baseUrl + '?page=' + i + qs}"
+               th:text="${i + 1}">1</a>
+        </th:block>
+
+        <span th:if="${to < totalPages - 2}" aria-hidden="true">…</span>
+        <a th:if="${to < totalPages - 1}"
+           th:href="${baseUrl + '?page=' + (totalPages - 1) + qs}"
+           th:text="${totalPages}">9</a>
+
+        <a th:if="${cur < totalPages - 1}"
+           th:href="${baseUrl + '?page=' + (cur + 1) + qs}"
+           aria-label="Следующая страница">→</a>
+        <span th:unless="${cur < totalPages - 1}" class="is-disabled" aria-hidden="true">→</span>
+
+    </div>
+
+</nav>
+
+</body>
+</html>

@@ -1,193 +1,184 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header(${action == 'create' ? 'Создание теста' : 'Редактирование теста'})}">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern(${action == 'create' ? 'Создание теста' : 'Редактирование теста'})}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container py-3 py-md-4">
-    <div class="row">
-        <div class="col-12 mb-3 mb-md-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb flex-wrap">
-                    <li class="breadcrumb-item"><a th:href="@{/creator/tests}" class="text-decoration-none">Мои тесты</a></li>
-                    <li class="breadcrumb-item active" th:text="${action == 'create' ? 'Создание теста' : 'Редактирование теста'}">Создание</li>
-                </ol>
-            </nav>
-            <h1 class="h3 h2-md mb-0" th:text="${action == 'create' ? 'Создание нового теста' : 'Редактирование теста'}">Создание теста</h1>
+
+<div class="ap-page ap-shell">
+
+    <div class="ap-overlay" id="apOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/sidebar :: sidebar('CREATOR', 'tests')}"></aside>
+
+    <main class="ap-main">
+
+        <!-- Action bar -->
+        <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+
+        <!-- Хлебные крошки -->
+        <div class="ap-crumbs">
+            <a th:href="@{/creator/tests}">Тесты</a>
+            <span class="sep">/</span>
+            <span class="cur"
+                  th:text="${action == 'create' ? 'Создание теста' : 'Редактирование теста'}">Создание теста</span>
         </div>
-    </div>
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
-            <div class="card shadow border-0">
-                <div class="card-body p-3 p-md-4">
-                    <!-- Сообщения об ошибках -->
-                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show py-2">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <span class="small" th:text="${errorMessage}">Ошибка</span>
-                        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
-                    </div>
-                    <form th:action="${formAction}"
-                          th:object="${test}"
-                          method="post"
-                          class="needs-validation"
-                          novalidate>
-                        <input type="hidden" th:if="${action == 'edit'}" th:field="*{id}">
-                        <div class="mb-3">
-                            <label for="title" class="form-label fw-semibold small">Название теста *</label>
-                            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'"
-                                   id="title" th:field="*{title}" placeholder="Например: Основы Java" required>
-                            <div class="invalid-feedback small" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Ошибка</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label fw-semibold small">Описание</label>
-                            <textarea class="form-control" id="description" th:field="*{description}"
-                                      rows="3" placeholder="Краткое описание теста"></textarea>
-                        </div>
-                        <div class="row g-2">
-                            <div class="col-12 col-md-6 mb-2 mb-md-0">
-                                <label for="categoryId" class="form-label fw-semibold small">Категория *</label>
-                                <select class="form-select" id="categoryId" th:field="*{categoryId}" required>
-                                    <option value="">-- Выберите категорию --</option>
-                                    <option th:each="cat : ${categories}"
-                                            th:value="${cat.id}"
-                                            th:text="${cat.name}">
-                                    </option>
-                                </select>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}">
-                                    Выберите категорию
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label for="timeLimitMinutes" class="form-label fw-semibold small">Таймер (минуты)</label>
-                                <input type="number" class="form-control" id="timeLimitMinutes" th:field="*{timeLimitMinutes}"
-                                       min="0" value="0">
-                                <small class="text-muted d-block mt-1 small">0 = без ограничения</small>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold small">Проходной процент (%)</label>
-                            <input type="number" th:field="*{passThresholdPercent}" class="form-control form-control-sm"
-                                   min="0" max="100" placeholder="Оставьте пустым, если не нужно">
-                            <small class="text-muted">Если результат ниже – тест считается не пройденным</small>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" th:field="*{reTestOnFail}" value="true">
-                            <label class="form-check-label">Назначать пересдачу при неудаче</label>
-                        </div>
-                        <div class="mb-3 mt-3">
-                            <label class="form-label fw-semibold small">Ограничение на повторное прохождение</label>
-                            <div class="card bg-light">
-                                <div class="card-body p-3">
-                                    <div class="row g-2">
-                                        <div class="col-12 col-md-6">
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="radio" name="cooldownType"
-                                                       id="cooldownHours" value="hours"
-                                                       th:checked="${test.retryCooldownHours != null and test.retryCooldownHours > 0}">
-                                                <label class="form-check-label small" for="cooldownHours">
-                                                    Часы
-                                                </label>
-                                            </div>
-                                            <div class="ms-4 mb-2">
-                                                <input type="number" class="form-control form-control-sm w-100 mw-120"
-                                                       th:field="*{retryCooldownHours}" min="1" max="336"
-                                                       placeholder="Часы" th:disabled="${test.retryCooldownHours == null or test.retryCooldownHours == 0}">
-                                            </div>
-                                        </div>
-                                        <div class="col-12 col-md-6">
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="radio" name="cooldownType"
-                                                       id="cooldownDays" value="days"
-                                                       th:checked="${test.retryCooldownDays != null and test.retryCooldownDays > 0}">
-                                                <label class="form-check-label small" for="cooldownDays">
-                                                    Дни (макс. 14)
-                                                </label>
-                                            </div>
-                                            <div class="ms-4">
-                                                <input type="number" class="form-control form-control-sm w-100 mw-120"
-                                                       th:field="*{retryCooldownDays}" min="1" max="14"
-                                                       placeholder="Дни" th:disabled="${test.retryCooldownDays == null or test.retryCooldownDays == 0}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted d-block mt-2 small">Оставьте пустым, если ограничений нет</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-2 mb-md-0">
-                                <label class="form-label fw-semibold small">Доступен с</label>
-                                <input type="datetime-local" class="form-control form-control-sm"
-                                       name="availableFrom"
-                                       th:attr="value=${test.availableFrom != null ? #temporals.format(test.availableFrom, 'yyyy-MM-dd') + 'T' + #temporals.format(test.availableFrom, 'HH:mm') : ''}"
-                                       placeholder="Оставьте пустым, если ограничение не нужно">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold small">Доступен по</label>
-                                <input type="datetime-local" class="form-control form-control-sm"
-                                       name="availableTo"
-                                       th:attr="value=${test.availableTo != null ? #temporals.format(test.availableTo, 'yyyy-MM-dd') + 'T' + #temporals.format(test.availableTo, 'HH:mm') : ''}"
-                                       placeholder="Оставьте пустым, если ограничение не нужно">
-                            </div>
-                        </div>
-                        <div th:if="${action == 'edit'}" class="mb-3">
-                            <div class="alert alert-info py-2">
-                                <i class="bi bi-info-circle me-2 small"></i>
-                                <span class="small">Статус: <strong th:text="${test.published} ? 'Опубликован' : 'Черновик'"></strong></span>
-                                <span th:if="${test.published}" class="text-muted ms-2 small">(нельзя изменить)</span>
-                            </div>
-                        </div>
-                        <hr class="my-3">
-                        <div class="d-flex flex-column flex-sm-row gap-2">
-                            <button type="submit" class="btn btn-dark px-4 py-2 w-100 w-sm-auto">
-                                <i class="bi bi-check-circle me-2"></i>
-                                <span th:text="${action == 'create'} ? 'Создать тест' : 'Сохранить'">Сохранить</span>
-                            </button>
-                            <a th:href="@{/creator/tests}" class="btn btn-outline-secondary px-4 py-2 w-100 w-sm-auto">
-                                <i class="bi bi-x-circle me-2"></i>Отмена
-                            </a>
-                        </div>
-                    </form>
+
+        <!-- Page head -->
+        <div class="ap-page-head">
+            <h1 th:text="${action == 'create' ? 'Создание нового теста' : 'Редактирование теста'}">Создание теста</h1>
+            <p>Основные параметры теста. Вопросы добавляются после сохранения.</p>
+        </div>
+
+        <!-- Флеш-сообщения -->
+        <div th:if="${successMessage}" class="ap-alert"
+             style="background:#f0fdf4;color:#166534;border-color:#dcfce7">
+            <svg th:replace="~{fragments/icons :: i-check}"></svg>
+            <span th:text="${successMessage}">Успех</span>
+        </div>
+        <div th:if="${errorMessage}" class="ap-alert"
+             style="background:#fef2f2;color:#b91c1c;border-color:#fecaca">
+            <svg th:replace="~{fragments/icons :: i-alert}"></svg>
+            <span th:text="${errorMessage}">Ошибка</span>
+        </div>
+
+        <!-- Форма -->
+        <div class="ap-card" style="padding:24px">
+            <form th:action="${formAction}"
+                  th:object="${test}"
+                  method="post">
+
+                <input type="hidden" th:if="${action == 'edit'}" th:field="*{id}">
+
+                <!-- Ошибки уровня объекта (например, неверный диапазон дат) -->
+                <div th:if="${#fields.hasGlobalErrors()}" class="ap-field is-invalid" style="margin-bottom:18px">
+                    <div class="ap-err" th:each="err : ${#fields.globalErrors()}"
+                         th:text="${err.defaultMessage}">Ошибка формы</div>
                 </div>
-            </div>
+
+                <div class="ap-form-grid">
+
+                    <div class="ap-field ap-span-2"
+                         th:classappend="${#fields.hasErrors('title')} ? ' is-invalid'">
+                        <label class="ap-label" for="title">Название теста <span class="req">*</span></label>
+                        <input type="text" class="ap-input" id="title" th:field="*{title}"
+                               placeholder="Например: Основы Java" required>
+                        <div class="ap-err" th:if="${#fields.hasErrors('title')}"
+                             th:errors="*{title}">Ошибка</div>
+                    </div>
+
+                    <div class="ap-field ap-span-2"
+                         th:classappend="${#fields.hasErrors('description')} ? ' is-invalid'">
+                        <label class="ap-label" for="description">Описание</label>
+                        <textarea class="ap-textarea" id="description" th:field="*{description}"
+                                  rows="3" placeholder="Краткое описание теста"></textarea>
+                        <div class="ap-err" th:if="${#fields.hasErrors('description')}"
+                             th:errors="*{description}">Ошибка</div>
+                    </div>
+
+                    <div class="ap-field"
+                         th:classappend="${#fields.hasErrors('categoryId')} ? ' is-invalid'">
+                        <label class="ap-label" for="categoryId">Категория <span class="req">*</span></label>
+                        <select class="ap-select" id="categoryId" th:field="*{categoryId}" required>
+                            <option value="">— Выберите категорию —</option>
+                            <option th:each="cat : ${categories}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.name}">Категория</option>
+                        </select>
+                        <div class="ap-err" th:if="${#fields.hasErrors('categoryId')}"
+                             th:errors="*{categoryId}">Выберите категорию</div>
+                    </div>
+
+                    <div class="ap-field"
+                         th:classappend="${#fields.hasErrors('timeLimitMinutes')} ? ' is-invalid'">
+                        <label class="ap-label" for="timeLimitMinutes">Таймер (минуты)</label>
+                        <input type="number" class="ap-input" id="timeLimitMinutes"
+                               th:field="*{timeLimitMinutes}" min="0" max="300">
+                        <div class="ap-hint">0 — без ограничения, максимум 300 минут</div>
+                        <div class="ap-err" th:if="${#fields.hasErrors('timeLimitMinutes')}"
+                             th:errors="*{timeLimitMinutes}">Ошибка</div>
+                    </div>
+
+                    <div class="ap-field"
+                         th:classappend="${#fields.hasErrors('passThresholdPercent')} ? ' is-invalid'">
+                        <label class="ap-label" for="passThresholdPercent">Проходной процент (%)</label>
+                        <input type="number" class="ap-input" id="passThresholdPercent"
+                               th:field="*{passThresholdPercent}" min="0" max="100"
+                               placeholder="Оставьте пустым, если не нужно">
+                        <div class="ap-hint">Если результат ниже — тест считается непройденным</div>
+                        <div class="ap-err" th:if="${#fields.hasErrors('passThresholdPercent')}"
+                             th:errors="*{passThresholdPercent}">Ошибка</div>
+                    </div>
+
+                    <div class="ap-field"
+                         th:classappend="${#fields.hasErrors('retryCooldownDays')} ? ' is-invalid'">
+                        <label class="ap-label" for="retryCooldownDays">Интервал пересдачи (дни)</label>
+                        <input type="number" class="ap-input" id="retryCooldownDays"
+                               th:field="*{retryCooldownDays}" min="0" max="14">
+                        <div class="ap-hint">0 — без ограничения, максимум 14 дней; приоритетнее часов</div>
+                        <div class="ap-err" th:if="${#fields.hasErrors('retryCooldownDays')}"
+                             th:errors="*{retryCooldownDays}">Ошибка</div>
+                    </div>
+
+                    <div class="ap-field"
+                         th:classappend="${#fields.hasErrors('retryCooldownHours')} ? ' is-invalid'">
+                        <label class="ap-label" for="retryCooldownHours">Интервал пересдачи (часы)</label>
+                        <input type="number" class="ap-input" id="retryCooldownHours"
+                               th:field="*{retryCooldownHours}" min="0" max="336">
+                        <div class="ap-hint">Учитывается, только если дни не заданы; максимум 336 часов</div>
+                        <div class="ap-err" th:if="${#fields.hasErrors('retryCooldownHours')}"
+                             th:errors="*{retryCooldownHours}">Ошибка</div>
+                    </div>
+
+                    <div class="ap-field">
+                        <label class="ap-label" for="availableFrom">Доступен с</label>
+                        <input type="datetime-local" class="ap-input" id="availableFrom"
+                               name="availableFrom"
+                               th:attr="value=${test.availableFrom != null ? #temporals.format(test.availableFrom, 'yyyy-MM-dd') + 'T' + #temporals.format(test.availableFrom, 'HH:mm') : ''}">
+                        <div class="ap-hint">Оставьте пустым, если ограничение не нужно</div>
+                    </div>
+
+                    <div class="ap-field">
+                        <label class="ap-label" for="availableTo">Доступен по</label>
+                        <input type="datetime-local" class="ap-input" id="availableTo"
+                               name="availableTo"
+                               th:attr="value=${test.availableTo != null ? #temporals.format(test.availableTo, 'yyyy-MM-dd') + 'T' + #temporals.format(test.availableTo, 'HH:mm') : ''}">
+                        <div class="ap-hint">Оставьте пустым, если ограничение не нужно</div>
+                    </div>
+
+                    <div class="ap-field ap-span-2">
+                        <label class="ap-switch" for="reTestOnFail">
+                            <input type="checkbox" id="reTestOnFail" th:field="*{reTestOnFail}">
+                            <span class="ap-switch-track"></span>
+                            <span>Назначать пересдачу при неудаче</span>
+                        </label>
+                        <div class="ap-err" th:if="${#fields.hasErrors('reTestOnFail')}"
+                             th:errors="*{reTestOnFail}">Ошибка</div>
+                    </div>
+
+                </div>
+
+                <div th:if="${action == 'edit'}" class="ap-small ap-muted" style="margin-top:16px">
+                    Статус:
+                    <strong th:text="${test.published ? 'Опубликован' : 'Черновик'}">Черновик</strong>.
+                    Публикация переключается в списке тестов.
+                </div>
+
+                <div class="ap-between" style="margin-top:24px;justify-content:flex-end;flex-wrap:wrap;gap:12px">
+                    <a th:href="@{/creator/tests}" class="ap-btn ap-btn-outline">Отмена</a>
+                    <button type="submit" class="ap-btn ap-btn-dark">
+                        <svg th:replace="~{fragments/icons :: i-check}"></svg>
+                        <span th:text="${action == 'create' ? 'Создать тест' : 'Сохранить'}">Сохранить</span>
+                    </button>
+                </div>
+
+            </form>
         </div>
-    </div>
+
+    </main>
+
 </div>
-<div th:replace="~{fragments/footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const hoursRadio = document.getElementById('cooldownHours');
-        const daysRadio = document.getElementById('cooldownDays');
-        const hoursInput = document.querySelector('[name="retryCooldownHours"]');
-        const daysInput = document.querySelector('[name="retryCooldownDays"]');
 
-        function toggleInputs() {
-            hoursInput.disabled = !hoursRadio.checked;
-            daysInput.disabled = !daysRadio.checked;
-
-            if (hoursRadio.checked) {
-                daysInput.value = '';
-            } else if (daysRadio.checked) {
-                hoursInput.value = '';
-            }
-        }
-        if (hoursRadio) hoursRadio.addEventListener('change', toggleInputs);
-        if (daysRadio) daysRadio.addEventListener('change', toggleInputs);
-        toggleInputs();
-    });
-    (function() {
-        'use strict';
-        const forms = document.querySelectorAll('.needs-validation');
-        Array.prototype.slice.call(forms).forEach(function(form) {
-            form.addEventListener('submit', function(event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            }, false);
-        });
-    })();
-</script>
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 </body>
 </html>

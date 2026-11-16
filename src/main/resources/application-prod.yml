@@ -18,7 +18,7 @@ spring:
         use_sql_comments: false
   liquibase:
     enabled: true
-    change-log: classpath:db/changelog/master.xml
+    change-log: classpath:db/changelog/master.yaml
     contexts: production
     drop-first: false
   thymeleaf:

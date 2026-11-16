@@ -1,67 +1,149 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header('Статистика проекта')}">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern('Статистика проекта')}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<div class="container py-3">
-    <h1 th:text="'Проект: ' + ${project.name}"></h1>
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h6>Тестировщиков</h6>
-                    <h3 th:text="${testersCount}"></h3>
+
+<div class="ap-page ap-shell">
+
+    <div class="ap-overlay" id="apOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside th:replace="~{fragments/sidebar :: sidebar('MANAGER', 'statistics')}"></aside>
+
+    <main class="ap-main">
+
+        <!-- Action bar -->
+        <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+
+        <!-- Хлебные крошки -->
+        <nav class="ap-crumbs" aria-label="Хлебные крошки">
+            <a th:href="@{/manager/dashboard}">Обзор</a>
+            <span class="sep">/</span>
+            <span class="cur" th:text="${project.name}">Проект</span>
+        </nav>
+
+        <!-- Page head -->
+        <div class="ap-page-head">
+            <h1 th:text="${project.name}">Название проекта</h1>
+            <p>
+                Статистика проекта
+                <span th:if="${project.manager != null}">
+                    · менеджер: <span th:text="${project.manager}">—</span>
+                </span>
+            </p>
+        </div>
+
+        <!-- Метрики -->
+        <div class="ap-metrics" style="margin-bottom:24px">
+
+            <div class="ap-metric">
+                <div class="l">Тестировщиков</div>
+                <div class="v" th:text="${testersCount != null ? testersCount : 0}">0</div>
+            </div>
+
+            <div class="ap-metric">
+                <div class="l">Завершено попыток</div>
+                <div class="v" th:text="${completedAttempts != null ? completedAttempts : 0}">0</div>
+            </div>
+
+            <div class="ap-metric">
+                <div class="l">Средний балл</div>
+                <div class="v">
+                    <span th:text="${#numbers.formatDecimal(averageScore != null ? averageScore : 0, 1, 1)}">0,0</span><small>%</small>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h6>Завершено попыток</h6>
-                    <h3 th:text="${completedAttempts}"></h3>
+
+            <div class="ap-metric">
+                <div class="l">Статус</div>
+                <div class="v" style="font-size:18px">
+                    <span class="ap-tag ap-ok"
+                          th:if="${project.active != null and project.active}">Активен</span>
+                    <span class="ap-tag ap-neutral"
+                          th:unless="${project.active != null and project.active}">Архив</span>
                 </div>
             </div>
+
         </div>
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h6>Средний балл</h6>
-                    <h3 th:text="${#numbers.formatDecimal(averageScore, 1, 1)}"></h3>
-                </div>
+
+        <!-- Тестировщики -->
+        <div class="ap-section">
+
+            <div class="ap-section-head">
+                <h2>Тестировщики</h2>
+                <span class="ap-xs ap-muted"
+                      th:text="'Всего: ' + ${testers != null ? #lists.size(testers) : 0}">Всего: 0</span>
             </div>
+
+            <div class="ap-table-card ap-stack-mobile">
+                <table>
+                    <thead>
+                    <tr>
+                        <th scope="col">Тестировщик</th>
+                        <th scope="col">Логин</th>
+                        <th scope="col">Попыток</th>
+                        <th scope="col">Средний балл</th>
+                        <th scope="col">Последняя попытка</th>
+                        <th scope="col" class="ap-td-actions"><span class="ap-visually-hidden">Действия</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="tester : ${testers}">
+
+                        <td data-label="Тестировщик" class="ap-cell-title" th:text="${tester.fullName}">Иванов И.И.</td>
+
+                        <td data-label="Логин" class="ap-small ap-muted"
+                            th:text="${tester.username != null ? tester.username : '—'}">tester</td>
+
+                        <td data-label="Попыток" class="ap-td-num"
+                            th:text="${tester.attemptCount != null ? tester.attemptCount : 0}">0</td>
+
+                        <td data-label="Средний балл">
+                            <div class="ap-score-cell">
+                                <div class="ap-score-bar">
+                                    <i th:style="'width:' + ${tester.averageScore != null ? tester.averageScore : 0} + '%'"></i>
+                                </div>
+                                <span class="ap-score-num"
+                                      th:text="${#numbers.formatDecimal(tester.averageScore != null ? tester.averageScore : 0, 1, 1)}">0,0</span>
+                                <span class="ap-score-pct">%</span>
+                            </div>
+                        </td>
+
+                        <td data-label="Последняя попытка" class="ap-date"
+                            th:text="${tester.lastAttemptDate != null
+                                      ? #temporals.format(tester.lastAttemptDate, 'dd.MM.yyyy HH:mm')
+                                      : '—'}">—</td>
+
+                        <td data-label="Действия" class="ap-td-actions">
+                            <a th:if="${tester.username != null}"
+                               th:href="@{/manager/tester/{username}/full-statistics(username=${tester.username})}"
+                               class="ap-row-link">Статистика →</a>
+                            <span th:unless="${tester.username != null}" class="ap-muted ap-small">—</span>
+                        </td>
+
+                    </tr>
+
+                    <tr th:if="${testers == null or #lists.isEmpty(testers)}">
+                        <td colspan="6" class="ap-empty-row" data-label="Пусто">Нет данных</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
         </div>
-    </div>
-    <h4>Тестировщики</h4>
-    <table class="table table-hover">
-        <thead class="table-light">
-        <tr>
-            <th>Тестировщик</th>
-            <th>Попыток</th>
-            <th>Средний балл</th>
-            <th>Последняя попытка</th>
-            <th></th> <!-- новая колонка для действий -->
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="tester : ${testers}">
-            <td th:text="${tester.fullName}"></td>
-            <td th:text="${tester.attemptCount}"></td>
-            <td th:text="${#numbers.formatDecimal(tester.averageScore, 1, 1)}"></td>
-            <td th:text="${tester.lastAttemptDate != null ? #temporals.format(tester.lastAttemptDate, 'dd.MM.yyyy HH:mm') : '—'}"></td>
-            <td>
-                <a th:if="${tester.username != null}"
-                   th:href="@{/manager/tester/{username}/full-statistics(username=${tester.username})}"
-                   class="btn btn-sm btn-outline-dark">Статистика</a>
-                <span th:unless="${tester.username != null}" class="text-muted">—</span>
-            </td>
-        </tr>
-        <tr th:if="${testers.isEmpty()}">
-            <td colspan="5" class="text-center text-muted">Нет данных</td>
-        </tr>
-        </tbody>
-    </table>
+
+        <!-- Действия -->
+        <nav class="ap-cluster" aria-label="Навигация">
+            <a th:href="@{/manager/dashboard}" class="ap-btn ap-btn-outline">
+                <svg th:replace="~{fragments/icons :: i-chevron-left}"></svg>
+                К обзору
+            </a>
+        </nav>
+
+    </main>
+
 </div>
-<div th:replace="~{fragments/footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 </body>
 </html>

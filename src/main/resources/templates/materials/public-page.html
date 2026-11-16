@@ -1,149 +1,221 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/header :: header('Материалы для обучения')}">
-    <style>
-        /* те же стили, что и раньше */
-    </style>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: headerModern('Материалы для изучения')}"></head>
 <body>
-<div th:replace="~{fragments/panel-navigation}"></div>
-<main class="container-fluid px-0 py-4">
-    <div class="row g-4">
-        <!-- Оглавление -->
-        <div class="col-12 col-md-4 col-lg-3 order-1">
-            <div class="card toc-card sticky-md-top sticky-top-offset">
-                <div class="card-header">
-                    <h5 class="mb-0 fw-semibold">
-                        <i class="bi bi-journal-bookmark-fill me-2" style="color: #b78c5a;"></i>Разделы
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush" id="toc-list">
-                        <a th:each="section : ${sections}"
-                           th:href="'#' + ${section.id}"
-                           class="list-group-item toc-item"
-                           th:text="${section.title}">
-                        </a>
-                    </div>
-                </div>
-            </div>
+
+<!--
+    /materials требует аутентификации (SecurityConfig: anyRequest().authenticated()),
+    поэтому страница рендерится в общем shell с sidebar.
+
+    Особенность: на этой странице сайдбар работает как оглавление.
+    Список разделов передаётся в фрагмент sidebar через th:with —
+    фрагмент видит переменную sidebarSections и переключается в режим
+    «только материалы»: переходы по приложению скрыты, вместо них
+    кнопка «Назад» и список разделов.
+
+    Материалы только для просмотра: без кнопок скачивания, имён файлов,
+    размеров и счётчиков.
+-->
+<div class="ap-page ap-shell"
+     th:with="role=${#authentication != null and #authentication.isAuthenticated()
+                    ? #strings.replace(#authentication.authorities.iterator().next().authority, 'ROLE_', '')
+                    : 'TESTER'},
+              sidebarSections=${sections}">
+
+    <div class="ap-overlay" id="apOverlay"></div>
+
+    <!-- Sidebar в режиме оглавления -->
+    <aside th:replace="~{fragments/sidebar :: sidebar(${role}, 'materials')}"></aside>
+
+    <main class="ap-main" id="materialsTop">
+
+        <!-- Action bar -->
+        <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+
+        <!-- Page head -->
+        <div class="ap-page-head">
+            <h1>Материалы для изучения</h1>
         </div>
-        <div class="col-12 col-md-8 col-lg-9 order-2">
-            <h1 class="display-5 fw-light mb-4" style="font-family: 'Playfair Display', serif;">Материалы для изучения</h1>
-            <div th:each="section : ${sections}" th:id="${section.id}" class="section mb-5">
-                <h2 th:text="${section.title}"></h2>
-                <div th:if="${section.description}" th:utext="${section.description}" class="mb-3"></div>
 
-                <!-- Все материалы секции (видео и PDF) -->
-                <div th:each="material : ${section.materials}" class="mb-3">
-                    <!-- Видеофайл (VIDEO_FILE) -->
-                    <div th:if="${material.type == 'VIDEO_FILE'}" class="card border-0 shadow-sm">
-                        <div class="card-header bg-white py-2">
-                        </div>
-                        <div class="card-body p-0">
-                            <video controls style="width: 100%; max-height: 500px;">
-                                <source th:src="@{/materials/video/{id}(id=${material.id})}"
-                                        th:type="${material.contentType}">
-                                Ваш браузер не поддерживает видео.
-                            </video>
-                        </div>
+        <th:block th:if="${sections != null and !#lists.isEmpty(sections)}">
+
+            <!-- Разделы. Виден всегда один; переключение — из сайдбара.
+                 Первый показан сразу (на случай, если JS не выполнится). -->
+            <div th:each="section, iter : ${sections}"
+                 class="ap-section-view"
+                 th:id="'sec-' + ${section.id}"
+                 th:style="${iter.first} ? '' : 'display:none'"
+                 role="tabpanel">
+
+                <div class="ap-card">
+                    <div class="ap-card-head">
+                        <h3 th:text="${section.title}">Раздел</h3>
                     </div>
 
-                    <!-- PDF -->
-                    <div th:if="${material.type == 'PDF'}" class="card border-0 shadow-sm">
-                        <div class="card-header bg-white py-2">
-                            <h5 class="mb-0">
-                                <i class="bi bi-file-pdf text-danger me-2"></i>Материал
-                            </h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="pdf-container"
-                                 th:attr="data-pdf-url=@{/materials/pdf/{id}(id=${material.id})}">
+                    <div class="ap-card-body">
+
+                        <p class="ap-small ap-muted" style="margin-bottom:16px"
+                           th:if="${section.description}"
+                           th:text="${section.description}">Описание раздела</p>
+
+                        <!-- Материалы раздела: чистый просмотр -->
+                        <div th:each="material : ${section.materials}">
+
+                            <!-- Видео -->
+                            <div th:if="${material.type == 'VIDEO_FILE'}" class="ap-media ap-media-video">
+                                <video controls controlsList="nodownload"
+                                       disablepictureinpicture
+                                       preload="metadata">
+                                    <source th:src="@{/materials/video/{id}(id=${material.id})}"
+                                            th:type="${material.contentType}">
+                                    Ваш браузер не поддерживает видео.
+                                </video>
                             </div>
+
+                            <!-- PDF -->
+                            <div th:if="${material.type == 'PDF'}" class="ap-media ap-media-doc">
+                                <!-- pdf.js вставляет <canvas> внутрь этого контейнера -->
+                                <div class="pdf-container"
+                                     th:attr="data-pdf-url=@{/materials/pdf/{id}(id=${material.id})}"></div>
+                            </div>
+
                         </div>
+
+                        <!-- Связанные тесты: без заголовка, просто ссылки под чертой -->
+                        <div th:if="${section.tests != null and !#lists.isEmpty(section.tests)}"
+                             class="ap-media-tests">
+                            <a th:each="test : ${section.tests}"
+                               class="ap-btn ap-btn-outline ap-btn-sm"
+                               th:href="@{/tester/test/{id}/start(id=${test.id})}"
+                               th:text="${test.title}">Тест</a>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- Привязанные тесты (без изменений) -->
-                <div th:if="${!section.tests.isEmpty()}" class="mt-3">
-                    <h5>Связанные тесты:</h5>
-                    <ul>
-                        <li th:each="test : ${section.tests}">
-                            <a th:href="@{/tester/attempt/{id}(id=${test.id})}" th:text="${test.title}"></a>
-                        </li>
-                    </ul>
-                </div>
             </div>
+
+        </th:block>
+
+        <!-- Пустое состояние -->
+        <div class="ap-empty" th:if="${sections == null or #lists.isEmpty(sections)}">
+            <svg th:replace="~{fragments/icons :: i-materials}"></svg>
+            <div>Материалы пока не добавлены.</div>
         </div>
-    </div>
-    <div th:replace="~{fragments/footer}"></div>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    </main>
+
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script th:inline="javascript">
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    // для каждого контейнера с PDF запускаем рендеринг
-    document.addEventListener('DOMContentLoaded', function() {
-        const containers = document.querySelectorAll('.pdf-container');
-        containers.forEach(container => {
-            const url = container.getAttribute('data-pdf-url');
-            if (url) {
-                loadPdf(container, url);
+    function loadPdf(container, url) {
+        pdfjsLib.getDocument(url).promise.then(function (pdf) {
+            container.innerHTML = '';
+            var chain = Promise.resolve();
+            for (var i = 1; i <= pdf.numPages; i++) {
+                chain = chain.then(function (pageNum) {
+                    return pdf.getPage(pageNum).then(function (page) {
+                        var viewport = page.getViewport({ scale: 1.25 });
+                        var canvas = document.createElement('canvas');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        container.appendChild(canvas);
+                        return page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                    });
+                }.bind(null, i));
             }
+        }).catch(function () {
+            container.innerHTML = '<p style="padding:12px;color:var(--ap-muted)">Не удалось загрузить документ.</p>';
         });
+    }
 
-        // скрыть/показать секции при клике в оглавлении
-        const tocLinks = document.querySelectorAll('.toc-item');
-        const sections = document.querySelectorAll('.section');
-        tocLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href').substring(1);
-                sections.forEach(sec => {
-                    sec.style.display = (sec.id === targetId) ? 'block' : 'none';
-                });
-                // если в секции есть PDF, который ещё не загружен – загрузить (ленивая загрузка)
-                const pdfContainer = document.querySelector(`#${targetId} .pdf-container`);
-                if (pdfContainer && !pdfContainer.classList.contains('loaded')) {
-                    const url = pdfContainer.getAttribute('data-pdf-url');
-                    loadPdf(pdfContainer, url);
-                    pdfContainer.classList.add('loaded');
-                }
-                history.pushState(null, null, '#' + targetId);
+    document.addEventListener('DOMContentLoaded', function () {
+
+        var side    = document.getElementById('apSide');
+        var focus   = document.querySelector('.ap-side-focus');
+        var backBtn = document.getElementById('apSideBack');
+        var topBtn  = document.getElementById('apMaterialsTop');
+        var subBtns = document.querySelectorAll('.ap-side-sections .ap-nav-sub');
+        var panels  = document.querySelectorAll('.ap-section-view');
+
+        // Страница материалов открывается сразу в режиме оглавления
+        if (focus && side) { side.classList.add('ap-focus-mode'); }
+
+        function scrollTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showSection(id, doScroll) {
+            var target = document.getElementById('sec-' + id);
+            if (!target) return;
+
+            panels.forEach(function (p) {
+                p.style.display = (p === target) ? 'block' : 'none';
+            });
+
+            subBtns.forEach(function (b) {
+                b.classList.toggle('ap-active', b.getAttribute('data-section') === String(id));
+            });
+
+            // ленивая загрузка PDF в показанном разделе
+            var doc = target.querySelector('.pdf-container');
+            if (doc && !doc.classList.contains('loaded')) {
+                var url = doc.getAttribute('data-pdf-url');
+                if (url) { loadPdf(doc, url); doc.classList.add('loaded'); }
+            }
+
+            if (doScroll) { scrollTop(); }
+            if (history.replaceState) { history.replaceState(null, null, '#sec-' + id); }
+        }
+
+        subBtns.forEach(function (b) {
+            b.addEventListener('click', function () {
+                showSection(this.getAttribute('data-section'), true);
             });
         });
 
-        // при загрузке показать только первую секцию (или по хэшу)
-        const hash = window.location.hash.substring(1);
-        const defaultSection = sections[0]?.id;
-        let showId = hash || defaultSection;
-        if (showId) {
-            sections.forEach(sec => sec.style.display = (sec.id == showId) ? 'block' : 'none');
+        // «Назад» — вернуть обычную навигацию по приложению
+        if (backBtn) {
+            backBtn.addEventListener('click', function () {
+                if (side) { side.classList.remove('ap-focus-mode'); }
+            });
         }
-    });
 
-    function loadPdf(container, url) {
-        pdfjsLib.getDocument(url).promise.then(pdf => {
-            container.innerHTML = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-                pdf.getPage(i).then(page => {
-                    const scale = 1.2;
-                    const viewport = page.getViewport({scale});
-                    const canvas = document.createElement('canvas');
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-                    canvas.style.display = 'block';
-                    canvas.style.margin = '10px auto';
-                    canvas.style.maxWidth = '100%';
-                    canvas.style.height = 'auto';
-                    container.appendChild(canvas);
-                    page.render({canvasContext: canvas.getContext('2d'), viewport});
+        // Возврат в режим оглавления без перезагрузки: клик по «Материалы»
+        // в обычной навигации снова разворачивает разделы.
+        document.querySelectorAll('.ap-side-full a.ap-nav-item').forEach(function (a) {
+            var href = a.getAttribute('href') || '';
+            if (/\/materials$/.test(href)) {
+                a.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (side) { side.classList.add('ap-focus-mode'); }
+                    scrollTop();
                 });
             }
-        }).catch(err => {
-            container.innerHTML = '<p class="text-danger p-3">Не удалось загрузить PDF.</p>';
         });
-    }
+
+        // «Материалы» — наверх и первый раздел
+        if (topBtn) {
+            topBtn.addEventListener('click', function () {
+                scrollTop();
+                if (panels.length) {
+                    showSection(panels[0].id.replace('sec-', ''), false);
+                }
+            });
+        }
+
+        // Начальный раздел: из хэша либо первый
+        var hash = window.location.hash ? window.location.hash.substring(1).replace('sec-', '') : null;
+        var initial = (hash && document.getElementById('sec-' + hash))
+            ? hash
+            : (panels.length ? panels[0].id.replace('sec-', '') : null);
+        if (initial) { showSection(initial, false); }
+    });
 </script>
+<script th:src="@{/js/assesspro-ui.js}"></script>
+<script th:src="@{/js/notifications.js}"></script>
 </body>
 </html>

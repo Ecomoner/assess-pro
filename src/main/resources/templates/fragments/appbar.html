@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==========================================================
+     appbar(searchPlaceholder, searchAction, searchName)
+
+     searchPlaceholder — текст плейсхолдера; пустая строка скрывает поиск
+     searchAction      — URL GET-формы поиска; пустая строка делает поле
+                         декоративным (без отправки)
+     searchName        — имя параметра поиска (обычно 'search')
+
+     Использование:
+       <div th:replace="~{fragments/appbar :: appbar('Поиск тестов...', '/tester/tests', 'search')}"></div>
+       <div th:replace="~{fragments/appbar :: appbar('', '', '')}"></div>
+     ========================================================== -->
+<div th:fragment="appbar(searchPlaceholder, searchAction, searchName)" class="ap-action-bar">
+
+    <button class="ap-menu-toggle" id="apMenuToggle" type="button"
+            aria-label="Открыть меню" aria-controls="apSide" aria-expanded="false">
+        <svg th:replace="~{fragments/icons :: i-menu}"></svg>
+    </button>
+
+    <!-- Поиск -->
+    <th:block th:if="${searchPlaceholder != null and !#strings.isEmpty(searchPlaceholder)}">
+
+        <form class="ap-search" th:if="${searchAction != null and !#strings.isEmpty(searchAction)}"
+              th:action="${searchAction}" method="get" role="search">
+            <svg th:replace="~{fragments/icons :: i-search}"></svg>
+            <input type="search"
+                   th:name="${searchName != null and !#strings.isEmpty(searchName) ? searchName : 'search'}"
+                   th:placeholder="${searchPlaceholder}"
+                   th:value="${param.search} ?: ''"
+                   th:aria-label="${searchPlaceholder}">
+        </form>
+
+        <div class="ap-search" th:unless="${searchAction != null and !#strings.isEmpty(searchAction)}">
+            <svg th:replace="~{fragments/icons :: i-search}"></svg>
+            <input type="text" th:placeholder="${searchPlaceholder}"
+                   th:aria-label="${searchPlaceholder}">
+        </div>
+
+    </th:block>
+
+    <div class="ap-action-icons" style="margin-left:auto">
+
+        <details class="ap-pop" id="apNotif">
+            <summary title="Уведомления" aria-label="Уведомления">
+                <svg th:replace="~{fragments/icons :: i-bell}"></svg>
+                <span class="ap-pop-count" id="apNotifCount" hidden>0</span>
+            </summary>
+
+            <div class="ap-pop-panel">
+                <div class="ap-pop-head">
+                    <span>Уведомления</span>
+                    <button type="button" id="apNotifClear">Очистить</button>
+                </div>
+                <div id="apNotifList">
+                    <div class="ap-pop-empty">Нет новых уведомлений</div>
+                </div>
+            </div>
+        </details>
+
+    </div>
+
+    <!-- Стек тостов. Внутри фрагмента: position:fixed выносит его из потока,
+         поэтому вложенность не влияет на раскладку, а notifications.js
+         находит #apToastStack только если он отрендерен. -->
+    <div class="ap-toast-stack" id="apToastStack" role="status" aria-live="polite"></div>
+
+</div>
+
+</body>
+</html>
