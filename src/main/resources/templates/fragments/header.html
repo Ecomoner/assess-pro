@@ -43,8 +43,11 @@
               href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     </noscript>
 
-    <!-- CSRF-обвязка: должна подключиться до скриптов страниц -->
-    <script defer th:src="@{/js/csrf.js}"></script>
+    <!-- CSRF-обвязка. Намеренно БЕЗ defer: классические скрипты из body
+         выполняются раньше deferred-скриптов из head, и тогда первый же
+         fetch на странице ушёл бы без токена. Файл локальный и крошечный,
+         блокировка парсинга незаметна. -->
+    <script th:src="@{/js/csrf.js}"></script>
 
     <!-- Новый CSS -->
     <link th:href="@{/css/assesspro-ui.css}" rel="stylesheet">
