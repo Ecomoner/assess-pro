@@ -2,48 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <!-- ============================================
-     СТАРЫЙ header — для существующих 50 шаблонов
-     Грузит assesspro.css + Bootstrap Icons
-     ============================================ -->
-<head th:fragment="header(title)">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes">
-    <meta name="theme-color" content="#111827">
-    <title th:text="${title}"></title>
+     headerModern(title) — единственная шапка проекта.
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
-    <link th:href="@{/css/assesspro.css}" rel="stylesheet">
-
-    <style>
-        body { overflow-x: hidden; }
-        .container, .container-fluid {
-            padding-right: 12px;
-            padding-left: 12px;
-        }
-        @media (max-width: 576px) {
-            .container, .container-fluid {
-                padding-right: 8px;
-                padding-left: 8px;
-            }
-        }
-    </style>
-</head>
-
-
-<!-- ============================================
-     НОВЫЙ headerModern — только для переделанных страниц
-     Грузит assesspro-ui.css, без Bootstrap Icons
-     Bootstrap оставляем как fallback для JS-модалок
+     Раньше здесь был второй фрагмент header(title)
+     с Bootstrap Icons и Font Awesome, но его не
+     подключала ни одна страница, поэтому он удалён.
      ============================================ -->
 <head th:fragment="headerModern(title)">
     <meta charset="UTF-8">
@@ -51,15 +14,37 @@
     <meta name="theme-color" content="#fafafa">
     <title th:text="${title}"></title>
 
+    <!-- CSRF-токен для JS (fetch / jQuery / htmx / динамические формы).
+         Пока CSRF на сервере выключен, content будет пустым и js/csrf.js
+         просто ничего не сделает. -->
+    <meta name="_csrf" th:content="${_csrf?.token}">
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}">
+    <meta name="_csrf_parameter" th:content="${_csrf?.parameterName}">
+
+    <!--
+        Внешние библиотеки намеренно НЕ подключаются:
+        - htmx не используется (нет ни одного hx-*), а unpkg.com не резолвится
+          и вешал парсинг страницы на ~11 секунд;
+        - jQuery не используется (весь JS переписан на ванильный);
+        - Bootstrap CSS не используется (все классы — ap-*, модалки нативные
+          <dialog>), а его reboot перебивался нашим сбросом.
+
+        Шрифт Inter грузим неблокирующе: сначала страница рисуется
+        системным шрифтом (он прописан в assesspro-ui.css как fallback),
+        затем подменяется. Так недоступность Google Fonts не тормозит
+        первую отрисовку.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" media="print" onload="this.media='all'"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <noscript>
+        <link rel="stylesheet"
+              href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    </noscript>
 
-    <!-- Bootstrap — только для JS-компонентов (модалки, dropdown, alert) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- CSRF-обвязка: должна подключиться до скриптов страниц -->
+    <script defer th:src="@{/js/csrf.js}"></script>
 
     <!-- Новый CSS -->
     <link th:href="@{/css/assesspro-ui.css}" rel="stylesheet">
